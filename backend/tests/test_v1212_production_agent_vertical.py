@@ -344,7 +344,7 @@ async def test_public_http_to_restricted_mcp_agent_finalizer_vertical(
             )
             assert {item.tool_name for item in invocations} == {
                 "search_knowledge",
-                "query_account",
+                "query_subscription",
                 "query_api_usage",
             }
             assert len(invocations) == len(observations) == 3
