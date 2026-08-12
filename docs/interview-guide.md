@@ -34,7 +34,7 @@ SupportGuard 不是“LLM 套一个聊天框”，而是一个 AI SaaS 客服单
 
 输入：`余额充足，但 atlas-chat 返回 429 concurrency_limit_exceeded，为什么？`
 
-先读自然语言答案，再展开不超过三个来源，最后打开技术检查器。按顺序指出 `AgentDecision → query_account/query_api_usage/search_knowledge → MCP Observation → Replan → grounded answer`。强调工具由真实 Provider 原生 `tool_calls` 或确定性 Fake Provider 驱动，Runtime 负责 Schema、Allowlist、Scope 和预算。
+先读自然语言答案，再展开不超过三个来源，最后打开技术检查器。按顺序指出 `AgentDecision → query_subscription/query_api_usage/search_knowledge → MCP Observation → Replan → grounded answer`。强调工具由真实 Provider 原生 `tool_calls` 或确定性 Fake Provider 驱动，Runtime 负责 Schema、Allowlist、Scope 和预算；只有客户明确询问账户状态、安全状态或区域时才开放 `query_account`。
 
 ### 2. 重复扣费：证明 HITL 不是按钮演示（5～6 分钟）
 

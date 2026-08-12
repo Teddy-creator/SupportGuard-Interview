@@ -196,9 +196,11 @@ def test_explanation_request_does_not_become_a_current_fact_shortcut() -> None:
     )
 
     assert requested_current_fact_requirements(state) == {}
-    assert {"search_knowledge", "query_account", "query_api_usage"} <= graph.runtime._allowlist(
-        state
-    )
+    assert graph.runtime._allowlist(state) == {
+        "search_knowledge",
+        "query_subscription",
+        "query_api_usage",
+    }
 
 
 def test_current_saturation_question_requires_usage_and_configured_limit() -> None:

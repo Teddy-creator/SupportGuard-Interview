@@ -45,7 +45,7 @@ def test_runtime_model_defaults_are_frozen() -> None:
     assert settings.llm_model == "deepseek-v4-flash"
     assert settings.llm_thinking_enabled is False
     assert settings.llm_temperature == 0
-    assert settings.provider_max_input_tokens == 12_000
+    assert settings.provider_max_input_tokens == 16_000
     assert settings.provider_max_output_tokens == 2_000
     assert settings.embedding_mode == "e5"
     assert settings.embedding_model == "intfloat/multilingual-e5-small"

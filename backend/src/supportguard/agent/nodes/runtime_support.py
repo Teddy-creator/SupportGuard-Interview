@@ -111,6 +111,20 @@ from supportguard.services.turn_results import turn_result_for
 from supportguard.tools.capabilities import registry_hash
 from supportguard.tools.gateway import ReadToolCall, ReadToolName, ToolGateway
 
+_ACCOUNT_DIAGNOSTIC_CUE = re.compile(
+    r"(?:账户状态|账号状态|安全状态|风控状态|账户区域|账号区域|"
+    r"\baccount status\b|\bsecurity status\b|\baccount region\b)",
+    re.I,
+)
+_REQUEST_TRACE_CUE = re.compile(
+    r"(?:request\s*id|请求\s*(?:id|编号)|\breq[-_][a-z0-9._:-]+\b)",
+    re.I,
+)
+_INCIDENT_DIAGNOSTIC_CUE = re.compile(
+    r"(?:事故|故障|宕机|服务状态|影响范围|\bincident\b|\boutage\b|\bservice status\b)",
+    re.I,
+)
+
 
 class GraphRuntimeSupport:
     """Shared durable runtime primitives used by typed Agent node collaborators."""
@@ -564,12 +578,8 @@ class GraphRuntimeSupport:
         mapping: dict[str, set[ReadToolName]] = {
             "api_diagnostics": {
                 "search_knowledge",
-                "query_account",
                 "query_subscription",
                 "query_api_usage",
-                "query_request_trace",
-                "check_service_status",
-                "query_incident_impact",
             },
             "credential_security": {
                 "search_knowledge",
@@ -579,7 +589,6 @@ class GraphRuntimeSupport:
             },
             "billing_refund": {
                 "search_knowledge",
-                "query_account",
                 "query_billing_record",
             },
             "incident_support": {
@@ -600,7 +609,15 @@ class GraphRuntimeSupport:
             },
             "unknown": {"search_knowledge", "query_account"},
         }
-        visible = mapping.get(str(issue), {"search_knowledge"})
+        visible = set(mapping.get(str(issue), {"search_knowledge"}))
+        if issue == "api_diagnostics":
+            message = str(state.get("redacted_message", ""))
+            if _ACCOUNT_DIAGNOSTIC_CUE.search(message):
+                visible.add("query_account")
+            if _REQUEST_TRACE_CUE.search(message):
+                visible.add("query_request_trace")
+            if _INCIDENT_DIAGNOSTIC_CUE.search(message):
+                visible.update({"check_service_status", "query_incident_impact"})
         if authoritative_current_fact is not None:
             # Singleton resource reads such as query_subscription have no
             # alternate argument that could make an immediate second call

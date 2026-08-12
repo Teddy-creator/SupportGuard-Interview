@@ -1573,7 +1573,7 @@ class TwoRoundProvider(DeterministicFakeProvider):
                         {
                             "tool_call_id": f"round_{self.decisions}",
                             "call": {
-                                "name": "query_account",
+                                "name": "query_subscription",
                                 "arguments": {},
                             },
                         }
@@ -1609,14 +1609,14 @@ class TwoRoundProvider(DeterministicFakeProvider):
                     "action": "answer",
                     "knowledge_chunk_ids": [],
                     "business_source_ids": [
-                        "fixture:query_account",
+                        "fixture:query_subscription",
                         "fixture:query_api_usage",
                     ],
                     "material_claims": [
                         {
                             "text": "已依据两轮实时观察完成判断。",
                             "observation_source_ids": [
-                                "fixture:query_account",
+                                "fixture:query_subscription",
                                 "fixture:query_api_usage",
                             ],
                         }
@@ -1632,7 +1632,7 @@ class ThirdRoundProvider(TwoRoundProvider):
     async def decide(self, **kwargs: Any) -> ProviderCallResult[Any]:
         self.decisions += 1
         self.visible_tools.append({item["function"]["name"] for item in kwargs["tools"]})
-        tool_name = ("query_account", "query_api_usage", "search_knowledge")[
+        tool_name = ("query_subscription", "query_api_usage", "search_knowledge")[
             min(self.decisions - 1, 2)
         ]
         arguments: dict[str, Any] = {}
@@ -2072,7 +2072,7 @@ def test_mixed_billing_question_keeps_business_reads_but_closes_knowledge() -> N
         test_capability=issue_test_runtime_capability(testing=True),
     )
 
-    assert graph.runtime._allowlist(state) == {"query_account", "query_billing_record"}
+    assert graph.runtime._allowlist(state) == {"query_billing_record"}
 
 
 def test_refused_or_previous_run_knowledge_does_not_close_search_surface() -> None:
@@ -6856,11 +6856,11 @@ async def test_agent_replans_from_observation_for_at_most_two_tool_rounds() -> N
     assert provider.decisions == 3
     assert provider.visible_tools[2] == set()
     third_payload = provider.transport_bytes[2]
-    assert third_payload.count(b'\\"balance\\":\\"120.00\\"') == 1
+    assert third_payload.count(b'\\"concurrency_limit\\":40') == 1
     assert third_payload.count(b'\\"concurrency_current\\":40') == 1
     serialized_context = json.loads(json.loads(third_payload)["context"])
     assert [item["tool_name"] for item in serialized_context["latest_observations"]] == [
-        "query_account",
+        "query_subscription",
         "query_api_usage",
     ]
     observation_lineage = list(output["tool_observations"])

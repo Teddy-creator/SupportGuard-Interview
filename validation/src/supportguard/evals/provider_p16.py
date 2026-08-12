@@ -56,7 +56,7 @@ _PRICE_SOURCE = "https://api-docs.deepseek.com/zh-cn/quick_start/pricing"
 _INPUT_CNY_PER_MILLION = Decimal("1")
 _OUTPUT_CNY_PER_MILLION = Decimal("2")
 _MAX_CALLS_PER_SCENARIO = 9
-_MAX_INPUT_TOKENS_PER_CALL = 12_000
+_MAX_INPUT_TOKENS_PER_CALL = 16_000
 _MAX_OUTPUT_TOKENS_PER_CALL = 2_000
 _COST_GATE_CNY = Decimal("30")
 _API_PORT_BASE = 32200
@@ -703,6 +703,32 @@ def _one_pending_approval(snapshot: Mapping[str, Any]) -> bool:
     return int(snapshot["approval_count"]) == int(snapshot["pending_approval_count"]) == 1
 
 
+def _run_reached_expected_terminal(
+    run: Mapping[str, Any],
+    *,
+    approval_interrupt_allowed: bool,
+    final_run_id: str,
+    snapshot: Mapping[str, Any],
+) -> bool:
+    """Treat a durable approval interrupt as a successful production terminal."""
+
+    if run["status"] == "completed":
+        return True
+    if (
+        not approval_interrupt_allowed
+        or run["status"] != "interrupted"
+        or str(run["id"]) != final_run_id
+    ):
+        return False
+    proposals = snapshot["proposals"]
+    return (
+        len(proposals) == 1
+        and proposals[0]["status"] == "bound"
+        and str(proposals[0]["run_id"]) == final_run_id
+        and _one_pending_approval(snapshot)
+    )
+
+
 def _score_scenario(
     scenario: Mapping[str, Any],
     answers: Sequence[str],
@@ -719,10 +745,17 @@ def _score_scenario(
         and item["status"] == "succeeded"
         and int(item["count"]) > 0
     }
+    final_run_id = str(snapshot["runs"][-1]["id"]) if snapshot["runs"] else ""
+    approval_interrupt_allowed = "approval_pending" in str(scenario["terminal"])
     assertions: dict[str, bool] = {
         "all_turns_completed_under_real_provider_config": len(snapshot["runs"]) == len(answers)
         and all(
-            item["status"] == "completed"
+            _run_reached_expected_terminal(
+                item,
+                approval_interrupt_allowed=approval_interrupt_allowed,
+                final_run_id=final_run_id,
+                snapshot=snapshot,
+            )
             and item["provider_mode"] == "production"
             and item["model"] == "deepseek-v4-flash"
             and item["tool_call_mode"] == "native"

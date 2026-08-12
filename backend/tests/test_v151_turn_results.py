@@ -90,6 +90,7 @@ def test_failure_taxonomy_is_actionable_and_never_invents_human_queue() -> None:
 def test_out_of_scope_response_keeps_conversation_open_without_tools() -> None:
     answer = safe_failure_answer("out_of_scope")
     assert "不在 SupportGuard" in answer
+    assert "天气" in answer
     assert "没有调用业务工具" in answer
     assert "继续询问" in answer
 
@@ -98,6 +99,8 @@ def test_prohibited_response_names_the_boundary_and_zero_effect() -> None:
     answer = safe_failure_answer("prohibited")
     assert "其他客户" in answer
     assert "安全拒绝" in answer
+    assert "现行安全策略" in answer
+    assert "独立审批" in answer
     assert "没有调用业务工具" in answer
     assert "执行变更" in answer
 

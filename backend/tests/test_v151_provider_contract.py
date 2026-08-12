@@ -492,7 +492,8 @@ def test_real_provider_prompts_use_current_taxonomy_and_bounded_customer_routes(
     decide = load_prompt("agent_decide", version="v5").content
     assert "`action=reject` candidate without tools" in decide
     assert "to resend the secret" in decide
-    assert "`query_account`, `query_api_usage`, and" in decide
+    assert "`query_subscription`, `query_api_usage`, and" in decide
+    assert "Use `query_account` only when" in decide
     assert "`search_knowledge`" in decide
     assert "Every API diagnostic answer must give" in decide
     assert "structured `requested_action`" in decide

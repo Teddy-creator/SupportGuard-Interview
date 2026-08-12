@@ -49,11 +49,12 @@ class DeterministicFakeProvider:
     mode = "fake"
     model = "deterministic-fake"
     tool_call_mode = "native_fixture"
+
     def __init__(
         self,
         *,
         delay_seconds: float = 0,
-        max_input_tokens: int = 12_000,
+        max_input_tokens: int = 16_000,
     ) -> None:
         self.delay_seconds = delay_seconds
         self.max_input_tokens = max_input_tokens
@@ -128,14 +129,12 @@ class DeterministicFakeProvider:
                     knowledge_message = f"{recent_customer_turns[-1]}\n{message}"[-500:]
             names = ["search_knowledge"]
             issue = payload["trusted_task_state"]["issue_type"]
-            if issue == "api_diagnostics":
-                names.append("query_account")
             if issue == "unknown" and any(
                 token in message.lower() for token in ("账号", "套餐", "account", "plan")
             ):
                 names.append("query_account")
             if issue == "api_diagnostics":
-                names.append("query_api_usage")
+                names.extend(["query_subscription", "query_api_usage"])
             if issue == "billing_refund":
                 names.append("query_billing_record")
             if issue == "credential_security":
@@ -153,9 +152,7 @@ class DeterministicFakeProvider:
                         "credential_security": "API Key 泄露后的撤销、审计与人工审批政策",
                         "entitlement_change": "提升并发 优化方案 按政策提案 标准处理",
                     }
-                    arguments = {
-                        "query": knowledge_queries.get(str(issue), knowledge_message)
-                    }
+                    arguments = {"query": knowledge_queries.get(str(issue), knowledge_message)}
                 elif name == "query_api_usage":
                     arguments = {"window": "1m"}
                 elif name == "query_billing_record":
@@ -576,8 +573,7 @@ class DeterministicFakeProvider:
             observations = [
                 item
                 for item in context_payload.get("latest_observations", [])
-                if item.get("tool_name") != "search_knowledge"
-                and item.get("status") == "ok"
+                if item.get("tool_name") != "search_knowledge" and item.get("status") == "ok"
             ]
             citation_ids = [
                 str(item["citation_binding_id"])

@@ -759,7 +759,7 @@ def test_ticket_api_runs_test_owned_tool_observation_replan_vertical_slice() -> 
     assert state["tool_attempts"] == 3
     assert {item["tool_name"] for item in state["tool_observations"]} == {
         "search_knowledge",
-        "query_account",
+        "query_subscription",
         "query_api_usage",
     }
     assert all(item["status"] == "ok" for item in state["tool_observations"])
@@ -798,7 +798,7 @@ def test_ticket_api_runs_test_owned_tool_observation_replan_vertical_slice() -> 
     # unbound retrieval candidates as published answer sources.
     assert product_detail["knowledge_sources"] == []
     assert {item["tool_name"] for item in product_detail["business_facts"]} == {
-        "query_account",
+        "query_subscription",
         "query_api_usage",
     }
     assert product_detail["timeline"]

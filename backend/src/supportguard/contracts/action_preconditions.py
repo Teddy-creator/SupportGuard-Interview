@@ -124,6 +124,7 @@ _REFUND_ACTION = re.compile(
 )
 _ACTION_REQUEST_CUE = re.compile(
     r"(?:帮我|麻烦|我要|我想|我需要|我希望|"
+    r"(?:^|[\s，,。；;！!])把|"
     r"(?:^|[\s，,。；;！!])请(?!问)|立即|继续(?:处理)?|"
     r"按.{0,12}(?:政策|流程|规则)|please|\bi\s+(?:want|need)\b)",
     re.I,
@@ -161,7 +162,7 @@ _ENTITLEMENT_CHANGE_NEGATED = re.compile(
     re.I,
 )
 _CONCURRENCY_TARGET = re.compile(
-    r"(?:(?:调整到|提升到|提高到|增加到|改为|改成|设置为|上限为|"
+    r"(?:(?:调整到|调整为|提升到|提高到|增加到|改为|改成|设置为|上限为|"
     r"target(?:\s+is)?|\bto)"
     r"|(?:目标\s*)?(?:并发|concurrency)(?:\s*(?:上限|limit))?\s*(?:是|为))"
     r"\s*[:：]?\s*(\d{1,6})\b",
@@ -169,8 +170,10 @@ _CONCURRENCY_TARGET = re.compile(
 )
 _RPM_TARGET = re.compile(
     r"(?:rpm|每分钟请求(?:数|上限)?).{0,12}"
-    r"(?:调整到|提升到|提高到|增加到|改为|改成|设置为|上限为|to)\s*[:：]?\s*(\d{1,7})\b"
-    r"|(?:调整到|提升到|提高到|增加到|改为|改成|设置为)\s*[:：]?\s*(\d{1,7})"
+    r"(?:调整到|调整为|提升到|提高到|增加到|改为|改成|设置为|上限为|to)"
+    r"\s*[:：]?\s*(\d{1,7})\b"
+    r"|(?:调整到|调整为|提升到|提高到|增加到|改为|改成|设置为)"
+    r"\s*[:：]?\s*(\d{1,7})"
     r"\s*(?:rpm|每分钟请求)",
     re.I,
 )
@@ -184,6 +187,21 @@ _PLAN_TARGET = re.compile(
 _DUPLICATE_CHARGE_ACTION = re.compile(
     r"(?:重复扣费|重复收费|duplicate\s+charge).{0,24}"
     r"(?:按.{0,6}政策处理|处理|退款|refund)",
+    re.I,
+)
+_DUPLICATE_BILLING_RELATION_ZH = re.compile(
+    rf"(?P<duplicate>{_BILLING_ID.pattern})\s*(?:是|为)\s*"
+    rf"(?P<original>{_BILLING_ID.pattern})\s*的(?:一笔|一条)?(?:重复扣费|重复收费)",
+    re.I,
+)
+_DUPLICATE_BILLING_RELATION_EN = re.compile(
+    rf"(?P<duplicate>{_BILLING_ID.pattern})\s+is\s+(?:a\s+)?duplicate(?:\s+charge)?\s+of\s+"
+    rf"(?P<original>{_BILLING_ID.pattern})",
+    re.I,
+)
+_REFUND_CONTEXT_CONTINUATION = re.compile(
+    r"(?:如果|若|确认(?:是|为)?|这笔|该笔|这条|该条|它|就按|"
+    r"\bif\b|\bif\s+confirmed\b|\bthis\s+(?:charge|bill)\b|\bthat\s+(?:charge|bill)\b)",
     re.I,
 )
 _ACTION_CLAUSE_BOUNDARY = re.compile(
@@ -415,6 +433,49 @@ def explicit_current_turn_action(current_turn: str) -> ActionType | None:
     return next(iter(intents)) if len(intents) == 1 else None
 
 
+def explicit_action_with_immediate_domain(
+    current_turn: str,
+    recent_conversation: Sequence[dict[str, Any]],
+) -> ActionType | None:
+    """Resolve a positive current action while inheriting at most one prior domain.
+
+    The current message must independently contain the positive action verb and
+    request cue. The immediately preceding customer turn may contribute only
+    the API-key or entitlement domain; it contributes neither authority nor a
+    resource/target value. This supports natural corrections without reviving
+    stale or negated actions.
+    """
+
+    direct = explicit_current_turn_action(current_turn)
+    if direct is not None:
+        return direct
+    previous = next(
+        (
+            str(item.get("content", "")).strip()
+            for item in reversed(recent_conversation)
+            if item.get("role") in {"customer", "user"} and str(item.get("content", "")).strip()
+        ),
+        "",
+    )
+    if not previous:
+        return None
+    domain_actions: tuple[ActionType, ...] = (
+        "api_key_revocation",
+        "entitlement_change",
+    )
+    inferred: set[ActionType] = {
+        action
+        for action in domain_actions
+        if _safe_immediate_domain_continuation(
+            requested_action=action,
+            current=current_turn,
+            previous=previous,
+        )
+        is not None
+    }
+    return next(iter(inferred)) if len(inferred) == 1 else None
+
+
 def _explicit_action_requested(
     content: str,
     *,
@@ -603,6 +664,73 @@ def _unique_matches(
     return list(unique.values())
 
 
+def _duplicate_relation_refund_target(
+    messages: Sequence[_AcceptedMessage],
+) -> tuple[str, AdmissionFieldSource] | None:
+    """Resolve the duplicate record without confusing its original as the target.
+
+    A duplicate relationship necessarily names two billing records. The
+    customer-authored grammar, rather than identifier order alone, owns which
+    record is the duplicate that may be refunded. Any additional reference or
+    conflicting relationship remains ambiguous and is rejected by the caller.
+    """
+
+    relations: list[tuple[str, str, AdmissionFieldSource]] = []
+    all_refs = _unique_matches(
+        _matches(_BILLING_ID, messages),
+        field_name="billing_record_id",
+    )
+    for item in messages:
+        for pattern in (_DUPLICATE_BILLING_RELATION_ZH, _DUPLICATE_BILLING_RELATION_EN):
+            for match in pattern.finditer(item.content):
+                duplicate = match.group("duplicate")
+                original = match.group("original")
+                start, end = match.span("duplicate")
+                relations.append(
+                    (
+                        duplicate,
+                        original,
+                        AdmissionFieldSource(
+                            field_name="billing_record_id",
+                            message_id=item.message_id,
+                            content_hash=item.content_hash,
+                            span_start=start,
+                            span_end=end,
+                        ),
+                    )
+                )
+    if len(relations) != 1:
+        return None
+    duplicate, original, source = relations[0]
+    referenced = {value.casefold() for value, _ in all_refs}
+    if referenced != {duplicate.casefold(), original.casefold()}:
+        return None
+    return duplicate, source
+
+
+def _safe_immediate_domain_continuation(
+    *,
+    requested_action: PlannedAction,
+    current: str,
+    previous: str,
+) -> ActionType | None:
+    """Inherit only a domain, never authority or a target, from the prior turn."""
+
+    if (
+        requested_action == "api_key_revocation"
+        and _KEY_DOMAIN.search(previous)
+        and _key_action_requested(current, domain_context=True)
+    ):
+        return "api_key_revocation"
+    if (
+        requested_action == "entitlement_change"
+        and _ENTITLEMENT_DOMAIN.search(previous)
+        and _entitlement_action_requested(current, domain_context=True)
+    ):
+        return "entitlement_change"
+    return None
+
+
 def _mismatch(
     *,
     planned_action: PlannedAction,
@@ -666,6 +794,12 @@ def resolve_action_admission_v2(
     # a stale action context.
     continuation_context = accepted_messages[-2].content if len(accepted_messages) > 1 else ""
     trusted_continuation = continuation_action if continuation_action == requested_action else None
+    if trusted_continuation is None and continuation_context:
+        trusted_continuation = _safe_immediate_domain_continuation(
+            requested_action=requested_action,
+            current=current_message.content,
+            previous=continuation_context,
+        )
     current_intents = _action_intents(
         (current_message,),
         continuation_action=trusted_continuation,
@@ -674,7 +808,18 @@ def resolve_action_admission_v2(
     current_blocks_continuation = requested_action == "refund" and _refund_continuation_blocked(
         current_message.content
     )
-    if current_intents or continuation_action != requested_action or current_blocks_continuation:
+    contextual_refund = bool(
+        requested_action == "refund"
+        and current_intents == {"refund"}
+        and _BILLING_ID.search(current_message.content) is None
+        and _REFUND_CONTEXT_CONTINUATION.search(current_message.content)
+        and len(accepted_messages) > 1
+        and len(_unique_matches(_matches(_BILLING_ID, accepted_messages[-2:-1]), field_name="x"))
+        == 1
+    )
+    if contextual_refund:
+        messages = accepted_messages[-2:]
+    elif current_intents or continuation_action != requested_action or current_blocks_continuation:
         messages = [current_message]
     else:
         messages = accepted_messages
@@ -754,12 +899,15 @@ def resolve_action_admission_v2(
             field_name="billing_record_id",
         )
         if len(refs) > 1:
-            return _mismatch(
-                action_type=parsed_action,
-                reason_code="resource_ref_ambiguous",
-                question="检测到多个账单 ID，请明确本次只处理哪一个账单。",
-                **common,
-            )
+            relation_target = _duplicate_relation_refund_target(messages)
+            if relation_target is None:
+                return _mismatch(
+                    action_type=parsed_action,
+                    reason_code="resource_ref_ambiguous",
+                    question="检测到多个账单 ID，请明确本次只处理哪一个账单。",
+                    **common,
+                )
+            refs = [relation_target]
         if not refs:
             missing_fields = ("billing_record_id",)
         else:

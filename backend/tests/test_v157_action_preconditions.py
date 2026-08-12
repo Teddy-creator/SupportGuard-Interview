@@ -119,9 +119,9 @@ def test_complete_action_fields_do_not_trigger_missing_field_admission() -> None
 
 
 @pytest.mark.asyncio
-async def test_refund_missing_billing_id_clarifies_before_any_provider_or_tool_call() -> None:
+async def test_refund_missing_billing_id_calls_provider_but_keeps_typed_precondition() -> None:
     graph = SupportGraph(
-        provider=NeverCalledProvider(),
+        provider=DeterministicFakeProvider(),
         retrieval=None,
         gateway=ToolGateway(None),
     )
@@ -130,19 +130,21 @@ async def test_refund_missing_billing_id_clarifies_before_any_provider_or_tool_c
     classified = await graph.intake_nodes.classify(initial)
     decided = await graph.decision_nodes.agent_decide(AgentState(**{**initial, **classified}))
 
-    assert classified["llm_calls"] == 0
+    assert classified["llm_calls"] == 1
     assert classified["classification"]["requested_action"] == "refund"
     assert classified["action_admission"]["missing_fields"] == ["billing_record_id"]
     assert decided["agent_finish_reason"] == "needs_clarification"
     assert "账单 ID" in decided["candidate"]["answer"]
     assert decided["agent_decision"]["tool_calls"] == []
+    # Intake owns the one semantic Provider call. The deterministic decision
+    # stage does not add another call while asking for the typed missing field.
     assert int(decided.get("llm_calls", 0)) == 0
 
 
 @pytest.mark.asyncio
-async def test_entitlement_missing_target_clarifies_before_proposal_path() -> None:
+async def test_entitlement_missing_target_calls_provider_but_keeps_typed_precondition() -> None:
     graph = SupportGraph(
-        provider=NeverCalledProvider(),
+        provider=DeterministicFakeProvider(),
         retrieval=None,
         gateway=ToolGateway(None),
     )
@@ -154,6 +156,7 @@ async def test_entitlement_missing_target_clarifies_before_proposal_path() -> No
     assert classified["classification"]["requested_action"] == "entitlement_change"
     assert classified["classification"]["requested_concurrency_limit"] is None
     assert classified["action_admission"]["missing_fields"] == ["target.concurrency_limit"]
+    assert classified["llm_calls"] == 1
     assert decided["agent_finish_reason"] == "needs_clarification"
     assert "具体并发上限目标值" in decided["candidate"]["answer"]
     assert decided["agent_decision"]["tool_calls"] == []
@@ -172,7 +175,7 @@ async def test_missing_action_precondition_finishes_full_graph_without_side_effe
     expected_field: str,
 ) -> None:
     graph = SupportGraph(
-        provider=NeverCalledProvider(),
+        provider=DeterministicFakeProvider(),
         retrieval=None,
         gateway=ToolGateway(None),
     )

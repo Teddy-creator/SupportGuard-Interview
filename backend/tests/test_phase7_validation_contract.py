@@ -39,7 +39,7 @@ def test_phase7_frozen_preflights_have_exact_denominators_and_no_execution() -> 
     }
     assert p16["scenarios"] == 16
     assert p16["multi_turn_scenarios"] >= 4
-    assert p16["estimated_upper_bound_cny"] == "2.304"
+    assert p16["estimated_upper_bound_cny"] == "2.880"
     assert p16["cost_gate_satisfied"] is True
     assert j12["journeys"] == 12
     assert set(j12["proof_keys"]) == set(journey_j12._REQUIRED_PROOF_KEYS)
@@ -186,6 +186,49 @@ def test_p16_scorer_covers_all_frozen_semantic_classes_and_fails_closed() -> Non
         unsupported,
     )
     assert "all_material_claims_durably_supported" in failures
+
+
+def test_p16_scorer_accepts_only_a_bound_pending_approval_interrupt() -> None:
+    contract = provider_p16._load_contract(ROOT)
+    scenario = next(item for item in contract["scenarios"] if item["id"] == "IE-P07")
+    snapshot = _snapshot(
+        runs=[
+            {
+                "id": "run_approval",
+                "status": "interrupted",
+                "provider_mode": "production",
+                "model": "deepseek-v4-flash",
+                "tool_call_mode": "native",
+            }
+        ],
+        proposals=[
+            {
+                "run_id": "run_approval",
+                "action_type": "api_key_revocation",
+                "resource_id": "key_demo_compromised",
+                "resource_version": 1,
+                "action_payload": {},
+                "status": "bound",
+            }
+        ],
+        approval_count=1,
+        pending_approval_count=1,
+    )
+
+    assertions, _failures = provider_p16._score_scenario(
+        scenario,
+        ["该撤销申请需要独立审批。"],
+        snapshot,
+    )
+    assert assertions["all_turns_completed_under_real_provider_config"] is True
+
+    snapshot["pending_approval_count"] = 0
+    assertions, _failures = provider_p16._score_scenario(
+        scenario,
+        ["该撤销申请需要独立审批。"],
+        snapshot,
+    )
+    assert assertions["all_turns_completed_under_real_provider_config"] is False
 
 
 def test_p16_candidate_identity_matches_the_frozen_public_schema(

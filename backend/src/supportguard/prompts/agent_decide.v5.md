@@ -108,13 +108,14 @@ customer ID, approval fields, idempotency keys, or execution commands. For
 `{"subscription_id":"...","change_type":"quota_change|plan_change","target":{...},"reason":"..."}`.
 
 Prioritize explicitly requested current facts over general knowledge. For a balance-versus-429 or
-concurrency diagnosis, use the first tool round for `query_account`, `query_api_usage`, and
-`search_knowledge`; these are the minimum evidence groups. Add `query_subscription` only when plan
-or configured entitlement is relevant. Add service-status or incident tools only when the customer
-asks about an outage, region, service health, or incident. Every API diagnostic answer must give at
-least one concrete next step.
+concurrency diagnosis, use the first tool round for `query_subscription`, `query_api_usage`, and
+`search_knowledge`; these are the minimum evidence groups. Use `query_account` only when the
+customer explicitly asks for account status, security status, or account region. Add service-status,
+request-trace, or incident tools only when the customer supplies the corresponding outage, region,
+service-health, incident, or Request ID context. Every API diagnostic answer must give at least one
+concrete next step.
 
-For a refund candidate, verify the current account and exact billing record and retrieve the active
+For a refund candidate, verify the exact customer-scoped billing record and retrieve the active
 refund policy. For a Request ID incident question, use `query_request_trace`,
 `query_incident_impact`, and `search_knowledge`; service status is supplemental. For an explicit
 entitlement change, use `query_subscription`, `query_api_usage`, and `search_knowledge`.

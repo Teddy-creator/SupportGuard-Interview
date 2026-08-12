@@ -26,6 +26,7 @@ from supportguard.config import Settings
 from supportguard.contracts.action_preconditions import (
     ActionAdmission,
     ActionAdmissionV2,
+    explicit_action_with_immediate_domain,
     resolve_action_admission_v2,
     resolve_missing_action_preconditions,
 )
@@ -282,8 +283,6 @@ class IntakeNodes:
                 "context_budget_exhausted",
                 error_code="protected_classification_context_oversized",
             )
-        if prepared.missing_action_admission is not None:
-            return await self._publish_missing_action_admission(state, prepared)
         return await self._classify_with_provider(state, prepared)
 
     async def _prepare_classification(self, state: AgentState) -> _ClassificationPreparation:
@@ -663,13 +662,58 @@ class IntakeNodes:
                 provider_classification,
                 state.get("current_actions", []),
             )
-        result = self.host._canonical_action_query_classification(
-            provider_classification,
-            action_state_query=action_state_query,
-            current_actions=state.get("current_actions", []),
+        missing_admission = prepared.missing_action_admission
+        deterministic_action = explicit_action_with_immediate_domain(
+            state["redacted_message"],
+            prepared.context,
         )
-        if action_state_query is None:
-            result = canonicalize_non_material_classification(state["redacted_message"], result)
+        if missing_admission is not None:
+            # The real Provider still classifies the natural-language turn, but
+            # it cannot weaken or fill a deterministic high-risk precondition.
+            # The typed admission remains the sole authority for the action and
+            # the exact field that must be clarified.
+            result = Classification(
+                issue_type=missing_admission.issue_type,
+                risk="high",
+                policy_boundary="allowed",
+                requested_action=missing_admission.action_type,
+                requested_concurrency_limit=None,
+                needs_realtime_facts=True,
+                support_subject="customer_problem",
+                rationale=(
+                    "Deterministic admission identified an explicit high-risk action "
+                    "with a missing typed precondition."
+                ),
+            )
+        elif (
+            deterministic_action is not None
+            and action_state_query is None
+            and provider_classification.policy_boundary == "allowed"
+        ):
+            issue_type = {
+                "refund": "billing_refund",
+                "api_key_revocation": "credential_security",
+                "entitlement_change": "entitlement_change",
+            }[deterministic_action]
+            result = provider_classification.model_copy(
+                update={
+                    "issue_type": issue_type,
+                    "risk": "high",
+                    "requested_action": deterministic_action,
+                    # ActionAdmissionV2 owns the typed target and will reject
+                    # ambiguity; an untrusted Provider target is not copied.
+                    "requested_concurrency_limit": None,
+                    "needs_realtime_facts": True,
+                }
+            )
+        else:
+            result = self.host._canonical_action_query_classification(
+                provider_classification,
+                action_state_query=action_state_query,
+                current_actions=state.get("current_actions", []),
+            )
+            if action_state_query is None:
+                result = canonicalize_non_material_classification(state["redacted_message"], result)
         event_payload: dict[str, Any] = {
             "classification": result.model_dump(),
             "llm_calls": calls,
@@ -687,6 +731,26 @@ class IntakeNodes:
                     "grants_action_authority": False,
                 }
             )
+        if missing_admission is not None:
+            event_payload.update(
+                {
+                    "provider_semantic_classification": (
+                        provider_classification.model_dump(mode="json")
+                    ),
+                    "deterministic_action_admission": missing_admission.model_dump(mode="json"),
+                    "grants_action_authority": False,
+                }
+            )
+        elif deterministic_action is not None and result.requested_action == deterministic_action:
+            event_payload.update(
+                {
+                    "provider_semantic_classification": (
+                        provider_classification.model_dump(mode="json")
+                    ),
+                    "deterministic_current_action": deterministic_action,
+                    "grants_action_authority": False,
+                }
+            )
         await self.host._event(state, "classification", event_payload, visibility="customer")
         update: AgentState = {
             "classification": result.model_dump(),
@@ -699,6 +763,8 @@ class IntakeNodes:
         }
         if action_state_query is not None:
             update["action_state_query"] = action_state_query
+        if missing_admission is not None:
+            update["action_admission"] = missing_admission.model_dump(mode="json")
         return update
 
     @staticmethod

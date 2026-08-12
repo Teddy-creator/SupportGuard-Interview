@@ -37,6 +37,7 @@ from supportguard.agent.tool_policy import (
 from supportguard.contracts.action_preconditions import (
     ActionAdmission,
     ActionAdmissionV2,
+    explicit_action_with_immediate_domain,
     explicit_current_turn_action,
     resolve_action_admission_v2,
     resolve_missing_action_preconditions,
@@ -283,6 +284,68 @@ def test_action_admission_v2_continues_only_a_trusted_unfinished_action() -> Non
     assert without_continuation.reason_code == "plan_without_customer_action"
     assert with_continuation.status == "admitted"
     assert with_continuation.extracted_arguments == {"billing_record_id": "bill_alpha"}
+
+
+def test_duplicate_relation_selects_the_duplicate_record_as_refund_target() -> None:
+    result = admission(
+        requested_action="refund",
+        issue_type="billing_refund",
+        message="bill_duplicate 是 bill_original 的重复扣费，请按现行政策退款。",
+    )
+
+    assert result.status == "admitted"
+    assert result.extracted_arguments == {"billing_record_id": "bill_duplicate"}
+    assert result.field_sources[0].message_id == "message-current"
+
+
+def test_duplicate_relation_with_an_extra_record_remains_ambiguous() -> None:
+    result = admission(
+        requested_action="refund",
+        issue_type="billing_refund",
+        message=(
+            "bill_duplicate 是 bill_original 的重复扣费，但还提到了 bill_third，请按现行政策退款。"
+        ),
+    )
+
+    assert result.status == "mismatch"
+    assert result.reason_code == "resource_ref_ambiguous"
+
+
+def test_explicit_refund_continuation_reuses_only_the_immediately_prior_record() -> None:
+    result = admission(
+        requested_action="refund",
+        issue_type="billing_refund",
+        message="如果确认是重复扣费，就按现行政策发起退款。",
+        history=[
+            {
+                "role": "customer",
+                "id": "message-diagnosis",
+                "content": "帮我核对 bill_duplicate 为什么收了两次。",
+            }
+        ],
+    )
+
+    assert result.status == "admitted"
+    assert result.extracted_arguments == {"billing_record_id": "bill_duplicate"}
+    assert result.source_message_ids == ("message-diagnosis", "message-current")
+
+
+def test_unqualified_refund_request_does_not_silently_inherit_a_prior_record() -> None:
+    result = admission(
+        requested_action="refund",
+        issue_type="billing_refund",
+        message="请直接退款。",
+        history=[
+            {
+                "role": "customer",
+                "id": "message-diagnosis",
+                "content": "帮我核对 bill_duplicate 为什么收了两次。",
+            }
+        ],
+    )
+
+    assert result.status == "missing"
+    assert result.missing_fields == ("billing_record_id",)
 
 
 @pytest.mark.parametrize(
@@ -568,6 +631,56 @@ def test_ie_p10_explicit_second_turn_correction_inherits_domain_not_old_target()
     assert len(result.field_sources) == 1
     assert result.field_sources[0].message_id == "message-current"
     assert result.source_message_ids == ("message-current",)
+
+
+def test_immediate_entitlement_correction_does_not_require_prior_missing_state() -> None:
+    result = admission(
+        requested_action="entitlement_change",
+        issue_type="entitlement_change",
+        message="请改成 40，按正常审批流程处理。",
+        requested_concurrency_limit=40,
+        history=[
+            {
+                "role": "customer",
+                "id": "message-first",
+                "content": "不要把并发提高到 80。",
+            }
+        ],
+    )
+
+    assert result.status == "admitted"
+    assert result.extracted_arguments == {
+        "change_type": "quota_change",
+        "target": {"concurrency_limit": 40},
+    }
+    assert result.source_message_ids == ("message-current",)
+    assert (
+        explicit_action_with_immediate_domain(
+            "请改成 40，按正常审批流程处理。",
+            [
+                {
+                    "role": "customer",
+                    "content": "不要把并发提高到 80。",
+                }
+            ],
+        )
+        == "entitlement_change"
+    )
+
+
+def test_adjust_to_synonym_is_an_explicit_bounded_entitlement_request() -> None:
+    result = admission(
+        requested_action="entitlement_change",
+        issue_type="entitlement_change",
+        message="把当前项目的并发配额调整为 40，需要的话走审批。",
+        requested_concurrency_limit=40,
+    )
+
+    assert result.status == "admitted"
+    assert result.extracted_arguments == {
+        "change_type": "quota_change",
+        "target": {"concurrency_limit": 40},
+    }
 
 
 @pytest.mark.parametrize("second_turn", ["40", "把并发改成40会有什么影响？"])

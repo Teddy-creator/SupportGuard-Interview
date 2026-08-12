@@ -68,9 +68,10 @@ class Settings(BaseSettings):
     provider_rpm_capacity: int = Field(default=60, ge=1, le=10000)
     # Transport preflight covers the complete OpenAI-compatible request, not
     # just ContextAssembler's 6k packet.  The AgentDecision schema and system
-    # policy add roughly 3.2k conservative tokens, so 12k keeps the request
-    # bounded without rejecting a valid two-round evidence packet locally.
-    provider_max_input_tokens: int = Field(default=12_000, ge=1000, le=128000)
+    # policy and the expanded typed AgentDecision schema add roughly 5.6k
+    # conservative tokens. 16k keeps the complete bounded 8k context packet
+    # representable without weakening ContextAssembler's per-section limits.
+    provider_max_input_tokens: int = Field(default=16_000, ge=1000, le=128000)
     provider_max_output_tokens: int = Field(default=2_000, ge=256, le=16_000)
     embedding_mode: Literal["e5", "deterministic-fixture"] = "e5"
     embedding_model: str = "intfloat/multilingual-e5-small"

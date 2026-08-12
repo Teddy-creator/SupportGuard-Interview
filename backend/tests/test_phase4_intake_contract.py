@@ -174,8 +174,18 @@ def test_phase4_intake_has_named_bounded_stages_without_impl_wrappers() -> None:
 
 
 @pytest.mark.asyncio
-async def test_phase4_intake_redacts_pii_and_admits_missing_action_without_provider() -> None:
-    provider = _RecordingProvider([])
+async def test_phase4_intake_redacts_pii_and_pins_missing_action_after_provider() -> None:
+    provider = _RecordingProvider(
+        [
+            ProviderCallResult(
+                output=_classification(),
+                attempts=1,
+                usage=ProviderUsage(prompt_tokens=4, completion_tokens=2),
+                trace_metadata={},
+                transport=canonical_transport_record({"input": "missing-action"}),
+            )
+        ]
+    )
     host = _IntakeHost(provider)
     nodes = IntakeNodes(cast(Any, host))
     state = _state("邮箱 user@example.com，请帮我退款。")
@@ -187,9 +197,45 @@ async def test_phase4_intake_redacts_pii_and_admits_missing_action_without_provi
     assert state["redacted_message"] == "邮箱 [REDACTED_EMAIL]，请帮我退款。"
     assert result["classification"]["requested_action"] == "refund"
     assert result["action_admission"]["missing_fields"] == ["billing_record_id"]
-    assert result["llm_calls"] == 0
-    assert provider.calls == []
-    assert host.reservation_count == 0
+    assert result["llm_calls"] == 1
+    assert len(provider.calls) == 1
+    assert host.reservation_count == 1
+    assert host.events[-1][1]["grants_action_authority"] is False
+
+
+@pytest.mark.asyncio
+async def test_phase4_intake_canonicalizes_an_immediate_action_correction() -> None:
+    provider = _RecordingProvider(
+        [
+            ProviderCallResult(
+                output=_classification(),
+                attempts=1,
+                usage=ProviderUsage(prompt_tokens=4, completion_tokens=2),
+                trace_metadata={},
+                transport=canonical_transport_record({"input": "action-correction"}),
+            )
+        ]
+    )
+    host = _IntakeHost(provider)
+    nodes = IntakeNodes(cast(Any, host))
+    state = _state(
+        "请改成 40，按正常审批流程处理。",
+        classification_context=[
+            {
+                "role": "customer",
+                "content": "不要把并发提高到 80。",
+                "message_id": "message_previous",
+            }
+        ],
+    )
+
+    result = await nodes.classify(state)
+
+    assert result["classification"]["issue_type"] == "entitlement_change"
+    assert result["classification"]["requested_action"] == "entitlement_change"
+    assert result["classification"]["requested_concurrency_limit"] is None
+    assert host.events[-1][1]["deterministic_current_action"] == "entitlement_change"
+    assert host.events[-1][1]["grants_action_authority"] is False
 
 
 @pytest.mark.asyncio
