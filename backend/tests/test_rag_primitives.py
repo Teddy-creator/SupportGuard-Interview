@@ -192,6 +192,29 @@ def test_rrf_combines_independent_rankings() -> None:
     assert fused[0].keyword_rank == 2
 
 
+def test_rrf_preserves_each_channel_head_before_document_coherence_tail() -> None:
+    vector_head = chunk("vector-head", document_id="focused")
+    keyword_head = chunk("keyword-head", document_id="exact")
+    repeated = [chunk(f"manual-{ordinal}", document_id="large-manual") for ordinal in range(1, 5)]
+
+    fused = reciprocal_rank_fusion(
+        [vector_head, *repeated],
+        [keyword_head, *reversed(repeated)],
+    )
+
+    assert {item.chunk.chunk_id for item in fused[:2]} == {
+        "vector-head",
+        "keyword-head",
+    }
+    assert [item.chunk.chunk_id for item in fused[2:]] == [
+        item.chunk.chunk_id
+        for item in sorted(
+            fused[2:],
+            key=lambda item: (-item.rrf_score, item.chunk.chunk_id),
+        )
+    ]
+
+
 def test_evidence_rejects_deprecated_and_wrong_scope() -> None:
     candidates = [
         RankedChunk(chunk=chunk("old", status="deprecated"), rrf_score=1.0),

@@ -357,6 +357,28 @@ def _collect_integration_nodes() -> tuple[list[str], IntegrationInventory]:
         raise RuntimeError("isolated_integration_collection_empty")
     selected = [str(node) for node in nodes if "/test_eval_" not in str(node)]
     inventory = _load_integration_inventory(selected)
+    exact_nodes_raw = os.environ.get("SUPPORTGUARD_INTEGRATION_NODES_JSON")
+    if exact_nodes_raw and (
+        os.environ.get("SUPPORTGUARD_INTEGRATION_START_AFTER")
+        or os.environ.get("SUPPORTGUARD_INTEGRATION_NODE")
+    ):
+        raise RuntimeError("isolated_integration_selectors_are_mutually_exclusive")
+    if exact_nodes_raw:
+        try:
+            exact_nodes = json.loads(exact_nodes_raw)
+        except json.JSONDecodeError as exc:
+            raise RuntimeError("isolated_integration_exact_nodes_malformed") from exc
+        if not (
+            isinstance(exact_nodes, list)
+            and exact_nodes
+            and all(isinstance(node, str) and node for node in exact_nodes)
+            and len(set(exact_nodes)) == len(exact_nodes)
+        ):
+            raise RuntimeError("isolated_integration_exact_nodes_invalid")
+        unknown = sorted(set(exact_nodes) - set(selected))
+        if unknown:
+            raise RuntimeError(f"isolated_integration_exact_nodes_unknown:{unknown}")
+        selected = list(exact_nodes)
     if start_after := os.environ.get("SUPPORTGUARD_INTEGRATION_START_AFTER"):
         try:
             offset = selected.index(start_after) + 1
@@ -496,6 +518,10 @@ def _run_integration(base: str) -> None:
             "head_sha": source_state.head_sha,
             "source_dirty": source_state.dirty,
             "source_state_sha256": source_state.sha256,
+            "executed_node_ids": nodes,
+            "executed_node_ids_sha256": hashlib.sha256(
+                json.dumps(nodes, separators=(",", ":")).encode()
+            ).hexdigest(),
         }
         receipt["integration_inventory_sha256"] = inventory.manifest_sha256
     except BaseException as exc:

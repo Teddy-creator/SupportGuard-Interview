@@ -73,6 +73,7 @@ def test_current_integration_inventory_is_exact(
 ) -> None:
     monkeypatch.delenv("SUPPORTGUARD_INTEGRATION_START_AFTER", raising=False)
     monkeypatch.delenv("SUPPORTGUARD_INTEGRATION_NODE", raising=False)
+    monkeypatch.delenv("SUPPORTGUARD_INTEGRATION_NODES_JSON", raising=False)
     namespace = _runner_namespace()
     collect = cast(Callable[[], tuple[list[str], Any]], namespace["_collect_integration_nodes"])
 
@@ -92,6 +93,31 @@ def test_current_integration_inventory_is_exact(
         "test_escalation_direct_and_generic_paths_fail_closed_without_writes"
     ) in current_nodes
     assert all("test_v129_" not in node for node in current_nodes)
+
+
+def test_current_integration_accepts_only_exact_known_phase7_nodes(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    node = (
+        "backend/tests/test_v124_agent_recovery.py::"
+        "test_turn_takeover_reuses_decision_and_terminalizes_every_ordinal"
+    )
+    monkeypatch.delenv("SUPPORTGUARD_INTEGRATION_START_AFTER", raising=False)
+    monkeypatch.delenv("SUPPORTGUARD_INTEGRATION_NODE", raising=False)
+    monkeypatch.setenv("SUPPORTGUARD_INTEGRATION_NODES_JSON", json.dumps([node]))
+    namespace = _runner_namespace()
+    collect = cast(Callable[[], tuple[list[str], Any]], namespace["_collect_integration_nodes"])
+
+    selected, _inventory = collect()
+
+    assert selected == [node]
+
+    monkeypatch.setenv(
+        "SUPPORTGUARD_INTEGRATION_NODES_JSON",
+        json.dumps(["backend/tests/test_unknown.py::test_unknown"]),
+    )
+    with pytest.raises(RuntimeError, match="isolated_integration_exact_nodes_unknown"):
+        collect()
 
 
 def test_integration_inventory_fails_closed_for_an_unclassified_file() -> None:

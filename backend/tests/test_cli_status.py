@@ -48,7 +48,7 @@ def test_eval_validate_cli_is_truthful(monkeypatch: pytest.MonkeyPatch, capsys) 
         ("ie-j12", []),
     ],
 )
-def test_candidate_evaluation_commands_fail_closed(
+def test_phase7_commands_require_candidate_bound_outputs_before_artifact_access(
     command: str, extra: list[str], monkeypatch: pytest.MonkeyPatch
 ) -> None:
     def forbidden_path_effect(*args: object, **kwargs: object) -> None:
@@ -57,7 +57,7 @@ def test_candidate_evaluation_commands_fail_closed(
     for method in ("open", "read_text", "read_bytes", "write_text", "write_bytes"):
         monkeypatch.setattr(Path, method, forbidden_path_effect)
     monkeypatch.setattr(sys, "argv", ["supportguard-validation", "eval", command, *extra])
-    with pytest.raises(EvaluationGateError, match="before artifact access"):
+    with pytest.raises(RuntimeError, match="required"):
         main()
 
 

@@ -8,7 +8,6 @@ from pathlib import Path
 import pytest
 
 from supportguard.cli import build_parser as build_runtime_parser
-from supportguard.evals.gate import EvaluationGateError
 from supportguard.validation import cli as validation_cli
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -53,11 +52,17 @@ def test_validation_only_packages_are_absent_from_runtime(package: str) -> None:
     assert not (RUNTIME_ROOT / package).exists()
 
 
-def test_phase6_validation_distribution_contains_only_current_owners() -> None:
+def test_phase7_validation_distribution_contains_only_current_owners() -> None:
     files = {path.relative_to(VALIDATION_ROOT).as_posix() for path in VALIDATION_ROOT.rglob("*.py")}
     expected_files = {
         "evals/__init__.py",
         "evals/gate.py",
+        "evals/deterministic_proof.py",
+        "evals/fault_f06.py",
+        "evals/journey_j12.py",
+        "evals/phase7_common.py",
+        "evals/provider_p16.py",
+        "evals/rag_dev30.py",
         "evidence/__init__.py",
         "evidence/mcp_test_registry.py",
         "evidence/process_contract.py",
@@ -85,18 +90,18 @@ def test_runtime_cli_does_not_import_or_expose_evaluation() -> None:
     assert "eval" not in command_action.choices
 
 
-def test_validation_cli_blocks_disabled_route_before_artifact_or_settings_access(
+def test_validation_cli_requires_candidate_binding_before_artifact_or_settings_access(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     touched: list[str] = []
 
     def forbidden(*args: object, **kwargs: object) -> None:
         touched.append(f"{args!r}:{kwargs!r}")
-        raise AssertionError("disabled route crossed the validation gate")
+        raise AssertionError("unbound route crossed the validation gate")
 
     monkeypatch.setattr(validation_cli, "get_settings", forbidden)
     monkeypatch.setattr(Path, "open", forbidden)
     monkeypatch.setattr(sys, "argv", ["supportguard-validation", "eval", "ie-p16"])
-    with pytest.raises(EvaluationGateError, match="before artifact access"):
+    with pytest.raises(RuntimeError, match="candidate_sha_output_and_identity_required"):
         validation_cli.main()
     assert touched == []

@@ -42,4 +42,18 @@ def reciprocal_rank_fusion(
     }
     for item in merged.values():
         item.rrf_score += document_coherence_weight * coherence[item.chunk.document_id]
-    return sorted(merged.values(), key=lambda item: (-item.rrf_score, item.chunk.chunk_id))
+    fused = sorted(merged.values(), key=lambda item: (-item.rrf_score, item.chunk.chunk_id))
+    # RRF rewards candidates that occur in both channels, and the bounded
+    # document-coherence signal intentionally rewards mutually supporting
+    # sections.  Without a channel-head reservation those two useful signals
+    # can nevertheless push the strongest semantic or exact lexical match out
+    # of the first evidence window when one long manual contributes many
+    # generic sections.  Preserve exactly the first result from each
+    # independent channel, ordered by their fused score, then keep the original
+    # RRF order for every remaining candidate.  This is query-agnostic and does
+    # not change scores, eligibility, or the bounded candidate denominator.
+    channel_heads = {item.chunk_id for item in (*vector[:1], *keyword[:1])}
+    return [
+        *[item for item in fused if item.chunk.chunk_id in channel_heads],
+        *[item for item in fused if item.chunk.chunk_id not in channel_heads],
+    ]

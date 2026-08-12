@@ -327,7 +327,12 @@ class RetrievalService:
             "keyword": "postgres.simple+heading-content-chinese-ngram-2-4.stable-order.v3",
             "restricted_keyword_terms": "compare-exact-subject-first.v1",
             "candidate_limit_per_status": 40 if intent == "compare" else 20,
-            "fusion": {"algorithm": "rrf", "k": 60, "document_coherence_weight": 0.15},
+            "fusion": {
+                "algorithm": "rrf-channel-head-reservation",
+                "k": 60,
+                "document_coherence_weight": 0.15,
+                "reserved_per_channel": 1,
+            },
             "evidence": {
                 "selector": "authority-scope-conflict.v1",
                 "dedup": "content_hash",
