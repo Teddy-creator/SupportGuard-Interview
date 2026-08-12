@@ -1,0 +1,84 @@
+{
+  "contract_version": "supportguard-interview-v2-phase1-local-validation.v1",
+  "status": "passed",
+  "verified_at": "2026-08-12T00:59:49+08:00",
+  "candidate_sha": "72ea297e466d77b68a75f007f12bc0cdeabca41b",
+  "scope": "phase1-local-correctness-closure",
+  "recording_note": "This receipt records aggregate results from the completed Phase 1 validation lanes without inventing command lines or substituting local execution for Hosted CI.",
+  "results": [
+    {
+      "lane": "backend_hermetic",
+      "result": "pass",
+      "passed": 2006,
+      "deselected": 380,
+      "warnings": 18,
+      "duration_seconds": 282.64
+    },
+    {
+      "lane": "isolated_postgresql_redis",
+      "result": "pass",
+      "passed": 320,
+      "total": 320,
+      "source_dirty": false,
+      "source_state_sha256": "e6a9cde8b366eb0d68c34d9079ed6c25d703df7e0975c8bb4a8d99e218d19931",
+      "database_disposition": "dropped"
+    },
+    {
+      "lane": "mcp",
+      "result": "pass",
+      "passed": 50,
+      "total": 50
+    },
+    {
+      "lane": "frontend",
+      "result": "pass",
+      "test_files_passed": 5,
+      "passed": 76,
+      "lint": "pass",
+      "build": "pass"
+    },
+    {
+      "lane": "quality_and_security",
+      "result": "pass",
+      "docs": "pass",
+      "ruff": "pass",
+      "scoped_format": "pass",
+      "mypy": "pass",
+      "mypy_source_files": 250,
+      "security": "pass",
+      "security_services": 10,
+      "security_secret_vars": 5,
+      "pip_audit": "no_known_vulnerabilities"
+    },
+    {
+      "lane": "cleanup",
+      "result": "pass",
+      "temporary_postgresql_removed": true,
+      "temporary_redis_removed": true,
+      "test_database_residual_count": 0,
+      "test_process_residual_count": 0
+    }
+  ],
+  "hosted_ci": {
+    "receipt": "validation/evidence/interview_v2/phase1/hosted-ci-receipt.v1.json",
+    "receipt_sha256": "bfe9595ed751c9a12d6fc84445a84c9bd6feaff674f006e7300f918d91f581fd",
+    "run_url": "https://github.com/Teddy-creator/SupportGuard/actions/runs/31512749202",
+    "classification": "external_zero_step_blocker",
+    "job_count": 5,
+    "total_step_count": 0,
+    "release_blocker": true,
+    "local_execution_used_as_substitute": false
+  },
+  "claims": {
+    "phase1_local_correctness_complete": true,
+    "hosted_ci_green": false,
+    "hosted_ci_external_blocker_registered": true,
+    "phase2_authorized_to_continue": true,
+    "phase7_complete": false,
+    "final_definition_of_done_complete": false,
+    "ie_p16_executed": false,
+    "ie_j12_executed": false,
+    "evaluation_v6_holdout_accessed": false,
+    "cross_encoder_executed": false
+  }
+}

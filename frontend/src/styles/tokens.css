@@ -1,0 +1,46 @@
+:root {
+  font-family:
+    Inter, "SF Pro Text", "PingFang SC", "Microsoft YaHei", sans-serif;
+  color: #17201b;
+  background: #f7f8f4;
+  font-synthesis: none;
+  --canvas: #f7f8f4;
+  --surface: #fff;
+  --surface-soft: #f1f5f0;
+  --line: #dce4dc;
+  --muted: #718077;
+  --green: #185c43;
+  --green-soft: #e5f2ea;
+  --amber: #8d6415;
+  --amber-soft: #fff4d8;
+  --danger: #a23b34;
+  --danger-soft: #fdeceb;
+  --radius: 10px;
+  --shadow: 0 12px 36px rgba(25, 51, 38, 0.09);
+}
+* {
+  box-sizing: border-box;
+}
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+button {
+  cursor: pointer;
+}
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+:focus-visible {
+  outline: 3px solid rgba(24, 92, 67, 0.28);
+  outline-offset: 2px;
+}

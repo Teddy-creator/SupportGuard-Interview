@@ -1,0 +1,152 @@
+{
+  "artifacts": [
+    {
+      "path": "frontend/e2e/conversation-v15.spec.ts-snapshots/conversation-empty-390-darwin.png",
+      "persistence": "git",
+      "sha256": "be64ca6ce7558ad6f0f9c06d8987b8ec52526942a500d6aa542c466a4394e16e"
+    },
+    {
+      "path": "dist/phase5/hosted-ci-70717d8f19a9cbe3d8ead99db228c93f1577acc4.json",
+      "persistence": "local_dist",
+      "sha256": "137939f829d4dff07c2454f48514d2b1d26135af633bb2617aa70f8945d9a886"
+    }
+  ],
+  "candidate_sha": "70717d8f19a9cbe3d8ead99db228c93f1577acc4",
+  "candidate_tree_sha": "853acfafd9782e2ce2d984cdd75da959718045a8",
+  "claims": {
+    "cross_encoder_executed": false,
+    "evaluation_v6_holdout_accessed": false,
+    "final_definition_of_done_complete": false,
+    "hosted_ci_external_blocker_preserved": true,
+    "hosted_ci_green": false,
+    "human_acceptance_complete": false,
+    "ie_f06_executed": false,
+    "ie_j12_executed": false,
+    "ie_p16_executed": false,
+    "phase5_complete": true,
+    "phase6_authorized_to_continue": true,
+    "phase7_complete": false,
+    "rag_dev30_executed": false,
+    "real_provider_executed": false
+  },
+  "contract_version": "supportguard-interview-v2-phase5-validation.v1",
+  "hosted_ci": {
+    "classification": "external_zero_step_blocker",
+    "hosted_execution_started": false,
+    "job_count": 5,
+    "local_execution_used_as_substitute": false,
+    "raw_artifact": "dist/phase5/hosted-ci-70717d8f19a9cbe3d8ead99db228c93f1577acc4.json",
+    "raw_artifact_sha256": "137939f829d4dff07c2454f48514d2b1d26135af633bb2617aa70f8945d9a886",
+    "receipt": "validation/evidence/interview_v2/phase5/hosted-ci-receipt.v1.json",
+    "receipt_sha256": "137939f829d4dff07c2454f48514d2b1d26135af633bb2617aa70f8945d9a886",
+    "recorder_exit_code": 2,
+    "release_blocker": true,
+    "run_id": 31565826533,
+    "run_url": "https://github.com/Teddy-creator/SupportGuard/actions/runs/31565826533",
+    "total_step_count": 0
+  },
+  "origin_main_sha": "70717d8f19a9cbe3d8ead99db228c93f1577acc4",
+  "recorded_at": "2026-08-12T05:24:26Z",
+  "results": {
+    "cleanup": {
+      "backend_candidate_image_removed": true,
+      "frontend_candidate_image_removed": true,
+      "host_port_listener_residual_count": 0,
+      "invocation_owned_container_residual_count": 0,
+      "invocation_owned_network_residual_count": 0,
+      "invocation_owned_volume_residual_count": 0,
+      "legacy_diagnostic_project_residual_count": 0,
+      "status": "passed",
+      "transport_image_removed": true
+    },
+    "clean_product_acceptance": {
+      "action_result_reconciliation": "passed",
+      "approval_source_projection": "passed",
+      "browser_tests_passed": 19,
+      "browser_tests_total": 19,
+      "compose_service_counts": {
+        "api": 1,
+        "dispatcher": 1,
+        "frontend": 1,
+        "postgres": 1,
+        "reconciler": 1,
+        "redis": 1,
+        "worker": 2
+      },
+      "cross_tenant_fail_closed": "passed",
+      "demo_resource_preflight": "passed",
+      "deterministic_demo_fact_refresh": "passed",
+      "keyboard_and_focus": "passed",
+      "knowledge_index_version": "kb-7b55fd599b483ae4",
+      "long_conversation_scroll": "passed",
+      "mcp_child_count": 4,
+      "mobile_390_snapshot": "passed",
+      "offline_reconnect_and_polling": "passed",
+      "status": "passed"
+    },
+    "deterministic_and_static": {
+      "backend_ci_contract_tests_passed": 47,
+      "backend_ci_contract_tests_total": 47,
+      "frontend_build": "passed",
+      "frontend_build_javascript_bytes": 424222,
+      "frontend_build_stylesheet_bytes": 23744,
+      "frontend_e2e_discovered": 19,
+      "frontend_lint": "passed",
+      "frontend_test_files": 6,
+      "frontend_tests_passed": 81,
+      "hermetic_backend_deselected": 397,
+      "hermetic_backend_passed": 2248,
+      "hermetic_backend_total": 2248,
+      "status": "passed"
+    },
+    "frontend_state_ownership": {
+      "approval_page_loc": 189,
+      "conversation_controller_loc": 203,
+      "conversation_page_loc": 295,
+      "controller_use_state_count": 0,
+      "page_api_call_count": 0,
+      "page_use_state_or_effect_count": 0,
+      "query_stream_mutation_view_state_separated": true,
+      "remote_nonterminal_action_poll_interval_ms": 1500,
+      "remote_terminal_action_polling_stops": true,
+      "source_projection_validation_is_pure": true,
+      "status": "passed"
+    },
+    "identity_and_routing": {
+      "approver_switch_requires_explicit_user_action": true,
+      "fresh_approval_url_bootstraps_customer": true,
+      "role_surface_uses_authoritative_session": true,
+      "status": "passed",
+      "tenant_switch_clears_prior_projection": true
+    },
+    "runtime_images": {
+      "backend_image_id": "sha256:6e83764f95ac1c6322b029431f36afba8fcd9a1d02c58e0bbe0e9bdabbbb6e74",
+      "backend_image_size_bytes": 1798799143,
+      "backend_inventory": "passed",
+      "backend_revision": "70717d8f19a9cbe3d8ead99db228c93f1577acc4",
+      "backend_runtime_smoke": "passed",
+      "frontend_image_id": "sha256:00143ad125f314ffd253ba6ef27814ae09b169f16a095ac4ec101d6d3d348689",
+      "frontend_image_size_bytes": 50169282,
+      "frontend_revision": "70717d8f19a9cbe3d8ead99db228c93f1577acc4",
+      "runtime_distribution_file_count": 225,
+      "runtime_wheel_sha256": "dd51522d80126f46e30d57d516331ed0995b271a584b22a3808388c078676201",
+      "status": "passed",
+      "validation_namespace_leak_count": 0
+    },
+    "transport_limitation": {
+      "asset": "uv-aarch64-unknown-linux-gnu.tar.gz",
+      "asset_sha256": "04792cac761c4a6ba78267f36f2af541b7f92196d42ac55d21d3ff6b0f5ab6a5",
+      "default_pinned_ghcr_transport_verified": false,
+      "final_runtime_contains_transport_override": false,
+      "source": "official_astral_uv_0.11.2_github_release",
+      "status": "passed_with_transport_limitation"
+    }
+  },
+  "scope": "phase5-frontend-state-convergence",
+  "source_identity": {
+    "head_equals_origin_main": true,
+    "verified_before_evidence_closure": true,
+    "worktree_state": "clean"
+  },
+  "status": "passed_with_hosted_ci_external_blocker"
+}

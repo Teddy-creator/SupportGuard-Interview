@@ -1,0 +1,21 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "supportguard-validation"
+version = "0.1.0"
+description = "Phase 7 input validation and MCP test evidence tooling for SupportGuard."
+requires-python = ">=3.11,<3.13"
+dependencies = [
+  "supportguard==0.1.0",
+]
+
+[project.scripts]
+supportguard-validation = "supportguard.validation.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/supportguard"]
+
+[tool.uv.sources]
+supportguard = { workspace = true }

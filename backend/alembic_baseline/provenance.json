@@ -1,0 +1,36 @@
+{
+  "schema_version": "supportguard-interview-baseline-provenance.v1",
+  "source_revision": "b207c0a1d001",
+  "baseline_revision": "i200_baseline_0001",
+  "source_candidate_sha": "20962bf98116ade0bf133a512c2c9dcd8e60cda6",
+  "legacy_migration_source_sha256": "8e23b5bda34c9be933f8ad40efd7c7e91269a636e73899834c01903d9f31e484",
+  "legacy_migration_source_file_count": 192,
+  "legacy_migration_source_scope": [
+    "alembic.ini",
+    "backend/alembic/**:all-regular-files-excluding-__pycache__-pyc-pyo"
+  ],
+  "source_catalog_snapshot_sha256": "626a5391c18ac5ddcf948bafa38200969a631f5f678f6b45adfedcee13045151",
+  "source_catalog_record_count": 3377,
+  "source_dump_sha256": "24e8faedd7ff8bce493ffe132c7d5e17e3750faee4f482d0214ff1384ce7b724",
+  "baseline_sql_sha256": "a23ae9a5aa825ffbc85e16d4c67cd7607b7ed09d5e3892d6aed1157f84e4f4be",
+  "postgresql_version": "16.14 (Debian 16.14-1.pgdg12+1)",
+  "pg_dump_version": "16.14 (Debian 16.14-1.pgdg12+1)",
+  "generation_contract": {
+    "mode": "schema-only",
+    "legacy_source_digest_scope": "sha256 of sorted per-file sha256 receipts for alembic.ini and every regular file below backend/alembic, excluding __pycache__, .pyc and .pyo",
+    "source_candidate_binding": "source commit must exist, be an ancestor of current HEAD, and produce the same canonical legacy-source digest as the current checkout",
+    "source_dump_hash_scope": "checked-in normalized dump prefix before exact catalog-expression repairs",
+    "excluded_relations": [
+      "public.alembic_version"
+    ],
+    "excluded_data": true,
+    "normalizations": [
+      "remove pg_dump client restrict directives",
+      "remove dump-level statement_timeout and lock_timeout",
+      "reuse bootstrap-created supportguard_control schema",
+      "reuse bootstrap-created vector extension",
+      "prepend immutable source and target revision comment",
+      "recreate 24 CHECK constraints and one partial index from frozen source expressions to preserve exact catalog deparsing"
+    ]
+  }
+}

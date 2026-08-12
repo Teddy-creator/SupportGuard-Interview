@@ -1,0 +1,179 @@
+{
+  "artifacts": [
+    {
+      "path": "dist/phase4/escalation-retirement-05f15760a97d05f55fa597456a2981df7d62f447.json",
+      "persistence": "local_dist",
+      "sha256": "8944b672a2f925c682da3bdfc9b5a62b93d461314beb6aaae5fe1fd088316d34"
+    },
+    {
+      "path": "dist/phase4/hosted-ci-05f15760a97d05f55fa597456a2981df7d62f447.json",
+      "persistence": "local_dist",
+      "sha256": "0be059f31e855a5336b84720428fd375ed22ec8e1fead3f20acc4feead2d2c7f"
+    }
+  ],
+  "candidate_sha": "05f15760a97d05f55fa597456a2981df7d62f447",
+  "candidate_tree_sha": "8b1c8d968d6192c30ec45e42a5b4dad11c673a7f",
+  "claims": {
+    "cross_encoder_executed": false,
+    "evaluation_v6_holdout_accessed": false,
+    "final_definition_of_done_complete": false,
+    "hosted_ci_external_blocker_preserved": true,
+    "hosted_ci_green": false,
+    "human_acceptance_complete": false,
+    "ie_f06_executed": false,
+    "ie_j12_executed": false,
+    "ie_p16_executed": false,
+    "phase4_complete": true,
+    "phase5_authorized_to_continue": true,
+    "phase7_complete": false,
+    "rag_dev30_executed": false,
+    "real_provider_executed": false
+  },
+  "contract_version": "supportguard-interview-v2-phase4-validation.v1",
+  "hosted_ci": {
+    "classification": "external_zero_step_blocker",
+    "hosted_execution_started": false,
+    "job_count": 5,
+    "local_execution_used_as_substitute": false,
+    "raw_artifact": "dist/phase4/hosted-ci-05f15760a97d05f55fa597456a2981df7d62f447.json",
+    "raw_artifact_sha256": "0be059f31e855a5336b84720428fd375ed22ec8e1fead3f20acc4feead2d2c7f",
+    "receipt": "validation/evidence/interview_v2/phase4/hosted-ci-receipt.v1.json",
+    "receipt_sha256": "0be059f31e855a5336b84720428fd375ed22ec8e1fead3f20acc4feead2d2c7f",
+    "recorder_exit_code": 2,
+    "release_blocker": true,
+    "run_id": 31560564403,
+    "run_url": "https://github.com/Teddy-creator/SupportGuard/actions/runs/31560564403",
+    "total_step_count": 0
+  },
+  "origin_main_sha": "05f15760a97d05f55fa597456a2981df7d62f447",
+  "recorded_at": "2026-08-12T04:04:24Z",
+  "results": {
+    "action_pipeline": {
+      "action_spec_count": 3,
+      "generic_proposal_branch_count": 1,
+      "status": "passed",
+      "typed_stages": [
+        "ActionCandidate",
+        "ApprovalDecision",
+        "RuntimeEffectResult"
+      ]
+    },
+    "agent_and_policy": {
+      "core_decision_function_hard_maximum_loc": 199,
+      "graph_escalation_node_present": false,
+      "graph_forwarding_shell_count": 0,
+      "policy_mutation_authority": false,
+      "status": "passed",
+      "tool_attempt_budget": 6,
+      "tool_round_budget": 2,
+      "typed_stage_chain": [
+        "AcceptedMessage",
+        "AgentDecision",
+        "ToolInvocation",
+        "Observation",
+        "EvidenceDecision",
+        "CandidateResponse",
+        "PublicationDecision",
+        "ActionCandidate",
+        "ApprovalDecision",
+        "RuntimeEffectResult"
+      ]
+    },
+    "capability_and_database_retirement": {
+      "action_schema_sha256": "b9508627d4959b332b082582b1cba31899c905d0b7934fc4168d7ce89fe70136",
+      "catalog_delta_count": 2,
+      "current_catalog_sha256": "9d4faabe4e2705803aea84316aabca8467f357a164560fa7123de23afae82e49",
+      "current_revision": "i201_retire_escalation",
+      "direct_escalation_sqlstate": "42501",
+      "existing_i200_upgrade": "passed",
+      "fresh_head_upgrade": "passed",
+      "proposal_capability_count": 3,
+      "read_capability_count": 9,
+      "runtime_capability_count": 3,
+      "source_revision": "i200_baseline_0001",
+      "status": "passed",
+      "zero_write_on_retired_or_unknown_capability": true
+    },
+    "cleanup": {
+      "invocation_owned_container_residual_count": 0,
+      "invocation_owned_container_with_volume_removed_count": 2,
+      "invocation_owned_network_residual_count": 0,
+      "invocation_owned_volume_residual_count": 0,
+      "mcp_or_runner_process_residual_count": 0,
+      "phase4_database_created_count": 3,
+      "phase4_database_dropped_count": 3,
+      "phase4_database_remaining_count": 0,
+      "postgresql_port_55435_listener_count": 0,
+      "redis_port_56381_listener_count": 0,
+      "status": "passed"
+    },
+    "code_map": {
+      "default_entry_count": 12,
+      "duplicate_business_owner_count": 0,
+      "mastered_core_nonblank_noncomment_loc": 6839,
+      "mastered_core_target_maximum": 8000,
+      "mastered_core_target_minimum": 6000,
+      "one_hop_dependency_limit": 2,
+      "runtime_dependency_cycle_count": 0,
+      "status": "passed"
+    },
+    "current_integration": {
+      "database_disposition": "dropped",
+      "dedicated_partitions_excluded": 2,
+      "disposition_manifest_sha256": "bf82fe96e5deb5771c2217e1f689808854e3c2d04f103a9ddb87b2ae9a618117",
+      "historical_partitions_excluded": 34,
+      "passed": 299,
+      "source_dirty": false,
+      "source_state_sha256": "acfc4cd3298022ffeeefaa263d42f6dc61ab8db789267c8c6d08ef62c7a5daac",
+      "status": "passed",
+      "total": 299
+    },
+    "deterministic_and_static": {
+      "bandit_findings": 0,
+      "frontend_build": "passed",
+      "frontend_lint": "passed",
+      "frontend_test_files": 5,
+      "frontend_tests_passed": 76,
+      "hermetic_backend_passed": 2204,
+      "hermetic_backend_total": 2204,
+      "mypy_runtime_source_files": 206,
+      "mypy_validation_source_files": 79,
+      "pip_audit": "no_known_vulnerabilities",
+      "resolved_python_packages": 156,
+      "ruff": "passed",
+      "status": "passed",
+      "uv_lock_check": "passed"
+    },
+    "mcp": {
+      "failed": 0,
+      "hermetic_passed": 6,
+      "hermetic_total": 6,
+      "manifest_sha256": "5734067851478475b6c0077599892c88fab84a73fd73d3c95fcd5c7a5bfbc4d7",
+      "orphan_process_count": 0,
+      "postgresql_passed": 11,
+      "postgresql_total": 11,
+      "skipped": 0,
+      "status": "passed"
+    },
+    "runtime_import_graph": {
+      "edge_count": 2754,
+      "forbidden_reachability_count": 0,
+      "module_count": 206,
+      "root_count": 6,
+      "status": "passed",
+      "strongly_connected_component_count": 0
+    },
+    "test_disposition": {
+      "group_count": 5,
+      "historical_result_rewritten": false,
+      "status": "phase4_completed"
+    }
+  },
+  "scope": "phase4-agent-mcp-action-convergence",
+  "source_identity": {
+    "head_equals_origin_main": true,
+    "verified_before_evidence_closure": true,
+    "worktree_state": "clean"
+  },
+  "status": "passed_with_hosted_ci_external_blocker"
+}

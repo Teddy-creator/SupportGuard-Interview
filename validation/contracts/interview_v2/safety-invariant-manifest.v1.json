@@ -1,0 +1,313 @@
+{
+  "schema_version": "supportguard.interview_v2.safety_invariant_manifest.v1",
+  "status": "approved_frozen_input",
+  "authority": {
+    "spec_path": "docs/interview-edition-simplification-v2.0.md",
+    "authority_commit": "110d65c854f7dc98e85e775dc6070ee46726b2be",
+    "archive_baseline_commit": "6255c8c0eb0dcedd877bfbf16a9695dad2a0c9eb"
+  },
+  "test_disposition_rule": {
+    "allowed_dispositions": [
+      "keep",
+      "replaced_by_new_contract",
+      "archive_only"
+    ],
+    "current_disposition": "keep",
+    "replacement_requires_same_requirement_id": true,
+    "replacement_requires_simultaneous_old_and_new_green": true,
+    "archive_only_before_phase_6": false,
+    "historical_result_rewrite_allowed": false
+  },
+  "invariants": [
+    {
+      "requirement_id": "IE-S01",
+      "name": "model_has_no_mutation_authority",
+      "statement": "Provider output may classify, select read tools, propose an answer or form a typed candidate, but cannot request or execute a runtime mutation capability.",
+      "target_owners": [
+        "IE-CM03",
+        "IE-CM06",
+        "IE-CM07"
+      ],
+      "current_public_test_nodes": [
+        "backend/tests/test_agent_graph.py::test_model_schema_cannot_request_runtime_only_refund_execution",
+        "backend/tests/test_v1512_conversation_action_graph.py::test_action_state_provider_advice_cannot_grant_action_authority"
+      ],
+      "required_assertion_classes": [
+        "runtime mutation absent from model schema",
+        "provider advice cannot grant policy authority",
+        "zero effect without deterministic authorization"
+      ]
+    },
+    {
+      "requirement_id": "IE-S02",
+      "name": "trusted_tenant_scope_and_rls",
+      "statement": "Trusted principal, tenant and customer scope are established outside user text and Provider output, and PostgreSQL RLS denies unscoped and cross-tenant access.",
+      "target_owners": [
+        "IE-CM01",
+        "IE-CM11"
+      ],
+      "current_public_test_nodes": [
+        "backend/tests/test_postgres_rls.py::test_postgres_rls_denies_unscoped_and_isolates_tenants",
+        "backend/tests/test_postgres_service_roles.py::test_runtime_logins_are_non_owner_non_superuser_and_rls_isolates",
+        "backend/tests/test_explicit_tenant_contract.py::test_trusted_principal_requires_an_explicit_tenant"
+      ],
+      "required_assertion_classes": [
+        "unscoped access denied",
+        "cross-tenant rows invisible",
+        "runtime roles are non-owner and non-superuser",
+        "tenant is explicit"
+      ]
+    },
+    {
+      "requirement_id": "IE-S03",
+      "name": "mcp_capability_isolation",
+      "statement": "Read MCP returns only read Observations; Proposal MCP creates only inert proposals for deterministic Policy; neither MCP server exposes Runtime Effect capabilities.",
+      "target_owners": [
+        "IE-CM04",
+        "IE-CM09"
+      ],
+      "current_public_test_nodes": [
+        "backend/tests/test_read_mcp.py::test_read_server_handshake_discovery_and_scoped_call",
+        "backend/tests/test_read_mcp.py::test_action_server_isolated_discovery_and_proposal_only",
+        "backend/tests/test_v16_structural_characterization.py::test_v16_capability_ownership_is_characterized"
+      ],
+      "required_assertion_classes": [
+        "read and proposal discovery are disjoint",
+        "model-visible surface contains read tools only",
+        "runtime effect tools are undiscoverable",
+        "Schema Hash is stable"
+      ]
+    },
+    {
+      "requirement_id": "IE-S04",
+      "name": "mcp_process_lifecycle_is_bounded",
+      "statement": "The two stdio MCP sessions initialize, discover, reconnect and close within bounded ownership, and a failed or cancelled call leaves no orphan child process.",
+      "target_owners": [
+        "IE-CM09",
+        "IE-CM10"
+      ],
+      "current_public_test_nodes": [
+        "backend/tests/test_read_mcp.py::test_backend_manages_long_lived_mcp_sessions_and_clean_shutdown",
+        "backend/tests/test_read_mcp.py::test_retryable_stdio_process_loss_reaps_old_pid_and_rehandshakes",
+        "backend/tests/test_read_mcp.py::test_real_pending_call_is_cancelled_before_exact_child_pids_exit",
+        "backend/tests/test_mcp_supervisor.py::test_supervisor_shutdown_cancels_and_drains_pending_calls"
+      ],
+      "required_assertion_classes": [
+        "bounded reconnect",
+        "old generation reaped before replacement",
+        "pending calls drained",
+        "owned child residual count zero"
+      ]
+    },
+    {
+      "requirement_id": "IE-S05",
+      "name": "hitl_snapshot_and_independent_decision",
+      "statement": "Each high-risk proposal persists an immutable Approval Snapshot and interrupt before an independently scoped human decision can enqueue Resume.",
+      "target_owners": [
+        "IE-CM06",
+        "IE-CM07",
+        "IE-CM11"
+      ],
+      "current_public_test_nodes": [
+        "backend/tests/test_postgres_finalizer_faults.py::test_all_high_risk_interrupt_finalizers_publish_one_pending_approval",
+        "backend/tests/test_approval_commands.py::test_edit_and_approve_appends_revision_without_mutating_base_snapshot",
+        "backend/tests/test_approval_commands.py::test_runtime_job_create_rejects_cross_scope_resume_approval"
+      ],
+      "required_assertion_classes": [
+        "one persisted pending approval",
+        "base snapshot immutable",
+        "human actor scope independent",
+        "cross-scope resume rejected"
+      ]
+    },
+    {
+      "requirement_id": "IE-S06",
+      "name": "transaction_time_revalidation",
+      "statement": "Approval does not grant a permanent capability; Runtime revalidates tenant, scope, selected revision, Action Hash, resource version, Policy and kill switch in the effect transaction.",
+      "target_owners": [
+        "IE-CM07",
+        "IE-CM11"
+      ],
+      "current_public_test_nodes": [
+        "backend/tests/test_approvals.py::test_execution_revalidates_changed_billing_version",
+        "backend/tests/test_approvals.py::test_edit_and_approve_changes_only_refund_reason_and_action_hash",
+        "backend/tests/test_postgres_finalizer_faults.py::test_finalizer_actual_ticket_head_conflict_commits_fail_closed_terminal"
+      ],
+      "required_assertion_classes": [
+        "stale resource version prevents effect",
+        "selected revision and Action Hash match",
+        "ticket head conflict fails closed",
+        "revalidation and effect share one transaction boundary"
+      ]
+    },
+    {
+      "requirement_id": "IE-S07",
+      "name": "idempotent_acceptance_and_resume",
+      "statement": "The same scoped idempotency key and payload reuses its original resource, a different payload conflicts, and repeated approval Resume creates no additional domain effect.",
+      "target_owners": [
+        "IE-CM01",
+        "IE-CM07",
+        "IE-CM11"
+      ],
+      "current_public_test_nodes": [
+        "backend/tests/test_runtime_foundation.py::test_idempotency_same_hash_reuses_and_different_hash_conflicts",
+        "backend/tests/test_approvals.py::test_approved_refund_is_atomic_and_repeated_resume_is_idempotent",
+        "backend/tests/test_v125_idempotency_postgres.py::test_concurrent_same_key_claim_creates_exactly_one_resource_group"
+      ],
+      "required_assertion_classes": [
+        "same-hash replay returns original result",
+        "different-hash replay returns stable conflict",
+        "concurrent claim has one winner",
+        "repeated Resume has zero additional effect"
+      ]
+    },
+    {
+      "requirement_id": "IE-S08",
+      "name": "lease_fence_and_takeover",
+      "statement": "Only the current non-expired Lease owner and Fence may write run, checkpoint, proposal or finalizer state; takeover increments Fence and rejects every late writer.",
+      "target_owners": [
+        "IE-CM10",
+        "IE-CM11"
+      ],
+      "current_public_test_nodes": [
+        "backend/tests/test_runtime_foundation.py::test_new_claim_increments_fence_and_rejects_old_writer",
+        "backend/tests/test_runtime_foundation.py::test_expired_lease_rejects_current_owner_and_token",
+        "backend/tests/test_segments.py::test_only_current_fence_can_finalize_private_checkpoint",
+        "backend/tests/test_segments.py::test_prepared_old_fence_never_becomes_canonical"
+      ],
+      "required_assertion_classes": [
+        "Fence increases on takeover",
+        "expired Lease cannot write",
+        "late checkpoint cannot become canonical",
+        "late proposal or finalization rejected"
+      ]
+    },
+    {
+      "requirement_id": "IE-S09",
+      "name": "checkpoint_resume_preserves_budget",
+      "statement": "HTTP retry, worker takeover, interrupt and approval Resume retain the stable run identity and monotonically consumed Provider, Tool Round and Tool Attempt budgets.",
+      "target_owners": [
+        "IE-CM02",
+        "IE-CM04",
+        "IE-CM10"
+      ],
+      "current_public_test_nodes": [
+        "backend/tests/test_attempt_ledger.py::test_checkpoint_resume_cannot_decrease_consumed_budget",
+        "backend/tests/test_segments.py::test_checkpoint_written_recovery_runs_finalizer_only_without_new_attempts",
+        "backend/tests/test_v159_action_core.py::test_graph_rehydrates_v1_checkpoint_without_new_provider_or_tool_call"
+      ],
+      "required_assertion_classes": [
+        "budget is monotonic",
+        "committed Observation is reused",
+        "finalizer-only recovery makes no Provider or read-tool call",
+        "run identity remains stable"
+      ]
+    },
+    {
+      "requirement_id": "IE-S10",
+      "name": "effect_once_runtime_action",
+      "statement": "Refund, API Key revocation and Entitlement Change use the same effect ledger and produce at most one externally visible fixture effect across replay, duplicate click, retry and takeover.",
+      "target_owners": [
+        "IE-CM07",
+        "IE-CM10",
+        "IE-CM11"
+      ],
+      "current_public_test_nodes": [
+        "backend/tests/test_v1512_runtime_action_binding_postgres.py::test_runtime_action_old_fence_and_exact_replay_are_effect_once",
+        "backend/tests/test_v1213_identity_bound_e2e.py::test_three_actions_bind_exact_http_runtime_and_resource_effects",
+        "backend/tests/test_postgres_finalizer_faults.py::test_v126_api_approval_capability_serializes_duplicate_decisions"
+      ],
+      "required_assertion_classes": [
+        "three ActionSpecs share one finalization contract",
+        "old Fence produces no effect",
+        "exact replay returns canonical result",
+        "concurrent decisions serialize to one effect"
+      ]
+    },
+    {
+      "requirement_id": "IE-S11",
+      "name": "citation_and_observation_lineage",
+      "statement": "A material answer or actionable proposal binds only to eligible selected evidence and fresh scoped Observations from the same logical run; unsupported or stale evidence cannot become actionable.",
+      "target_owners": [
+        "IE-CM05",
+        "IE-CM06",
+        "IE-CM08"
+      ],
+      "current_public_test_nodes": [
+        "backend/tests/test_v1512_citation_message_binding.py::test_citations_bind_only_to_the_canonical_answer_publication",
+        "backend/tests/test_segments.py::test_draft_proposal_without_citation_lineage_never_becomes_actionable",
+        "backend/tests/test_v151_evidence_freshness.py::test_stale_usage_cannot_support_a_current_429_claim_and_requests_replan"
+      ],
+      "required_assertion_classes": [
+        "citation binds exact answer publication",
+        "proposal without citation lineage is inert",
+        "stale current fact triggers replan or limited answer",
+        "no fabricated locator"
+      ]
+    },
+    {
+      "requirement_id": "IE-S12",
+      "name": "pii_secret_and_internal_trace_egress",
+      "statement": "Secrets and PII are irreversibly redacted before Provider, persistence and logs, and customer or interview projections expose neither Prompt, private reasoning nor raw runtime payload.",
+      "target_owners": [
+        "IE-CM01",
+        "IE-CM03",
+        "IE-CM12"
+      ],
+      "current_public_test_nodes": [
+        "backend/tests/test_agent_graph.py::test_redaction_removes_email_and_key_before_provider",
+        "backend/tests/test_observability_logging.py::test_json_logging_recursively_redacts_args_extra_and_exception",
+        "backend/tests/test_api.py::test_run_inspector_is_exactly_bound_and_redacts_runtime_internals"
+      ],
+      "required_assertion_classes": [
+        "Provider payload contains no raw Secret or PII",
+        "nested logs and exceptions are redacted",
+        "customer projection excludes Prompt and private reasoning",
+        "cross-tenant existence is not disclosed"
+      ]
+    },
+    {
+      "requirement_id": "IE-S13",
+      "name": "real_mode_fails_closed",
+      "statement": "Missing Secret, Provider authentication or initialization failure, native Tool Calling failure and dependency failure are durable typed failures and never silently switch to Fake Provider.",
+      "target_owners": [
+        "IE-CM03",
+        "IE-CM04",
+        "IE-CM10"
+      ],
+      "current_public_test_nodes": [
+        "backend/tests/test_v124_rag_contract.py::test_provider_initialization_failure_is_durable_and_never_falls_back",
+        "backend/tests/test_v151_provider_contract.py::test_deepseek_does_not_retry_authentication_failure",
+        "backend/tests/test_v151_provider_contract.py::test_deepseek_terminal_retry_failure_preserves_attempt_count_through_decide"
+      ],
+      "required_assertion_classes": [
+        "no Fake fallback",
+        "authentication failure is not retried",
+        "bounded transport retry accounting is preserved",
+        "zero unauthorized proposal approval or effect"
+      ]
+    },
+    {
+      "requirement_id": "IE-S14",
+      "name": "postgres_truth_redis_rebuild_and_memory_freshness",
+      "statement": "PostgreSQL remains authoritative business state, Redis is rebuildable asynchronous delivery, and Memory is bounded non-authoritative history superseded by fresh scoped Observations.",
+      "target_owners": [
+        "IE-CM05",
+        "IE-CM10",
+        "IE-CM11"
+      ],
+      "current_public_test_nodes": [
+        "backend/tests/test_runtime_queue.py::test_real_redis_outbox_publish_and_inbox_delivery",
+        "backend/tests/test_runtime_queue.py::test_redis_flush_is_rebuilt_from_postgres_outbox",
+        "backend/tests/test_memory_and_tickets.py::test_terminal_summary_contains_only_sourced_facts_and_scoped_history",
+        "backend/tests/test_memory_and_tickets.py::test_new_observation_supersedes_prior_fact_and_preserves_freshness"
+      ],
+      "required_assertion_classes": [
+        "Outbox is durable before delivery",
+        "Redis loss is reconstructible",
+        "Memory carries source and freshness identity",
+        "fresh Observation supersedes historical fact"
+      ]
+    }
+  ]
+}

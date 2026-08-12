@@ -1,0 +1,385 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://supportguard.local/contracts/interview_v2/candidate-identity.schema.json",
+  "title": "SupportGuard Interview Edition v2 Candidate Identity",
+  "description": "Immutable identity bound before IE-P16 execution. It contains only hashes, digests, public configuration and version identifiers; Secret values, raw Provider payload, Prompt content and private reasoning are forbidden.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "generated_at",
+    "candidate",
+    "archive_identity",
+    "runtime_artifacts",
+    "provider_contract",
+    "prompt_hashes",
+    "schema_hashes",
+    "knowledge_identity",
+    "database_identity",
+    "contract_hashes",
+    "validation_scope"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "supportguard.interview_v2.candidate_identity.v1"
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "candidate_sha",
+        "git_tree_sha",
+        "origin_main_sha",
+        "branch",
+        "worktree_clean",
+        "head_equals_origin_main"
+      ],
+      "properties": {
+        "candidate_sha": {
+          "$ref": "#/$defs/git_sha"
+        },
+        "git_tree_sha": {
+          "$ref": "#/$defs/git_sha"
+        },
+        "origin_main_sha": {
+          "$ref": "#/$defs/git_sha"
+        },
+        "branch": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "worktree_clean": {
+          "const": true
+        },
+        "head_equals_origin_main": {
+          "const": true
+        }
+      }
+    },
+    "archive_identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "tag",
+        "tag_object_sha",
+        "baseline_commit_sha",
+        "baseline_tree_sha",
+        "archive_manifest_sha256",
+        "restore_receipt_sha256"
+      ],
+      "properties": {
+        "tag": {
+          "const": "archive/interview-v2.0-baseline"
+        },
+        "tag_object_sha": {
+          "const": "d274ca18abe7c9c4c324a2d6caa7bbec0622f9b9"
+        },
+        "baseline_commit_sha": {
+          "const": "6255c8c0eb0dcedd877bfbf16a9695dad2a0c9eb"
+        },
+        "baseline_tree_sha": {
+          "const": "a192f8a50b3a4c770d2ac1a77620f830364f3289"
+        },
+        "archive_manifest_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "restore_receipt_sha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "runtime_artifacts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "runtime_source_tree_sha256",
+        "backend_wheel_sha256",
+        "backend_image_digest",
+        "frontend_image_digest",
+        "compose_config_sha256"
+      ],
+      "properties": {
+        "runtime_source_tree_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "backend_wheel_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "backend_image_digest": {
+          "$ref": "#/$defs/oci_digest"
+        },
+        "frontend_image_digest": {
+          "$ref": "#/$defs/oci_digest"
+        },
+        "compose_config_sha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "provider_contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "provider",
+        "base_url",
+        "model",
+        "thinking",
+        "temperature",
+        "tool_call_mode",
+        "max_tool_rounds",
+        "max_tool_attempts"
+      ],
+      "properties": {
+        "provider": {
+          "const": "deepseek"
+        },
+        "base_url": {
+          "const": "https://api.deepseek.com"
+        },
+        "model": {
+          "const": "deepseek-v4-flash"
+        },
+        "thinking": {
+          "const": "disabled"
+        },
+        "temperature": {
+          "const": 0
+        },
+        "tool_call_mode": {
+          "const": "native"
+        },
+        "max_tool_rounds": {
+          "const": 2
+        },
+        "max_tool_attempts": {
+          "const": 6
+        }
+      }
+    },
+    "prompt_hashes": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "$ref": "#/$defs/sha256"
+      },
+      "propertyNames": {
+        "type": "string",
+        "minLength": 1,
+        "not": {
+          "pattern": "[Ss][Ee][Cc][Rr][Ee][Tt]|[Tt][Oo][Kk][Ee][Nn]|[Pp][Aa][Ss][Ss][Ww][Oo][Rr][Dd]|[Aa][Pp][Ii][_-]?[Kk][Ee][Yy]|[Aa][Uu][Tt][Hh][Oo][Rr][Ii][Zz][Aa][Tt][Ii][Oo][Nn]|[Cc][Oo][Oo][Kk][Ii][Ee]|[Pp][Rr][Oo][Mm][Pp][Tt][_-]?[Cc][Oo][Nn][Tt][Ee][Nn][Tt]"
+        }
+      }
+    },
+    "schema_hashes": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "provider_output_schema_sha256",
+        "read_mcp_schema_sha256",
+        "proposal_mcp_schema_sha256",
+        "runtime_capability_registry_sha256",
+        "action_spec_registry_sha256",
+        "action_admission_schema_sha256",
+        "obligation_ledger_schema_sha256"
+      ],
+      "properties": {
+        "provider_output_schema_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "read_mcp_schema_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "proposal_mcp_schema_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "runtime_capability_registry_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "action_spec_registry_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "action_admission_schema_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "obligation_ledger_schema_sha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "knowledge_identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "corpus_manifest_sha256",
+        "corpus_snapshot_sha256",
+        "index_version",
+        "pipeline_fingerprint",
+        "embedding_model",
+        "embedding_dimensions",
+        "embedding_normalized",
+        "document_count",
+        "chunk_count"
+      ],
+      "properties": {
+        "corpus_manifest_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "corpus_snapshot_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "index_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "pipeline_fingerprint": {
+          "$ref": "#/$defs/sha256"
+        },
+        "embedding_model": {
+          "const": "intfloat/multilingual-e5-small"
+        },
+        "embedding_dimensions": {
+          "const": 384
+        },
+        "embedding_normalized": {
+          "const": true
+        },
+        "document_count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "chunk_count": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "database_identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "alembic_head",
+        "baseline_schema_sha256",
+        "security_contract_sha256",
+        "seed_version",
+        "seed_sha256"
+      ],
+      "properties": {
+        "alembic_head": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "baseline_schema_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "security_contract_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "seed_version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "seed_sha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "contract_hashes": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code_map_owner_dependency_sha256",
+        "behavior_characterization_sha256",
+        "safety_invariant_manifest_sha256",
+        "ie_p16_sha256",
+        "ie_f06_sha256",
+        "ie_j12_sha256",
+        "rag_dev30_contract_sha256",
+        "rag_dev30_dataset_sha256"
+      ],
+      "properties": {
+        "code_map_owner_dependency_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "behavior_characterization_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "safety_invariant_manifest_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "ie_p16_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "ie_f06_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "ie_j12_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "rag_dev30_contract_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "rag_dev30_dataset_sha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "validation_scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "evaluation_v6_holdout_accessed",
+        "cross_encoder_executed",
+        "historical_gate_or_parity_executed",
+        "invocation_eight_executed",
+        "external_effect_mode"
+      ],
+      "properties": {
+        "evaluation_v6_holdout_accessed": {
+          "const": false
+        },
+        "cross_encoder_executed": {
+          "const": false
+        },
+        "historical_gate_or_parity_executed": {
+          "const": false
+        },
+        "invocation_eight_executed": {
+          "const": false
+        },
+        "external_effect_mode": {
+          "const": "fixture_only"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "git_sha": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "oci_digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    }
+  },
+  "x-supportguard-forbidden-content": [
+    "Secret values",
+    "API credentials or credential-presence probes",
+    "raw Provider request or response payload",
+    "Prompt content",
+    "private Chain-of-Thought",
+    "customer free text",
+    "unredacted trace or log"
+  ]
+}

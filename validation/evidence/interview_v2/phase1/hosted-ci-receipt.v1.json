@@ -1,0 +1,73 @@
+{
+  "candidate_sha": "72ea297e466d77b68a75f007f12bc0cdeabca41b",
+  "claims": {
+    "hosted_execution_started": false,
+    "local_execution_used_as_substitute": false,
+    "release_blocker": true
+  },
+  "classification": "external_zero_step_blocker",
+  "conclusion": "failure",
+  "contract_version": "supportguard-interview-v2-hosted-ci.v1",
+  "jobs": [
+    {
+      "annotation_messages": [
+        "The job was not started because recent account payments have failed or your spending limit needs to be increased. Please check the 'Billing & plans' section in your settings"
+      ],
+      "conclusion": "failure",
+      "database_id": 93850354169,
+      "name": "backend",
+      "status": "completed",
+      "step_count": 0,
+      "steps": []
+    },
+    {
+      "annotation_messages": [
+        "The job was not started because recent account payments have failed or your spending limit needs to be increased. Please check the 'Billing & plans' section in your settings"
+      ],
+      "conclusion": "failure",
+      "database_id": 93850354249,
+      "name": "frontend",
+      "status": "completed",
+      "step_count": 0,
+      "steps": []
+    },
+    {
+      "annotation_messages": [
+        "The job was not started because recent account payments have failed or your spending limit needs to be increased. Please check the 'Billing & plans' section in your settings"
+      ],
+      "conclusion": "failure",
+      "database_id": 93850354310,
+      "name": "image",
+      "status": "completed",
+      "step_count": 0,
+      "steps": []
+    },
+    {
+      "annotation_messages": [
+        "The job was not started because recent account payments have failed or your spending limit needs to be increased. Please check the 'Billing & plans' section in your settings"
+      ],
+      "conclusion": "",
+      "database_id": 93850354276,
+      "name": "integration",
+      "status": "queued",
+      "step_count": 0,
+      "steps": []
+    },
+    {
+      "annotation_messages": [],
+      "conclusion": "",
+      "database_id": 93850354350,
+      "name": "product-e2e",
+      "status": "queued",
+      "step_count": 0,
+      "steps": []
+    }
+  ],
+  "recorded_at": "2026-08-11T16:30:54.726042+00:00",
+  "repository": "Teddy-creator/SupportGuard",
+  "run_attempt": 1,
+  "run_id": 31512749202,
+  "run_url": "https://github.com/Teddy-creator/SupportGuard/actions/runs/31512749202",
+  "status": "completed",
+  "workflow": "CI"
+}

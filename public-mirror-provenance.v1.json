@@ -1,0 +1,72 @@
+{
+  "schema_version": "supportguard.public_mirror_provenance.v1",
+  "status": "history_free_public_interview_snapshot",
+  "source": {
+    "repository": "Teddy-creator/SupportGuard",
+    "visibility": "private",
+    "commit": "a528a19d1b00c5699af9f5a87f12bd515c1a834d",
+    "tree": "ba50b72e014e85fb60c85ad9eb8ae253077ac817",
+    "exported_tracked_file_count": 556,
+    "export_method": "git archive HEAD"
+  },
+  "public_mirror": {
+    "repository": "Teddy-creator/SupportGuard-Interview",
+    "license": "MIT",
+    "git_history_included": false,
+    "git_tags_included": false,
+    "actions_history_included": false,
+    "actions_artifacts_included": false,
+    "archive_restore_is_locally_verifiable": false
+  },
+  "bound_private_contracts": {
+    "phase6_archive_manifest_sha256": "7a62d7c3141d8a6c1bfc6460393d0329b285061dbcb2f229a2ecbaa6d7645f7f",
+    "test_disposition_sha256": "6a46495d35427a09019b04b0e076fa796b45bf3a1922a155837abc29a0acf0dc",
+    "behavior_characterization_sha256": "e8c11dd05d82b1ebdf6ba627261aec612411752ea4eee15208de7b6385eabcda",
+    "safety_invariant_manifest_sha256": "e562b55f5b614016a86dc0ce24354595c17e7163e0f0c7e5c39a37c28dbfda6a",
+    "archive_tag": "archive/interview-v2.0-baseline",
+    "archive_tag_object": "d274ca18abe7c9c4c324a2d6caa7bbec0622f9b9",
+    "archive_baseline_commit": "6255c8c0eb0dcedd877bfbf16a9695dad2a0c9eb",
+    "phase6_archive_source_commit": "328bc8606fdfbe50c9f3530646e72c1c21269c12"
+  },
+  "transformations": [
+    {
+      "id": "history_free_export",
+      "effect": "The public repository starts from a new root commit and contains no private refs."
+    },
+    {
+      "id": "local_path_redaction",
+      "path": "docs/interview-edition-simplification-v2.0.md",
+      "effect": "The private workstation path is replaced by a public-safe canonical-repository label."
+    },
+    {
+      "id": "public_readme_notice",
+      "path": "README.md",
+      "effect": "The mirror boundary and source identity are made explicit."
+    },
+    {
+      "id": "public_ci_boundary",
+      "path": ".github/workflows/ci.yml",
+      "effect": "CI uses read-only permissions and validates public provenance instead of private Git reachability."
+    },
+    {
+      "id": "mit_license",
+      "path": "LICENSE",
+      "effect": "The public snapshot is distributed under the MIT License."
+    }
+  ],
+  "pre_publish_audit": {
+    "provider_key_findings": 0,
+    "repository_secret_count": 0,
+    "local_env_file_included": false,
+    "generic_fixture_or_hash_findings": 70,
+    "unverified_development_database_uri_findings": 34
+  },
+  "claims": {
+    "private_canonical_repository_modified": false,
+    "private_history_published": false,
+    "historical_results_rewritten": false,
+    "protected_evaluation_accessed": false,
+    "phase7_completed": false,
+    "final_definition_of_done_completed": false
+  }
+}

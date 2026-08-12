@@ -1,0 +1,75 @@
+{
+  "candidate_sha": "70717d8f19a9cbe3d8ead99db228c93f1577acc4",
+  "claims": {
+    "hosted_execution_started": false,
+    "local_execution_used_as_substitute": false,
+    "release_blocker": true
+  },
+  "classification": "external_zero_step_blocker",
+  "conclusion": "failure",
+  "contract_version": "supportguard-interview-v2-hosted-ci.v1",
+  "jobs": [
+    {
+      "annotation_messages": [
+        "The job was not started because recent account payments have failed or your spending limit needs to be increased. Please check the 'Billing & plans' section in your settings"
+      ],
+      "conclusion": "failure",
+      "database_id": 94017300449,
+      "name": "backend",
+      "status": "completed",
+      "step_count": 0,
+      "steps": []
+    },
+    {
+      "annotation_messages": [
+        "The job was not started because recent account payments have failed or your spending limit needs to be increased. Please check the 'Billing & plans' section in your settings"
+      ],
+      "conclusion": "failure",
+      "database_id": 94017300481,
+      "name": "frontend",
+      "status": "completed",
+      "step_count": 0,
+      "steps": []
+    },
+    {
+      "annotation_messages": [
+        "The job was not started because recent account payments have failed or your spending limit needs to be increased. Please check the 'Billing & plans' section in your settings"
+      ],
+      "conclusion": "failure",
+      "database_id": 94017300521,
+      "name": "image",
+      "status": "completed",
+      "step_count": 0,
+      "steps": []
+    },
+    {
+      "annotation_messages": [
+        "The job was not started because recent account payments have failed or your spending limit needs to be increased. Please check the 'Billing & plans' section in your settings"
+      ],
+      "conclusion": "failure",
+      "database_id": 94017300429,
+      "name": "integration",
+      "status": "completed",
+      "step_count": 0,
+      "steps": []
+    },
+    {
+      "annotation_messages": [
+        "The job was not started because recent account payments have failed or your spending limit needs to be increased. Please check the 'Billing & plans' section in your settings"
+      ],
+      "conclusion": "failure",
+      "database_id": 94017300536,
+      "name": "product-e2e",
+      "status": "completed",
+      "step_count": 0,
+      "steps": []
+    }
+  ],
+  "recorded_at": "2026-08-12T05:22:50.194241+00:00",
+  "repository": "Teddy-creator/SupportGuard",
+  "run_attempt": 1,
+  "run_id": 31565826533,
+  "run_url": "https://github.com/Teddy-creator/SupportGuard/actions/runs/31565826533",
+  "status": "completed",
+  "workflow": "CI"
+}

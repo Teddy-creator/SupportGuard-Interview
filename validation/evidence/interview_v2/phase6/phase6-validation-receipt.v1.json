@@ -1,0 +1,183 @@
+{
+  "artifacts": [
+    {
+      "path": "validation/evidence/interview_v2/phase6/archive-transition-manifest.v1.json",
+      "persistence": "git",
+      "sha256": "7a62d7c3141d8a6c1bfc6460393d0329b285061dbcb2f229a2ecbaa6d7645f7f"
+    },
+    {
+      "path": "dist/phase2/package-boundary-30254587585fa2169cab071a926c501e06dac9a6.json",
+      "persistence": "local_dist",
+      "sha256": "b5297e815f43638993af855367b656b321b121f3e70887cbfd92ef2a28207dfa"
+    },
+    {
+      "path": "dist/phase6/hosted-ci-raw-30254587585fa2169cab071a926c501e06dac9a6.json",
+      "persistence": "local_dist",
+      "sha256": "6bdb72e7b60ca994b561df1b88c7738acffedffe0d15f740b8a5902c07e1a41e"
+    }
+  ],
+  "candidate_sha": "30254587585fa2169cab071a926c501e06dac9a6",
+  "candidate_tree_sha": "199ca61783c5857cc95f83a468f1b80a5a313d81",
+  "claims": {
+    "cross_encoder_executed": false,
+    "evaluation_v6_holdout_accessed": false,
+    "final_definition_of_done_complete": false,
+    "hosted_ci_external_blocker_preserved": true,
+    "hosted_ci_green": false,
+    "human_acceptance_complete": false,
+    "ie_f06_executed": false,
+    "ie_j12_executed": false,
+    "ie_p16_executed": false,
+    "phase6_complete": true,
+    "phase7_complete": false,
+    "phase7_execution_blocked": true,
+    "rag_dev30_executed": false,
+    "real_provider_executed": false
+  },
+  "contract_version": "supportguard-interview-v2-phase6-validation.v1",
+  "hosted_ci": {
+    "classification": "external_zero_step_blocker",
+    "hosted_execution_started": false,
+    "job_count": 5,
+    "local_execution_used_as_substitute": false,
+    "raw_artifact": "dist/phase6/hosted-ci-raw-30254587585fa2169cab071a926c501e06dac9a6.json",
+    "raw_artifact_sha256": "6bdb72e7b60ca994b561df1b88c7738acffedffe0d15f740b8a5902c07e1a41e",
+    "receipt": "validation/evidence/interview_v2/phase6/hosted-ci-receipt.v1.json",
+    "recorder_exit_code": 2,
+    "release_blocker": true,
+    "run_id": 31573174199,
+    "run_url": "https://github.com/Teddy-creator/SupportGuard/actions/runs/31573174199",
+    "total_step_count": 0
+  },
+  "origin_main_sha": "30254587585fa2169cab071a926c501e06dac9a6",
+  "recorded_at": "2026-08-12T07:48:18Z",
+  "results": {
+    "archive_transition": {
+      "annotated_tag": "archive/interview-v2.0-baseline",
+      "archive_source_commit": "328bc8606fdfbe50c9f3530646e72c1c21269c12",
+      "archive_source_tree": "054d61844a9acf7a958ddc8ad3800f9aceed5cea",
+      "archive_tag_verified": true,
+      "bytes_removed_from_current_workspace": 20264669,
+      "current_authority_document_count": 8,
+      "current_paths_absent": true,
+      "file_count": 2197,
+      "historical_result_rewritten": false,
+      "source_reachable": true,
+      "status": "passed"
+    },
+    "cleanup": {
+      "builder_residual_count": 0,
+      "host_port_listener_residual_count": 0,
+      "invocation_owned_container_residual_count": 0,
+      "invocation_owned_network_residual_count": 0,
+      "invocation_owned_volume_residual_count": 0,
+      "mcp_or_runner_process_residual_count": 0,
+      "runtime_candidate_image_removed": true,
+      "status": "passed"
+    },
+    "deterministic_and_static": {
+      "bandit": "passed",
+      "frontend_build": "passed",
+      "frontend_lint": "passed",
+      "frontend_test_files": 6,
+      "frontend_tests_passed": 81,
+      "hermetic_backend_deselected": 241,
+      "hermetic_backend_passed": 1315,
+      "hermetic_backend_total": 1315,
+      "pip_audit": "no_known_vulnerabilities",
+      "ruff": "passed",
+      "runtime_mypy_source_files": 204,
+      "security_boundary_services": 10,
+      "security_boundary_secret_variables": 5,
+      "status": "passed",
+      "uv_lock_check": "passed",
+      "validation_mypy_source_files": 8
+    },
+    "evaluation_boundary": {
+      "active_dataset": null,
+      "cross_encoder": "not_executed",
+      "ie_f06": "frozen_unexecuted",
+      "ie_j12": "frozen_unexecuted",
+      "ie_p16": "frozen_unexecuted",
+      "protected_holdout": "not_accessed",
+      "rag_dev30": "frozen_unexecuted",
+      "status": "passed"
+    },
+    "isolated_integration": {
+      "database_disposition": "dropped",
+      "executed_partitions": 225,
+      "integration_inventory_sha256": "671b752d6937dfb099e86b705864540d90bc2efaede88507dadb25912e7fb66a",
+      "migration_command": "supportguard db baseline-upgrade",
+      "schema_identity": "interview_baseline",
+      "source_dirty": false,
+      "source_state_sha256": "2dcd3c8cc6b5ddb7dd2edbe023dd97376ced49891e47f476b738fa850d9fe7c4",
+      "status": "passed"
+    },
+    "mcp": {
+      "hermetic_executed": 6,
+      "hermetic_expected": 6,
+      "manifest_sha256": "cfbce7636341604843f139a4103c53dcc6dbe00f7683dd30316c4100b81b2d95",
+      "orphan_count": 0,
+      "postgres_executed": 10,
+      "postgres_expected": 10,
+      "status": "passed"
+    },
+    "package_boundary": {
+      "candidate_eligible": true,
+      "forbidden_reachability_count": 0,
+      "import_graph_edges": 2736,
+      "import_graph_modules": 204,
+      "overlapping_record_paths": 0,
+      "runtime_record_count": 218,
+      "runtime_wheel_sha256": "bdf405beddeda48730fa46c768f0cf7f97855d56ed966680df177ce16edc28d8",
+      "source_file_count": 554,
+      "source_state_digest": "6c5eb58f9f45ce8a23420a8f9cbf62cf0aa74d43d2fa7affb685e6f36d1d0f50",
+      "strongly_connected_component_count": 0,
+      "validation_record_count": 12,
+      "validation_wheel_sha256": "eb2d2fa031fc4d6c05caa9be2294b22d73155f99ea55245fc9efedd8f6059998",
+      "worktree_state": "clean"
+    },
+    "runtime_image": {
+      "forbidden_distribution_leak_count": 0,
+      "forbidden_module_leak_count": 0,
+      "forbidden_path_leak_count": 0,
+      "image_id": "sha256:0aeeb997a7b42472d75dcec0d842b25768ec9837a51a2c9f764c0bb0369bfc1b",
+      "image_size_bytes": 1797132689,
+      "imports": [
+        "supportguard.main",
+        "supportguard.runtime.worker",
+        "supportguard.mcp.read_server",
+        "supportguard.mcp.action_server"
+      ],
+      "inventory": "passed",
+      "revision": "30254587585fa2169cab071a926c501e06dac9a6",
+      "runtime_cli_commands": [
+        "db",
+        "demo",
+        "knowledge",
+        "maintenance",
+        "runtime",
+        "serve"
+      ],
+      "runtime_cli_exposes_eval": false,
+      "runtime_distribution_file_count": 223,
+      "runtime_smoke": "passed",
+      "runtime_wheel_sha256": "1a12caa909c8ab21ced4daca180d9e4623b520b1696db8cb846ddb6798044b8a",
+      "status": "passed"
+    },
+    "test_disposition": {
+      "historical_group_count": 6,
+      "historical_tests_git_recoverable": true,
+      "replacement_contracts_passed": true,
+      "safety_keep_mapping_count": 14,
+      "status": "phase6_completed"
+    }
+  },
+  "scope": "phase6-controlled-pruning-and-authority-transition",
+  "source_identity": {
+    "head_equals_origin_main": true,
+    "verified_after_candidate_validation": true,
+    "worktree_state": "clean"
+  },
+  "status": "passed_with_hosted_ci_external_blocker"
+}

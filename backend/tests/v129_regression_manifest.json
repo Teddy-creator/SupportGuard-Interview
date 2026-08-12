@@ -1,0 +1,495 @@
+{
+  "version": "supportguard-v129-regression.v1",
+  "platform_contract": "posix",
+  "required_platforms": [
+    "darwin",
+    "linux"
+  ],
+  "cases": [
+    {
+      "case_id": "canonical-second",
+      "group": "canonical_valid",
+      "node": "backend/tests/test_v129_postgres_contract.py::test_v129_sql_python_canonical_matrix[second]"
+    },
+    {
+      "case_id": "canonical-micro-100000",
+      "group": "canonical_valid",
+      "node": "backend/tests/test_v129_postgres_contract.py::test_v129_sql_python_canonical_matrix[micro-100000]"
+    },
+    {
+      "case_id": "canonical-micro-120000",
+      "group": "canonical_valid",
+      "node": "backend/tests/test_v129_postgres_contract.py::test_v129_sql_python_canonical_matrix[micro-120000]"
+    },
+    {
+      "case_id": "canonical-micro-123000",
+      "group": "canonical_valid",
+      "node": "backend/tests/test_v129_postgres_contract.py::test_v129_sql_python_canonical_matrix[micro-123000]"
+    },
+    {
+      "case_id": "canonical-micro-123400",
+      "group": "canonical_valid",
+      "node": "backend/tests/test_v129_postgres_contract.py::test_v129_sql_python_canonical_matrix[micro-123400]"
+    },
+    {
+      "case_id": "canonical-micro-123450",
+      "group": "canonical_valid",
+      "node": "backend/tests/test_v129_postgres_contract.py::test_v129_sql_python_canonical_matrix[micro-123450]"
+    },
+    {
+      "case_id": "canonical-micro-123456",
+      "group": "canonical_valid",
+      "node": "backend/tests/test_v129_postgres_contract.py::test_v129_sql_python_canonical_matrix[micro-123456]"
+    },
+    {
+      "case_id": "canonical-positive-offset",
+      "group": "canonical_valid",
+      "node": "backend/tests/test_v129_postgres_contract.py::test_v129_sql_python_canonical_matrix[positive-offset]"
+    },
+    {
+      "case_id": "canonical-negative-offset",
+      "group": "canonical_valid",
+      "node": "backend/tests/test_v129_postgres_contract.py::test_v129_sql_python_canonical_matrix[negative-offset]"
+    },
+    {
+      "case_id": "parser-z-suffix",
+      "group": "parser_reject",
+      "node": "backend/tests/test_v129_timestamps.py::test_canonical_timestamp_parser_rejects_noncanonical_values[z-suffix]"
+    },
+    {
+      "case_id": "parser-naive",
+      "group": "parser_reject",
+      "node": "backend/tests/test_v129_timestamps.py::test_canonical_timestamp_parser_rejects_noncanonical_values[naive]"
+    },
+    {
+      "case_id": "parser-fraction-1",
+      "group": "parser_reject",
+      "node": "backend/tests/test_v129_timestamps.py::test_canonical_timestamp_parser_rejects_noncanonical_values[fraction-1]"
+    },
+    {
+      "case_id": "parser-fraction-2",
+      "group": "parser_reject",
+      "node": "backend/tests/test_v129_timestamps.py::test_canonical_timestamp_parser_rejects_noncanonical_values[fraction-2]"
+    },
+    {
+      "case_id": "parser-fraction-3",
+      "group": "parser_reject",
+      "node": "backend/tests/test_v129_timestamps.py::test_canonical_timestamp_parser_rejects_noncanonical_values[fraction-3]"
+    },
+    {
+      "case_id": "parser-fraction-4",
+      "group": "parser_reject",
+      "node": "backend/tests/test_v129_timestamps.py::test_canonical_timestamp_parser_rejects_noncanonical_values[fraction-4]"
+    },
+    {
+      "case_id": "parser-fraction-5",
+      "group": "parser_reject",
+      "node": "backend/tests/test_v129_timestamps.py::test_canonical_timestamp_parser_rejects_noncanonical_values[fraction-5]"
+    },
+    {
+      "case_id": "parser-fraction-7",
+      "group": "parser_reject",
+      "node": "backend/tests/test_v129_timestamps.py::test_canonical_timestamp_parser_rejects_noncanonical_values[fraction-7]"
+    },
+    {
+      "case_id": "parser-non-utc-offset",
+      "group": "parser_reject",
+      "node": "backend/tests/test_v129_timestamps.py::test_canonical_timestamp_parser_rejects_noncanonical_values[non-utc-offset]"
+    },
+    {
+      "case_id": "parser-invalid-date",
+      "group": "parser_reject",
+      "node": "backend/tests/test_v129_timestamps.py::test_canonical_timestamp_parser_rejects_noncanonical_values[invalid-date]"
+    },
+    {
+      "case_id": "parser-non-string",
+      "group": "parser_reject",
+      "node": "backend/tests/test_v129_timestamps.py::test_canonical_timestamp_parser_rejects_noncanonical_values[non-string]"
+    },
+    {
+      "case_id": "legacy-ticket-legacy",
+      "group": "legacy_migration",
+      "node": "backend/tests/test_v129_legacy_migration.py::test_v129_legacy_snapshot_upgrade[ticket-legacy]"
+    },
+    {
+      "case_id": "legacy-message-legacy",
+      "group": "legacy_migration",
+      "node": "backend/tests/test_v129_legacy_migration.py::test_v129_legacy_snapshot_upgrade[message-legacy]"
+    },
+    {
+      "case_id": "legacy-decision-legacy",
+      "group": "legacy_migration",
+      "node": "backend/tests/test_v129_legacy_migration.py::test_v129_legacy_snapshot_upgrade[decision-legacy]"
+    },
+    {
+      "case_id": "legacy-already-canonical",
+      "group": "legacy_migration",
+      "node": "backend/tests/test_v129_legacy_migration.py::test_v129_legacy_snapshot_upgrade[already-canonical]"
+    },
+    {
+      "case_id": "legacy-mixed-invalid",
+      "group": "legacy_migration",
+      "node": "backend/tests/test_v129_legacy_migration.py::test_v129_invalid_legacy_batch_rolls_back[mixed-invalid]"
+    },
+    {
+      "case_id": "legacy-envelope-shape",
+      "group": "legacy_migration",
+      "node": "backend/tests/test_v129_legacy_migration.py::test_v129_invalid_legacy_batch_rolls_back[envelope-shape]"
+    },
+    {
+      "case_id": "legacy-instant-mismatch",
+      "group": "legacy_migration",
+      "node": "backend/tests/test_v129_legacy_migration.py::test_v129_invalid_legacy_batch_rolls_back[instant-mismatch]"
+    },
+    {
+      "case_id": "legacy-fence-writer-zero",
+      "group": "legacy_migration",
+      "node": "backend/tests/test_v129_legacy_migration.py::test_v129_fence_blocks_concurrent_writer_during_upgrade"
+    },
+    {
+      "case_id": "acceptance-db-ticket-first",
+      "group": "acceptance_db",
+      "node": "backend/tests/test_v129_acceptance_postgres.py::test_v129_acceptance_first_and_replay_are_canonical[ticket-first]"
+    },
+    {
+      "case_id": "acceptance-db-ticket-replay",
+      "group": "acceptance_db",
+      "node": "backend/tests/test_v129_acceptance_postgres.py::test_v129_acceptance_first_and_replay_are_canonical[ticket-replay]"
+    },
+    {
+      "case_id": "acceptance-db-message-first",
+      "group": "acceptance_db",
+      "node": "backend/tests/test_v129_acceptance_postgres.py::test_v129_acceptance_first_and_replay_are_canonical[message-first]"
+    },
+    {
+      "case_id": "acceptance-db-message-replay",
+      "group": "acceptance_db",
+      "node": "backend/tests/test_v129_acceptance_postgres.py::test_v129_acceptance_first_and_replay_are_canonical[message-replay]"
+    },
+    {
+      "case_id": "acceptance-db-approve-first",
+      "group": "acceptance_db",
+      "node": "backend/tests/test_v129_acceptance_postgres.py::test_v129_acceptance_first_and_replay_are_canonical[approve-first]"
+    },
+    {
+      "case_id": "acceptance-db-approve-replay",
+      "group": "acceptance_db",
+      "node": "backend/tests/test_v129_acceptance_postgres.py::test_v129_acceptance_first_and_replay_are_canonical[approve-replay]"
+    },
+    {
+      "case_id": "acceptance-db-edit_and_approve-first",
+      "group": "acceptance_db",
+      "node": "backend/tests/test_v129_acceptance_postgres.py::test_v129_acceptance_first_and_replay_are_canonical[edit_and_approve-first]"
+    },
+    {
+      "case_id": "acceptance-db-edit_and_approve-replay",
+      "group": "acceptance_db",
+      "node": "backend/tests/test_v129_acceptance_postgres.py::test_v129_acceptance_first_and_replay_are_canonical[edit_and_approve-replay]"
+    },
+    {
+      "case_id": "acceptance-db-reject-first",
+      "group": "acceptance_db",
+      "node": "backend/tests/test_v129_acceptance_postgres.py::test_v129_acceptance_first_and_replay_are_canonical[reject-first]"
+    },
+    {
+      "case_id": "acceptance-db-reject-replay",
+      "group": "acceptance_db",
+      "node": "backend/tests/test_v129_acceptance_postgres.py::test_v129_acceptance_first_and_replay_are_canonical[reject-replay]"
+    },
+    {
+      "case_id": "acceptance-db-manual_takeover-first",
+      "group": "acceptance_db",
+      "node": "backend/tests/test_v129_acceptance_postgres.py::test_v129_acceptance_first_and_replay_are_canonical[manual_takeover-first]"
+    },
+    {
+      "case_id": "acceptance-db-manual_takeover-replay",
+      "group": "acceptance_db",
+      "node": "backend/tests/test_v129_acceptance_postgres.py::test_v129_acceptance_first_and_replay_are_canonical[manual_takeover-replay]"
+    },
+    {
+      "case_id": "acceptance-db-ticket-concurrent",
+      "group": "acceptance_db",
+      "node": "backend/tests/test_v125_idempotency_postgres.py::test_concurrent_same_key_claim_creates_exactly_one_resource_group"
+    },
+    {
+      "case_id": "acceptance-db-message-concurrent",
+      "group": "acceptance_db",
+      "node": "backend/tests/test_v125_idempotency_postgres.py::test_concurrent_follow_up_reuses_one_message_run_job_and_outbox"
+    },
+    {
+      "case_id": "acceptance-db-approval-concurrent",
+      "group": "acceptance_db",
+      "node": "backend/tests/test_postgres_finalizer_faults.py::test_v126_api_approval_capability_serializes_duplicate_decisions"
+    },
+    {
+      "case_id": "acceptance-db-ticket-different-hash",
+      "group": "acceptance_db",
+      "node": "backend/tests/test_v125_idempotency_postgres.py::test_concurrent_same_key_different_hash_returns_stable_conflict"
+    },
+    {
+      "case_id": "acceptance-db-message-different-hash",
+      "group": "acceptance_db",
+      "node": "backend/tests/test_v129_acceptance_postgres.py::test_v129_message_different_hash_has_zero_additional_writes"
+    },
+    {
+      "case_id": "acceptance-db-approval-different-hash",
+      "group": "acceptance_db",
+      "node": "backend/tests/test_v129_acceptance_postgres.py::test_v129_approval_different_hash_has_zero_additional_writes"
+    },
+    {
+      "case_id": "acceptance-http-ticket-first",
+      "group": "acceptance_http",
+      "node": "backend/tests/test_v129_acceptance_http.py::test_v129_real_http_routes_keep_exact_acceptance_contract[ticket-first]"
+    },
+    {
+      "case_id": "acceptance-http-ticket-replay",
+      "group": "acceptance_http",
+      "node": "backend/tests/test_v129_acceptance_http.py::test_v129_real_http_routes_keep_exact_acceptance_contract[ticket-replay]"
+    },
+    {
+      "case_id": "acceptance-http-ticket-different-hash",
+      "group": "acceptance_http",
+      "node": "backend/tests/test_v129_acceptance_http.py::test_v129_real_http_routes_keep_exact_acceptance_contract[ticket-different-hash]"
+    },
+    {
+      "case_id": "acceptance-http-message-first",
+      "group": "acceptance_http",
+      "node": "backend/tests/test_v129_acceptance_http.py::test_v129_real_http_routes_keep_exact_acceptance_contract[message-first]"
+    },
+    {
+      "case_id": "acceptance-http-message-replay",
+      "group": "acceptance_http",
+      "node": "backend/tests/test_v129_acceptance_http.py::test_v129_real_http_routes_keep_exact_acceptance_contract[message-replay]"
+    },
+    {
+      "case_id": "acceptance-http-message-different-hash",
+      "group": "acceptance_http",
+      "node": "backend/tests/test_v129_acceptance_http.py::test_v129_real_http_routes_keep_exact_acceptance_contract[message-different-hash]"
+    },
+    {
+      "case_id": "acceptance-http-approve-first",
+      "group": "acceptance_http",
+      "node": "backend/tests/test_v129_acceptance_http.py::test_v129_real_http_routes_keep_exact_acceptance_contract[approve-first]"
+    },
+    {
+      "case_id": "acceptance-http-approve-replay",
+      "group": "acceptance_http",
+      "node": "backend/tests/test_v129_acceptance_http.py::test_v129_real_http_routes_keep_exact_acceptance_contract[approve-replay]"
+    },
+    {
+      "case_id": "acceptance-http-approve-different-hash",
+      "group": "acceptance_http",
+      "node": "backend/tests/test_v129_acceptance_http.py::test_v129_real_http_routes_keep_exact_acceptance_contract[approve-different-hash]"
+    },
+    {
+      "case_id": "acceptance-http-edit_and_approve-first",
+      "group": "acceptance_http",
+      "node": "backend/tests/test_v129_acceptance_http.py::test_v129_real_http_routes_keep_exact_acceptance_contract[edit_and_approve-first]"
+    },
+    {
+      "case_id": "acceptance-http-edit_and_approve-replay",
+      "group": "acceptance_http",
+      "node": "backend/tests/test_v129_acceptance_http.py::test_v129_real_http_routes_keep_exact_acceptance_contract[edit_and_approve-replay]"
+    },
+    {
+      "case_id": "acceptance-http-edit_and_approve-different-hash",
+      "group": "acceptance_http",
+      "node": "backend/tests/test_v129_acceptance_http.py::test_v129_real_http_routes_keep_exact_acceptance_contract[edit_and_approve-different-hash]"
+    },
+    {
+      "case_id": "acceptance-http-reject-first",
+      "group": "acceptance_http",
+      "node": "backend/tests/test_v129_acceptance_http.py::test_v129_real_http_routes_keep_exact_acceptance_contract[reject-first]"
+    },
+    {
+      "case_id": "acceptance-http-reject-replay",
+      "group": "acceptance_http",
+      "node": "backend/tests/test_v129_acceptance_http.py::test_v129_real_http_routes_keep_exact_acceptance_contract[reject-replay]"
+    },
+    {
+      "case_id": "acceptance-http-reject-different-hash",
+      "group": "acceptance_http",
+      "node": "backend/tests/test_v129_acceptance_http.py::test_v129_real_http_routes_keep_exact_acceptance_contract[reject-different-hash]"
+    },
+    {
+      "case_id": "acceptance-http-manual_takeover-first",
+      "group": "acceptance_http",
+      "node": "backend/tests/test_v129_acceptance_http.py::test_v129_real_http_routes_keep_exact_acceptance_contract[manual_takeover-first]"
+    },
+    {
+      "case_id": "acceptance-http-manual_takeover-replay",
+      "group": "acceptance_http",
+      "node": "backend/tests/test_v129_acceptance_http.py::test_v129_real_http_routes_keep_exact_acceptance_contract[manual_takeover-replay]"
+    },
+    {
+      "case_id": "acceptance-http-manual_takeover-different-hash",
+      "group": "acceptance_http",
+      "node": "backend/tests/test_v129_acceptance_http.py::test_v129_real_http_routes_keep_exact_acceptance_contract[manual_takeover-different-hash]"
+    },
+    {
+      "case_id": "upgrade-formatter-direct-deny",
+      "group": "upgrade_role_catalog",
+      "node": "backend/tests/test_v129_postgres_contract.py::test_v129_formatter_direct_execute_is_zero_for_every_runtime_login"
+    },
+    {
+      "case_id": "upgrade-capability-indirect",
+      "group": "upgrade_role_catalog",
+      "node": "backend/tests/test_v129_postgres_contract.py::test_v129_api_capability_uses_owner_formatter_indirectly"
+    },
+    {
+      "case_id": "upgrade-current-head",
+      "group": "upgrade_role_catalog",
+      "node": "backend/tests/test_v129_postgres_contract.py::test_v129_current_head_and_capability_definitions_are_present"
+    },
+    {
+      "case_id": "upgrade-empty-bootstrap",
+      "group": "upgrade_role_catalog",
+      "node": "backend/tests/test_v126_phase1_runtime.py::test_upgrade_snapshot_explicitly_proves_empty_unseeded_baseline"
+    },
+    {
+      "case_id": "upgrade-bridge-kill-resume",
+      "group": "upgrade_role_catalog",
+      "node": "backend/tests/test_v126_phase1_runtime.py::test_upgrade_process_sigkill_resumes_from_each_committed_phase"
+    },
+    {
+      "case_id": "upgrade-pg-proc-exact",
+      "group": "upgrade_role_catalog",
+      "node": "backend/tests/test_v129_postgres_contract.py::test_v129_formatter_is_owner_only_and_exact"
+    },
+    {
+      "case_id": "mcp-success",
+      "group": "mcp_partition_teardown",
+      "node": "backend/tests/test_v129_mcp_partition_teardown.py::test_v129_mcp_partition_success"
+    },
+    {
+      "case_id": "mcp-pytest-nonzero",
+      "group": "mcp_partition_teardown",
+      "node": "backend/tests/test_v129_mcp_partition_teardown.py::test_v129_mcp_partition_pytest_nonzero"
+    },
+    {
+      "case_id": "mcp-timeout-term",
+      "group": "mcp_partition_teardown",
+      "node": "backend/tests/test_v129_mcp_partition_teardown.py::test_v129_mcp_partition_timeout_term"
+    },
+    {
+      "case_id": "mcp-timeout-kill",
+      "group": "mcp_partition_teardown",
+      "node": "backend/tests/test_v129_mcp_partition_teardown.py::test_v129_mcp_partition_timeout_kill"
+    },
+    {
+      "case_id": "mcp-junit-missing",
+      "group": "mcp_partition_teardown",
+      "node": "backend/tests/test_v129_mcp_partition_teardown.py::test_v129_mcp_partition_junit_failure_is_unknown[missing]"
+    },
+    {
+      "case_id": "mcp-junit-malformed",
+      "group": "mcp_partition_teardown",
+      "node": "backend/tests/test_v129_mcp_partition_teardown.py::test_v129_mcp_partition_junit_failure_is_unknown[malformed]"
+    },
+    {
+      "case_id": "mcp-sigterm-cancel",
+      "group": "mcp_partition_teardown",
+      "node": "backend/tests/test_v129_mcp_partition_teardown.py::test_v129_mcp_partition_sigterm_cancel"
+    },
+    {
+      "case_id": "mcp-non-owned-sentinel",
+      "group": "mcp_partition_teardown",
+      "node": "backend/tests/test_v129_mcp_partition_teardown.py::test_v129_mcp_partition_non_owned_sentinel_survives"
+    },
+    {
+      "case_id": "mcp-killpg-fault",
+      "group": "mcp_partition_teardown",
+      "node": "backend/tests/test_v129_mcp_partition_teardown.py::test_v129_mcp_partition_killpg_fault_is_reported_after_cleanup"
+    },
+    {
+      "case_id": "gate-success",
+      "group": "gate_child_teardown",
+      "node": "backend/tests/test_v129_process_teardown.py::test_v129_gate_child_success_receipt"
+    },
+    {
+      "case_id": "gate-nonzero",
+      "group": "gate_child_teardown",
+      "node": "backend/tests/test_v129_process_teardown.py::test_v129_gate_child_nonzero_receipt"
+    },
+    {
+      "case_id": "gate-sigterm-cancel",
+      "group": "gate_child_teardown",
+      "node": "backend/tests/test_v129_process_teardown.py::test_v129_gate_child_sigterm_cancel_writes_receipt"
+    },
+    {
+      "case_id": "gate-timeout-kill-descendant",
+      "group": "gate_child_teardown",
+      "node": "backend/tests/test_v129_process_teardown.py::test_v129_gate_child_timeout_kills_ignoring_descendant"
+    },
+    {
+      "case_id": "gate-artifact-same",
+      "group": "gate_child_teardown",
+      "node": "backend/tests/test_v129_process_teardown.py::test_v129_gate_child_artifact_collision_prevents_spawn[same]"
+    },
+    {
+      "case_id": "gate-artifact-existing",
+      "group": "gate_child_teardown",
+      "node": "backend/tests/test_v129_process_teardown.py::test_v129_gate_child_artifact_collision_prevents_spawn[existing]"
+    },
+    {
+      "case_id": "gate-artifact-symlink",
+      "group": "gate_child_teardown",
+      "node": "backend/tests/test_v129_process_teardown.py::test_v129_gate_child_artifact_collision_prevents_spawn[symlink]"
+    },
+    {
+      "case_id": "gate-reserved-key",
+      "group": "gate_child_teardown",
+      "node": "backend/tests/test_v129_process_teardown.py::test_v129_gate_child_reserved_key_prevents_spawn"
+    },
+    {
+      "case_id": "gate-cleanup-fault",
+      "group": "gate_child_teardown",
+      "node": "backend/tests/test_v129_process_teardown.py::test_v129_gate_child_cleanup_fault_is_persisted"
+    },
+    {
+      "case_id": "gate-compose-timeout",
+      "group": "gate_child_teardown",
+      "node": "backend/tests/test_v129_process_teardown.py::test_v129_gate_compose_timeout_keeps_receipt"
+    },
+    {
+      "case_id": "gate-validator-retained",
+      "group": "gate_child_teardown",
+      "node": "backend/tests/test_v129_process_teardown.py::test_v129_gate_validator_failure_staging_is_retained"
+    },
+    {
+      "case_id": "gate-junit-missing",
+      "group": "gate_child_teardown",
+      "node": "backend/tests/test_v129_process_teardown.py::test_v129_gate_child_junit_missing_is_typed"
+    },
+    {
+      "case_id": "gate-junit-malformed",
+      "group": "gate_child_teardown",
+      "node": "backend/tests/test_v129_process_teardown.py::test_v129_gate_child_junit_malformed_is_typed"
+    },
+    {
+      "case_id": "gate-non-owned-sentinel",
+      "group": "gate_child_teardown",
+      "node": "backend/tests/test_v129_process_teardown.py::test_v129_gate_child_non_owned_sentinel_survives"
+    },
+    {
+      "case_id": "entry-expected-collected",
+      "group": "entrypoint_parity",
+      "node": "backend/tests/test_v129_entrypoint_contract.py::test_v129_entrypoint_expected_equals_collected_contract"
+    },
+    {
+      "case_id": "entry-collected-executed",
+      "group": "entrypoint_parity",
+      "node": "backend/tests/test_v129_entrypoint_contract.py::test_v129_entrypoint_collected_equals_executed_contract"
+    },
+    {
+      "case_id": "entry-single-entry",
+      "group": "entrypoint_parity",
+      "node": "backend/tests/test_v129_entrypoint_contract.py::test_v129_make_ci_gate_use_one_regression_entrypoint"
+    },
+    {
+      "case_id": "entry-manifest-digest",
+      "group": "entrypoint_parity",
+      "node": "backend/tests/test_v129_entrypoint_contract.py::test_v129_committed_manifest_digest_is_frozen"
+    }
+  ]
+}

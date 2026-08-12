@@ -1,0 +1,337 @@
+{
+  "contract_version": "supportguard-interview-v2-ie-f06.v1",
+  "status": "frozen",
+  "frozen_at": "2026-08-11",
+  "classification": "fault-injected",
+  "execution_state": "unexecuted",
+  "candidate_sha": null,
+  "candidate_binding": "bind_exact_clean_head_at_phase7_before_execution",
+  "purpose": "Independent deterministic fault matrix for runtime fail-closed, recovery, accounting, and cleanup evidence.",
+  "frozen_denominators": {
+    "fault_cases": 6,
+    "provider_timeout": 1,
+    "provider_auth_failure": 1,
+    "malformed_envelope": 1,
+    "mcp_timeout_or_reconnect": 1,
+    "lease_or_fence_takeover": 1,
+    "transaction_pre_or_post_commit_crash": 1
+  },
+  "separation_contract": {
+    "public_real_provider_matrix": "IE-P16",
+    "included_in_ie_p16": false,
+    "included_in_production_native_denominator": false,
+    "provider_mode": "deterministic_fixture_only",
+    "external_provider_calls": 0,
+    "protected_holdout_access": false,
+    "historical_gate_or_parity_execution": false,
+    "rules": [
+      "every_case_is_classified_fault-injected",
+      "never_merge_fault_attempts_results_or_denominators_into_ie-p16",
+      "never_describe_fault-injected_transport_as_production_native",
+      "partial_execution_does_not_complete_this_matrix",
+      "execute_only_after_candidate_sha_is_bound"
+    ]
+  },
+  "global_required_assertions": {
+    "accounting": [
+      "every_logical_attempt_and_physical_transport_attempt_has_one_durable_or_directly_asserted_terminal_outcome",
+      "retry_reconnect_takeover_and_reconciliation_are_bounded_and_counted_without_budget_refund",
+      "no_fault_path_is_reported_as_a_successful_unattempted_operation"
+    ],
+    "fail_closed": [
+      "no_provider_failure_falls_back_to_fake",
+      "no_malformed_provider_or_mcp_envelope_can_authorize_a_tool_or_business_effect",
+      "no_stale_lease_fence_or_unknown_commit_state_can_create_a_second_effect"
+    ],
+    "cleanup": [
+      "provider_clients_mcp_children_pending_tasks_database_leases_and_transactions_are_closed_reaped_released_or_left_in_an_explicit_recoverable_terminal_state",
+      "no_orphan_mcp_process_or_unbounded_reconciliation_loop_remains_after_case_teardown"
+    ]
+  },
+  "cases": [
+    {
+      "id": "IE-F01",
+      "title": "Provider timeout",
+      "classification": "fault-injected",
+      "fault_ownership": {
+        "component": "deepseek_provider_transport",
+        "owner_paths": [
+          "backend/src/supportguard/providers/deepseek.py",
+          "backend/src/supportguard/agent/graph.py"
+        ],
+        "retry_owner": "DeepSeekProvider HTTP transport loop",
+        "terminal_owner": "SupportGraph provider-failure boundary"
+      },
+      "injection_boundary": {
+        "surface": "httpx transport supplied to DeepSeekProvider.generate",
+        "fault": "httpx.ReadTimeout before any usable provider response",
+        "method": "deterministic httpx.MockTransport exception",
+        "forbidden_shortcuts": [
+          "real_provider_call",
+          "fake_provider_fallback",
+          "uncounted_hidden_retry",
+          "successful_empty_decision"
+        ]
+      },
+      "deterministic_test_nodes": [
+        "backend/tests/test_v156_provider_reliability.py::test_v156_transport_failure_exposes_safe_category"
+      ],
+      "required_assertions": {
+        "accounting": [
+          "transport_attempts_equals_2_after_one_bounded_retry",
+          "safe_error_code_equals_provider_timeout"
+        ],
+        "fail_closed": [
+          "no_parsed_decision_tool_call_proposal_or_effect_is_published",
+          "timeout_is_not_reclassified_as_auth_or_success"
+        ],
+        "cleanup": [
+          "DeepSeekProvider.aclose_runs_in_test_teardown",
+          "no_pending_HTTP_request_or_retry_task_remains"
+        ]
+      }
+    },
+    {
+      "id": "IE-F02",
+      "title": "Provider authentication failure",
+      "classification": "fault-injected",
+      "fault_ownership": {
+        "component": "deepseek_provider_authentication_boundary",
+        "owner_paths": [
+          "backend/src/supportguard/providers/deepseek.py",
+          "backend/src/supportguard/agent/graph.py"
+        ],
+        "retry_owner": "DeepSeekProvider HTTP status classifier",
+        "terminal_owner": "SupportGraph provider-failure boundary"
+      },
+      "injection_boundary": {
+        "surface": "HTTP 401 response returned by deterministic provider transport",
+        "fault": "authentication rejection before a provider decision exists",
+        "method": "deterministic httpx.MockTransport 401 response",
+        "forbidden_shortcuts": [
+          "retry_authentication_failure",
+          "provider_body_persistence",
+          "fake_provider_fallback",
+          "tool_or_action_execution"
+        ]
+      },
+      "deterministic_test_nodes": [
+        "backend/tests/test_v151_provider_contract.py::test_deepseek_does_not_retry_authentication_failure",
+        "backend/tests/test_v156_provider_reliability.py::test_v156_terminal_http_error_is_classified_without_response_body"
+      ],
+      "required_assertions": {
+        "accounting": [
+          "transport_attempts_equals_1",
+          "authentication_failure_consumes_one_attempt_and_zero_retries"
+        ],
+        "fail_closed": [
+          "cause_is_AuthenticationError_and_no_decision_is_published",
+          "provider_response_body_and_secret_material_are_not_persisted_or_exposed",
+          "runtime_never_falls_back_to_fake"
+        ],
+        "cleanup": [
+          "DeepSeekProvider.aclose_runs_in_test_teardown",
+          "no_retry_sleep_or_pending_HTTP_task_remains"
+        ]
+      }
+    },
+    {
+      "id": "IE-F03",
+      "title": "Malformed provider envelope",
+      "classification": "fault-injected",
+      "fault_ownership": {
+        "component": "provider_schema_validation_and_bounded_repair",
+        "owner_paths": [
+          "backend/src/supportguard/providers/deepseek.py",
+          "backend/src/supportguard/agent/graph.py",
+          "backend/src/supportguard/agent/schemas.py"
+        ],
+        "retry_owner": "SupportGraph single narrow structure-repair path",
+        "terminal_owner": "SupportGraph terminal publication guard"
+      },
+      "injection_boundary": {
+        "surface": "provider-controlled structured decision or evidence-synthesis payload before trusted model validation",
+        "fault": "missing fields wrong types invalid JSON or forbidden extra fields",
+        "method": "deterministic malformed provider fixture",
+        "forbidden_shortcuts": [
+          "treat_unvalidated_JSON_as_AgentDecision",
+          "allow_repair_to_call_tools",
+          "copy_provider_controlled_error_paths_to_public_state",
+          "unbounded_structure_repair"
+        ]
+      },
+      "deterministic_test_nodes": [
+        "backend/tests/test_v151_provider_contract.py::test_terminal_schema_repair_is_single_bounded_call_and_cannot_call_tools",
+        "backend/tests/test_v151_provider_contract.py::test_bound_synthesis_repair_fails_closed_for_non_extra_or_unresolvable_errors",
+        "backend/tests/test_v151_provider_contract.py::test_persisted_schema_error_paths_never_copy_provider_controlled_field_names"
+      ],
+      "required_assertions": {
+        "accounting": [
+          "structure_repair_is_at_most_one_additional_provider_call",
+          "llm_call_count_includes_the_repair_call",
+          "tool_rounds_and_tool_attempts_remain_zero_during_terminal_repair"
+        ],
+        "fail_closed": [
+          "missing_type_or_json_decode_errors_never_publish_a_candidate",
+          "repair_cannot_introduce_tool_calls_or_business_actions",
+          "persisted_schema_error_path_is_stable_and_provider_text_free"
+        ],
+        "cleanup": [
+          "no_tool_invocation_proposal_approval_or_business_effect_is_created",
+          "repair_state_terminates_without_recursive_or_pending_work"
+        ]
+      }
+    },
+    {
+      "id": "IE-F04",
+      "title": "MCP timeout and bounded reconnect",
+      "classification": "fault-injected",
+      "fault_ownership": {
+        "component": "stdio_mcp_supervision_and_agent_owned_reconnect",
+        "owner_paths": [
+          "backend/src/supportguard/mcp/manager.py",
+          "backend/src/supportguard/tools/gateway.py",
+          "backend/src/supportguard/agent/graph.py"
+        ],
+        "retry_owner": "SupportGraph rehandshake between physical sends",
+        "terminal_owner": "ToolGateway normalized Observation and MCPManager lifecycle"
+      },
+      "injection_boundary": {
+        "surface": "read MCP stdio call deadline or process transport between two physical sends",
+        "fault": "TimeoutError or hermetic read-MCP process loss followed by one bounded rehandshake",
+        "method": "deterministic classifier fixture plus hermetic stdio child termination",
+        "forbidden_shortcuts": [
+          "gateway_hidden_transport_retry",
+          "reconnect_non_retryable_schema_or_fence_failure",
+          "more_than_one_rehandshake_for_the_same_failed_generation",
+          "reuse_dead_child_process"
+        ]
+      },
+      "deterministic_test_nodes": [
+        "backend/tests/test_mcp_supervisor.py::test_reconnect_classifier_is_fail_closed",
+        "backend/tests/test_read_mcp.py::test_retryable_stdio_process_loss_reaps_old_pid_and_rehandshakes",
+        "backend/tests/test_agent_graph.py::test_failed_rehandshake_stops_without_a_second_physical_send",
+        "backend/tests/test_mcp_supervisor.py::test_supervisor_shutdown_cancels_and_drains_pending_calls"
+      ],
+      "required_assertions": {
+        "accounting": [
+          "timeout_is_retryable_but_schema_fence_permission_and_invalid_argument_failures_are_not",
+          "one_successful_reconnect_records_two_physical_attempts_one_reconnect_and_generation_increment",
+          "failed_rehandshake_records_one_physical_send_and_no_second_send"
+        ],
+        "fail_closed": [
+          "first_failed_call_is_a_normalized_unavailable_observation_not_a_success",
+          "failed_rehandshake_terminalizes_as_mcp_rehandshake_failed_and_non_retryable",
+          "no_business_effect_is_reachable_from_read_MCP_transport_failure"
+        ],
+        "cleanup": [
+          "old_stdio_pid_is_reaped_before_or_during_successful_rehandshake",
+          "manager_stop_reaps_the_final_child_pid",
+          "pending_calls_are_cancelled_and_drained_and_server_reaches_closed"
+        ]
+      }
+    },
+    {
+      "id": "IE-F05",
+      "title": "Worker Lease and Fence takeover",
+      "classification": "fault-injected",
+      "fault_ownership": {
+        "component": "runtime_job_lease_tool_turn_and_attempt_ledgers",
+        "owner_paths": [
+          "backend/src/supportguard/services/runtime_jobs.py",
+          "backend/src/supportguard/services/tool_ledger.py",
+          "backend/src/supportguard/services/attempts.py",
+          "backend/src/supportguard/worker.py"
+        ],
+        "retry_owner": "new worker holding the replacement fencing token",
+        "terminal_owner": "RuntimeJobRepository and durable ToolLedger state"
+      },
+      "injection_boundary": {
+        "surface": "expired or released worker lease after a decision and partial physical transport reservation",
+        "fault": "replacement worker claims the same durable job with a higher fencing token",
+        "method": "deterministic PostgreSQL lease expiry release and takeover fixture",
+        "forbidden_shortcuts": [
+          "reissue_provider_decision",
+          "stale_worker_write",
+          "refund_consumed_transport_budget",
+          "execute_already_terminal_tool_ordinal_again"
+        ]
+      },
+      "deterministic_test_nodes": [
+        "backend/tests/test_v124_agent_recovery.py::test_turn_takeover_reuses_decision_and_terminalizes_every_ordinal",
+        "backend/tests/test_v124_agent_recovery.py::test_takeover_exhausted_transport_fails_closed_and_cancels_remaining",
+        "backend/tests/test_v124_agent_recovery.py::test_worker_fence_reads_the_heartbeat_refreshed_database_expiry"
+      ],
+      "required_assertions": {
+        "accounting": [
+          "replacement_fencing_token_is_greater_than_previous_fencing_token",
+          "existing_provider_decision_is_reused_without_new_provider_attempt",
+          "reserved_unknown_and_terminal_tool_ordinals_remain_durably_accounted",
+          "exhausted_transport_budget_is_not_refunded_on_takeover"
+        ],
+        "fail_closed": [
+          "stale_or_expired_fence_cannot_mutate_the_job_turn_or_attempt_ledgers",
+          "exhausted_first_invocation_terminalizes_failed_and_cancels_remaining_work",
+          "heartbeat_refreshed_database_expiry_not_stale_in_memory_expiry_controls_MCP_deadline"
+        ],
+        "cleanup": [
+          "every_tool_ordinal_reaches_one_terminal_or_explicit_unknown_recoverable_state",
+          "old_lease_owner_is_cleared_and_replacement_owner_is_durable",
+          "database_engines_and sessions_are_disposed_by_fixture_teardown"
+        ]
+      }
+    },
+    {
+      "id": "IE-F06",
+      "title": "Transaction crash before commit and commit outcome unknown",
+      "classification": "fault-injected",
+      "fault_ownership": {
+        "component": "approval_action_transaction_and_post_effect_finalizer",
+        "owner_paths": [
+          "backend/src/supportguard/approvals/service.py",
+          "backend/src/supportguard/services/segment_finalization.py",
+          "backend/src/supportguard/services/action_effect_reconciliation.py",
+          "backend/src/supportguard/worker.py"
+        ],
+        "retry_owner": "RefundRuntime before-commit retry or ActionEffectReconciliationRunner after unknown commit outcome",
+        "terminal_owner": "transactional business action finalizer and durable RuntimeJob outcome"
+      },
+      "injection_boundary": {
+        "surface": "business action transaction immediately before commit or after commit with ACK loss",
+        "fault": "process rollback before commit or finalizer commit outcome reported unknown",
+        "method": "deterministic rollback and PostgreSQL finalizer fault functions",
+        "forbidden_shortcuts": [
+          "assume_unknown_commit_means_zero_effect",
+          "blindly_repeat_business_effect",
+          "mark_success_before_durable_commit",
+          "ack_queue_message_before_terminal_commit"
+        ]
+      },
+      "deterministic_test_nodes": [
+        "backend/tests/test_approvals.py::test_crash_before_transaction_commit_can_safely_retry",
+        "backend/tests/test_v1512_post_effect_finalizer_atomicity_postgres.py::test_action_finalizer_commit_unknown_enters_bounded_reconciliation",
+        "backend/tests/test_v1512_post_effect_finalizer_atomicity_postgres.py::test_action_finalizer_commit_ack_loss_reads_committed_terminal_truth",
+        "backend/tests/test_runtime_queue.py::test_worker_commits_terminal_state_before_stream_ack"
+      ],
+      "required_assertions": {
+        "accounting": [
+          "pre_commit_rollback_then_retry_leaves_exactly_one_committed_business_action",
+          "commit_unknown_enters_verification_pending_and_one_bounded_reconciliation_path",
+          "commit_ack_loss_reads_committed_terminal_truth_without_creating_a_second_effect",
+          "stream_ack_occurs_only_after_terminal_state_commit"
+        ],
+        "fail_closed": [
+          "unknown_commit_outcome_is_never_presented_as_completed_or_safe_to_replay",
+          "verified_zero_effect_marks_the_proposal_stale_or_failed_before_any_retry",
+          "verified_committed_effect_remains_executed_and_is_not_regressed",
+          "duplicate_business_effect_count_remains_zero"
+        ],
+        "cleanup": [
+          "rolled_back_transaction_leaves_no_durable_business_action",
+          "verification_pending_reaches_completed_or_verified_zero_effect_without_an_unbounded_loop",
+          "database_connections_workers_and_queue_deliveries_are_closed_or_acknowledged_after_durable_terminalization"
+        ]
+      }
+    }
+  ]
+}

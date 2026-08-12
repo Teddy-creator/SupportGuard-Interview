@@ -1,0 +1,19 @@
+{
+  "schema_version": "knowledge-temporal-backfill.v1",
+  "entries": [
+    {"document_id":"authentication-security-v3","document_family_key":"authentication-security","effective_from":"2026-01-01T00:00:00Z","effective_until":null,"applicable_plan":null,"applicable_region":null},
+    {"document_id":"api-errors-retries-v2","document_family_key":"api-errors-retries","effective_from":"2026-01-01T00:00:00Z","effective_until":null,"applicable_plan":null,"applicable_region":null},
+    {"document_id":"plans-limits-regions-v4","document_family_key":"plans-limits-regions","effective_from":"2026-01-01T00:00:00Z","effective_until":null,"applicable_plan":null,"applicable_region":null},
+    {"document_id":"models-compatibility-v5","document_family_key":"models-compatibility","effective_from":"2026-01-01T00:00:00Z","effective_until":null,"applicable_plan":null,"applicable_region":null},
+    {"document_id":"billing-refunds-v3","document_family_key":"billing-refunds","effective_from":"2026-01-01T00:00:00Z","effective_until":null,"applicable_plan":null,"applicable_region":null},
+    {"document_id":"incidents-status-sla-v2","document_family_key":"incidents-status-sla","effective_from":"2026-01-01T00:00:00Z","effective_until":null,"applicable_plan":null,"applicable_region":null},
+    {"document_id":"sdk-streaming-tools-v3","document_family_key":"sdk-streaming-tools","effective_from":"2026-01-01T00:00:00Z","effective_until":null,"applicable_plan":null,"applicable_region":null},
+    {"document_id":"product-faq-v2","document_family_key":"product-faq","effective_from":"2026-01-01T00:00:00Z","effective_until":null,"applicable_plan":null,"applicable_region":null},
+    {"document_id":"policy-changelog-2026","document_family_key":"policy-changelog","effective_from":"2026-01-01T00:00:00Z","effective_until":null,"applicable_plan":null,"applicable_region":null},
+    {"document_id":"legacy-platform-v1","document_family_key":"legacy-platform","effective_from":"2025-01-01T00:00:00Z","effective_until":"2026-01-01T00:00:00Z","applicable_plan":null,"applicable_region":null},
+    {"document_id":"request-trace-diagnostics-v1","document_family_key":"request-trace-diagnostics","effective_from":"2026-01-01T00:00:00Z","effective_until":null,"applicable_plan":null,"applicable_region":null},
+    {"document_id":"api-key-incident-v1","document_family_key":"api-key-incident","effective_from":"2026-01-01T00:00:00Z","effective_until":null,"applicable_plan":null,"applicable_region":null},
+    {"document_id":"entitlement-changes-v1","document_family_key":"entitlement-changes","effective_from":"2026-01-01T00:00:00Z","effective_until":null,"applicable_plan":null,"applicable_region":null},
+    {"document_id":"incident-impact-analysis-v1","document_family_key":"incident-impact-analysis","effective_from":"2026-01-01T00:00:00Z","effective_until":null,"applicable_plan":null,"applicable_region":null}
+  ]
+}

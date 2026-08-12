@@ -1,0 +1,180 @@
+{
+  "contract_version": "supportguard-interview-v2-phase2-validation.v1",
+  "status": "passed_with_transport_limitation",
+  "recorded_at": "2026-08-11T18:32:05Z",
+  "candidate_sha": "774c0f3490ece7a9a12ea2cbdf336a1328f2ff6c",
+  "origin_main_sha": "774c0f3490ece7a9a12ea2cbdf336a1328f2ff6c",
+  "scope": "phase2-runtime-validation-package-boundary",
+  "source_identity": {
+    "git_tree": "4ff6f74d0a75e1bde76cae8398eb731e52fb8af7",
+    "worktree_state": "clean",
+    "source_file_count": 2657,
+    "source_state_digest": "f435858f8276c77c5dd14ed763c044689028b839528e9e62395dd2066eb5f0df",
+    "verified_after_execution": true
+  },
+  "results": {
+    "backend": {
+      "status": "passed",
+      "passed": 2086
+    },
+    "frontend": {
+      "status": "passed",
+      "passed": 76,
+      "lint": "passed",
+      "build": "passed"
+    },
+    "quality_and_security": {
+      "status": "passed",
+      "ruff": "passed",
+      "mypy_runtime_source_files": 174,
+      "mypy_validation_source_files": 77,
+      "security_boundary_services": 10,
+      "security_secret_variables": 5,
+      "pip_audit": "no_known_vulnerabilities"
+    },
+    "package_boundary": {
+      "status": "passed",
+      "runtime_wheel_record_count": 188,
+      "runtime_wheel_sha256": "bdbaea0b00e4e8f2eef60b0bafbf56311292f73961ea99c36b9e4848ea2614c6",
+      "validation_wheel_record_count": 81,
+      "validation_wheel_sha256": "5766e34568b453c4e947241dec1482b6cfcbf6eee4a618ecd87ee99cbc2bc75c",
+      "overlapping_record_count": 0,
+      "runtime_import_module_count": 174,
+      "runtime_import_edge_count": 2219,
+      "forbidden_validation_reachability_count": 0,
+      "runtime_cli_exposes_eval": false,
+      "clean_runtime_environment": "passed",
+      "runtime_plus_validation_environment": "passed"
+    },
+    "runtime_image": {
+      "status": "passed",
+      "image_id": "sha256:f38f6997feb7283aca0b291f80aea7c77bb5ef5fe28f57197f577d5f01594660",
+      "revision": "774c0f3490ece7a9a12ea2cbdf336a1328f2ff6c",
+      "physical_inventory": "passed",
+      "runtime_smoke": "passed",
+      "runtime_distribution_file_count": 193,
+      "runtime_cli_exposes_eval": false,
+      "validation_module_leak_count": 0
+    },
+    "compose": {
+      "status": "passed",
+      "service_count": 7,
+      "container_count": 8,
+      "worker_count": 2,
+      "mcp_child_process_count": 4,
+      "embedding_contract": "cohesive",
+      "knowledge_index_version": "kb-7b55fd599b483ae4"
+    },
+    "live_mcp": {
+      "status": "passed",
+      "read_tool_count": 9,
+      "read_schema_hash": "55d4af013b70b2ed46a10046c63c8de888c455152e54dc5be4b05543706ca06c",
+      "action_tool_count": 4,
+      "action_schema_hash": "b7cb259ec67074b65e8bd3be252d5e7a9356ee2c8afe6abc9c71603eee77bfea",
+      "inert_read_rejected": true,
+      "inert_action_rejected": true,
+      "runtime_execute_discovered": false
+    },
+    "cleanup": {
+      "status": "passed",
+      "compose_container_residual_count": 0,
+      "compose_network_residual_count": 0,
+      "compose_volume_residual_count": 0,
+      "mcp_child_process_residual_count": 0,
+      "owned_builder_residual_count": 0,
+      "temporary_image_residual_count": 0
+    }
+  },
+  "transport": {
+    "dockerfile_default_uv_image": "ghcr.io/astral-sh/uv@sha256:4f5d923c9dcea037f57bda425dd209f3ec643da2f0b74227f68d09dab0b3bb36",
+    "default_attempt": {
+      "status": "externally_inconclusive",
+      "failure_classification": "tls_timeout",
+      "affected_endpoints": [
+        "ghcr.io",
+        "PyPI package transport"
+      ],
+      "default_pinned_ghcr_transport_directly_verified": false
+    },
+    "validation_override": {
+      "build_argument": "UV_IMAGE",
+      "source": "Astral uv GitHub Release",
+      "version": "0.11.2",
+      "asset": "uv-aarch64-unknown-linux-gnu.tar.gz",
+      "asset_sha256": "04792cac761c4a6ba78267f36f2af541b7f92196d42ac55d21d3ff6b0f5ab6a5",
+      "transport_only_override": true
+    },
+    "claims": {
+      "dockerfile_logic_except_default_uv_transport_verified": true,
+      "final_runtime_image_verified": true,
+      "default_pinned_ghcr_transport_verified": false
+    }
+  },
+  "hosted_ci": {
+    "status": "completed",
+    "classification": "external_zero_step_blocker",
+    "run_id": 31520751057,
+    "run_url": "https://github.com/Teddy-creator/SupportGuard/actions/runs/31520751057",
+    "job_count": 5,
+    "total_step_count": 0,
+    "recorder_exit_code": 2,
+    "hosted_execution_started": false,
+    "local_execution_used_as_substitute": false,
+    "release_blocker": true
+  },
+  "artifacts": [
+    {
+      "path": "dist/phase2/package-boundary-774c0f3490ece7a9a12ea2cbdf336a1328f2ff6c.json",
+      "persistence": "local_dist",
+      "sha256": "c422fe2c0e24388ae0132480d68ed9bd88d4b18e3d36afceb22ca0bf136e4bfb"
+    },
+    {
+      "path": "/tmp/sg-v20-phase2-image-inventory-774c0f3490ece7a9a12ea2cbdf336a1328f2ff6c.json",
+      "persistence": "external_ephemeral",
+      "sha256": "804e50de3037a92f1cf4f33c77801948576b1dc8e0251f7ea4ce4d7becc2af9e"
+    },
+    {
+      "path": "/tmp/sg-v20-phase2-image-smoke-774c0f3490ece7a9a12ea2cbdf336a1328f2ff6c.json",
+      "persistence": "external_ephemeral",
+      "sha256": "fd62704834e2cb0c56d23a8d44f638605e29f9a12c59f09966f23eec5f557602"
+    },
+    {
+      "path": "/tmp/sg-v20-phase2-compose-verify-774c0f3490ece7a9a12ea2cbdf336a1328f2ff6c.json",
+      "persistence": "external_ephemeral",
+      "sha256": "4a81dac657633e517311d9877b72c691988c93404b3cc3317750989abf69894c"
+    },
+    {
+      "path": "/tmp/sg-v20-phase2-compose-ps-774c0f3490ece7a9a12ea2cbdf336a1328f2ff6c.jsonl",
+      "persistence": "external_ephemeral",
+      "sha256": "7f0373f5bee0b1396fdb6d66e7c03c3164efef99e8651402759ca81daef7c128"
+    },
+    {
+      "path": "/tmp/sg-v20-phase2-mcp-live-774c0f3490ece7a9a12ea2cbdf336a1328f2ff6c.json",
+      "persistence": "external_ephemeral",
+      "sha256": "23f5322f9620ed9df0cb57afde9ee41caa9c28535a7d23ea017fd31b9f8d9265"
+    },
+    {
+      "path": "/tmp/sg-v20-phase2-image-cleanup.txt",
+      "persistence": "external_ephemeral",
+      "sha256": "69292bbc8e8366b5236b431f892d4804de83aea84eb2d7f7e758315b9a8f8492"
+    },
+    {
+      "path": "/tmp/sg-v20-phase2-hosted-ci-774c0f3490ece7a9a12ea2cbdf336a1328f2ff6c.json",
+      "persistence": "external_ephemeral",
+      "sha256": "6ce08adc141ee5afea9768b2fb5f0b72ef453a56ae2151fd061b6b113c9d5942"
+    }
+  ],
+  "claims": {
+    "phase2_complete": true,
+    "phase3_authorized_to_continue": true,
+    "hosted_ci_green": false,
+    "phase1_hosted_external_blocker_preserved": true,
+    "phase7_complete": false,
+    "human_acceptance_complete": false,
+    "final_definition_of_done_complete": false,
+    "ie_p16_executed": false,
+    "ie_j12_executed": false,
+    "evaluation_v6_holdout_accessed": false,
+    "cross_encoder_executed": false
+  }
+}

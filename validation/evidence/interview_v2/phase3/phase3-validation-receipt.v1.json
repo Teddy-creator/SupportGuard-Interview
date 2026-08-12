@@ -1,0 +1,129 @@
+{
+  "contract_version": "supportguard-interview-v2-phase3-validation.v1",
+  "status": "passed_with_hosted_ci_external_blocker",
+  "candidate_sha": "95a47f1932ea763045bd28dec8fe7877e9f2f147",
+  "origin_main_sha": "95a47f1932ea763045bd28dec8fe7877e9f2f147",
+  "candidate_tree_sha": "61975bec3da27c4b3223a32f93e1ca9e2f0fbfd5",
+  "scope": "phase3-schema-and-application-boundary",
+  "source_identity": {
+    "head_equals_origin_main": true,
+    "worktree_state": "clean",
+    "verified_before_evidence_closure": true
+  },
+  "results": {
+    "schema_equivalence": {
+      "status": "passed",
+      "section_count": 18,
+      "matching_section_count": 18,
+      "legacy_record_count": 3377,
+      "baseline_record_count": 3377,
+      "allowed_difference_count": 0,
+      "blocking_difference_count": 0,
+      "legacy_revision": "b207c0a1d001",
+      "baseline_revision": "i200_baseline_0001"
+    },
+    "legacy_rejection": {
+      "status": "passed",
+      "classification": "rejected_before_ddl",
+      "error_code": "interview_baseline_legacy_database_rejected",
+      "database_unchanged": true,
+      "revision_before": "b207c0a1d001",
+      "revision_after": "b207c0a1d001",
+      "record_count_before": 3377,
+      "record_count_after": 3377
+    },
+    "seed_and_reset": {
+      "status": "passed",
+      "seed_version": "interview-seed.v1",
+      "seed_contract_sha256": "1f989004708591baa6949362e904516dd378551f12fd01db1766cc546e10230a",
+      "repeat_semantics_equal": true,
+      "reset_executed": true,
+      "reset_mode": "drop_and_recreate_invocation_owned_database",
+      "reset_semantics_equal": true,
+      "ordinary_seed_preserves_business_state": true,
+      "clean_demo_contract": "passed"
+    },
+    "current_integration": {
+      "status": "passed",
+      "passed": 298,
+      "total": 298,
+      "source_dirty": false,
+      "source_state_sha256": "47bdab4da5cda1a6939fe28d15686c87518230a5424e731c531bb5e358712e13",
+      "historical_partitions_excluded": 33,
+      "dedicated_partitions_excluded": 1,
+      "database_disposition": "dropped"
+    },
+    "mcp": {
+      "status": "passed",
+      "hermetic_passed": 6,
+      "hermetic_total": 6,
+      "postgresql_passed": 10,
+      "postgresql_total": 10,
+      "failed": 0,
+      "skipped": 0,
+      "orphan_process_count": 0,
+      "manifest_sha256": "5a44a07633939904eeceb41977806b3cbdbdf3f02144fab35fdf4b4ed73a081a"
+    },
+    "deterministic_contracts": {
+      "status": "passed",
+      "passed": 54,
+      "ruff": "passed",
+      "mypy_runtime_source_files": 190,
+      "mypy_validation_source_files": 79
+    },
+    "cleanup": {
+      "status": "passed",
+      "created_database_count": 2,
+      "dropped_database_count": 2,
+      "drop_operations_succeeded": 2,
+      "remaining_database_count": 0,
+      "invocation_owned_postgresql_container_removed_with_volumes": true,
+      "invocation_owned_redis_container_removed_with_volumes": true,
+      "named_postgresql_volume_removed": true,
+      "anonymous_redis_volume_removed": true,
+      "label_matched_container_residual_count": 0,
+      "label_matched_network_residual_count": 0,
+      "label_matched_volume_residual_count": 0,
+      "postgresql_port_55433_listener_count": 0,
+      "redis_port_56379_listener_count": 0,
+      "mcp_or_runner_child_process_residual_count": 0
+    }
+  },
+  "hosted_ci": {
+    "receipt": "validation/evidence/interview_v2/phase3/hosted-ci-receipt.v1.json",
+    "receipt_sha256": "ce4d3c206bbe012ba7f1fb2b768deb4392a6de32463c581b6e2bcd52dca5e8da",
+    "raw_artifact": "dist/phase3/hosted-ci-95a47f1932ea763045bd28dec8fe7877e9f2f147.json",
+    "raw_artifact_sha256": "9077ed494ca374665d65b14b89a6dd5ea23eafe0b318b769657736e7f5b2cbc3",
+    "run_id": 31538133178,
+    "run_url": "https://github.com/Teddy-creator/SupportGuard/actions/runs/31538133178",
+    "classification": "external_zero_step_blocker",
+    "job_count": 5,
+    "total_step_count": 0,
+    "recorder_exit_code": 2,
+    "hosted_execution_started": false,
+    "local_execution_used_as_substitute": false,
+    "release_blocker": true
+  },
+  "artifacts": [
+    {
+      "path": "dist/phase3/baseline-schema-95a47f1932ea763045bd28dec8fe7877e9f2f147.json",
+      "persistence": "local_dist",
+      "sha256": "d57a8ff70375004ab39d90d8697f0dd415ed9de21614d2391d8d79990299f7e1"
+    }
+  ],
+  "claims": {
+    "phase3_complete": true,
+    "phase4_authorized_to_continue": true,
+    "hosted_ci_green": false,
+    "hosted_ci_external_blocker_preserved": true,
+    "phase7_complete": false,
+    "human_acceptance_complete": false,
+    "final_definition_of_done_complete": false,
+    "rag_dev30_executed": false,
+    "ie_f06_executed": false,
+    "ie_p16_executed": false,
+    "ie_j12_executed": false,
+    "evaluation_v6_holdout_accessed": false,
+    "cross_encoder_executed": false
+  }
+}

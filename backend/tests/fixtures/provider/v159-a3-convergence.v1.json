@@ -1,0 +1,68 @@
+{
+  "schema_version": "v159-a3-convergence.v1",
+  "classification": "deterministic_transcript_characterization_not_provider_replay",
+  "source_failure": {
+    "candidate_sha": "1a4a0c31093f93c9bbbaaa31e22be321937890ca",
+    "invocation_id": "rpa155_20260725T125311Z_a44108d0",
+    "flow_id": "RP155-A3",
+    "public_failure_snapshot_sha256": "a3c615dd592f856eb63264dc58cbbec65b1fe1898b2d69c76f423b7722f05f02",
+    "raw_receipt_sha256": "c775f8dcfc970f8d5e1d8b6402580b68fb5af5cf09ce4e3981afef40d5b06b04",
+    "journal_sha256": "4ff0ec11a2f8c8a6a28023018b1ecc24cd40feada6ea575844e43246d37a7e6b"
+  },
+  "action_type": "api_key_revocation",
+  "admission": {
+    "resource_ref_present": true,
+    "secret_material_present": false
+  },
+  "tool_rounds": [
+    {
+      "ordinal": 1,
+      "calls": [
+        {
+          "tool_name": "query_api_key_metadata",
+          "obligation": "current_resource"
+        },
+        {
+          "tool_name": "search_knowledge",
+          "obligation": "current_policy"
+        }
+      ],
+      "observation_statuses": [
+        "succeeded",
+        "succeeded"
+      ]
+    },
+    {
+      "ordinal": 2,
+      "calls": [
+        {
+          "tool_name": "search_knowledge",
+          "obligation": "current_policy"
+        },
+        {
+          "tool_name": "query_api_key_metadata",
+          "obligation": "current_resource"
+        }
+      ],
+      "observation_statuses": [
+        "succeeded",
+        "succeeded"
+      ]
+    }
+  ],
+  "observed_pre_fix_terminal": {
+    "finish_reason": "llm_call_budget_exhausted",
+    "proposal_count": 0,
+    "approval_count": 0,
+    "runtime_action_count": 0,
+    "resource_status": "active"
+  },
+  "required_post_fix_invariants": {
+    "first_successful_resource_observation_is_reused": true,
+    "first_read_qualified_policy_observation_is_reused": true,
+    "second_round_semantic_duplicates_do_not_enter_mcp_transport": true,
+    "all_reads_qualified_routes_to_tools_empty_synthesis": true,
+    "durable_proposal_count_max": 1,
+    "runtime_action_before_human_decision": 0
+  }
+}

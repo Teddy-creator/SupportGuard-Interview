@@ -1,0 +1,255 @@
+x-logging: &local-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+x-backend: &backend
+  image: ${BACKEND_IMAGE:-supportguard-backend:local}
+  environment: &backend-environment
+    APP_ENV: ${APP_ENV:-development}
+    AUTH_MODE: ${AUTH_MODE:-development}
+    CODE_VERSION: ${CODE_VERSION:-development}
+    OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+    EMBEDDING_MODE: ${EMBEDDING_MODE:-e5}
+    EMBEDDING_MODEL: ${EMBEDDING_MODEL:-intfloat/multilingual-e5-small}
+    EMBEDDING_REVISION: ${EMBEDDING_REVISION:-614241f622f53c4eeff9890bdc4f31cfecc418b3}
+  logging: *local-logging
+  init: true
+  read_only: true
+  tmpfs:
+    - /tmp:size=64m,mode=1777
+  security_opt:
+    - no-new-privileges:true
+  cap_drop:
+    - ALL
+  restart: unless-stopped
+  depends_on:
+    migrate:
+      condition: service_completed_successfully
+    bootstrap-demo:
+      condition: service_completed_successfully
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_DB: supportguard
+      POSTGRES_USER: supportguard
+      POSTGRES_PASSWORD: supportguard
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U supportguard -d supportguard"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+    ports:
+      - "127.0.0.1:${POSTGRES_HOST_PORT:-5432}:5432"
+    logging: *local-logging
+    volumes:
+      - supportguard-postgres:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7.4-alpine
+    command: ["redis-server", "--appendonly", "yes", "--save", "", "--aclfile", "/usr/local/etc/redis/users.acl"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "--user", "maintenance", "--pass", "maintenance_dev", "ping"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+    ports:
+      - "127.0.0.1:${REDIS_HOST_PORT:-6379}:6379"
+    logging: *local-logging
+    volumes:
+      - supportguard-redis:/data
+      - ./ops/redis-users.acl:/usr/local/etc/redis/users.acl:ro
+
+  migrate:
+    <<: *backend
+    restart: "no"
+    command: ["supportguard", "db", "baseline-upgrade"]
+    environment:
+      <<: *backend-environment
+      DATABASE_URL: postgresql+asyncpg://supportguard_migrator:${MIGRATOR_DATABASE_PASSWORD:-supportguard_migrator}@postgres:5432/supportguard
+    depends_on:
+      role-bootstrap:
+        condition: service_completed_successfully
+
+  role-bootstrap:
+    <<: *backend
+    restart: "no"
+    command: ["supportguard", "db", "bootstrap-interview-roles"]
+    environment:
+      <<: *backend-environment
+      DATABASE_URL: postgresql+asyncpg://supportguard:supportguard@postgres:5432/supportguard
+      MIGRATOR_DATABASE_PASSWORD: ${MIGRATOR_DATABASE_PASSWORD:-supportguard_migrator}
+      API_DATABASE_PASSWORD: ${API_DATABASE_PASSWORD:-supportguard_api}
+      DISPATCHER_DATABASE_PASSWORD: ${DISPATCHER_DATABASE_PASSWORD:-supportguard_dispatcher}
+      RECONCILER_DATABASE_PASSWORD: ${RECONCILER_DATABASE_PASSWORD:-supportguard_reconciler}
+      WORKER_DATABASE_PASSWORD: ${WORKER_DATABASE_PASSWORD:-supportguard_worker}
+      READ_MCP_DATABASE_PASSWORD: ${READ_MCP_DATABASE_PASSWORD:-supportguard_read_mcp}
+      ACTION_MCP_DATABASE_PASSWORD: ${ACTION_MCP_DATABASE_PASSWORD:-supportguard_action_mcp}
+      BOOTSTRAP_DATABASE_PASSWORD: ${BOOTSTRAP_DATABASE_PASSWORD:-supportguard_bootstrap}
+      MAINTENANCE_DATABASE_PASSWORD: ${MAINTENANCE_DATABASE_PASSWORD:-supportguard_maintenance}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  bootstrap-demo:
+    <<: *backend
+    restart: "no"
+    command: ["sh", "-c", "supportguard db seed && supportguard knowledge ingest $${KNOWLEDGE_INGEST_ARGS:-}"]
+    environment:
+      <<: *backend-environment
+      DATABASE_URL: postgresql+asyncpg://supportguard_bootstrap:${BOOTSTRAP_DATABASE_PASSWORD:-supportguard_bootstrap}@postgres:5432/supportguard
+      KNOWLEDGE_INGEST_ARGS: ${KNOWLEDGE_INGEST_ARGS:-}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  api:
+    <<: *backend
+    # The API owns the single shared Backend image build. Every one-shot and
+    # runtime Backend service references the same tag without exporting it again.
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+      args:
+        PYTHON_BASE_IMAGE: ${PYTHON_BASE_IMAGE:-python:3.11-slim}
+        CODE_VERSION: ${CODE_VERSION:-development}
+    command: ["supportguard", "serve"]
+    environment:
+      <<: *backend-environment
+      APP_HOST: 0.0.0.0
+      APP_SECRET_KEY: ${APP_SECRET_KEY:-compose-development-secret-change-me}
+      INTERNAL_API_TOKEN: ${INTERNAL_API_TOKEN:-compose-internal-health-token}
+      DEMO_FAKE_PROVIDER: ${DEMO_FAKE_PROVIDER:-false}
+      ASYNC_RUNTIME_ENABLED: "true"
+      DATABASE_URL: postgresql+asyncpg://supportguard_api:${API_DATABASE_PASSWORD:-supportguard_api}@postgres:5432/supportguard
+      REDIS_URL: redis://api:api_dev@redis:6379/0
+      TENANT_COMMANDS_PER_MINUTE: ${TENANT_COMMANDS_PER_MINUTE:-60}
+      PRINCIPAL_COMMANDS_PER_MINUTE: ${PRINCIPAL_COMMANDS_PER_MINUTE:-20}
+      FALLBACK_COMMANDS_PER_MINUTE: ${FALLBACK_COMMANDS_PER_MINUTE:-10}
+      MAX_DURABLE_BACKLOG: ${MAX_DURABLE_BACKLOG:-500}
+    ports:
+      - "127.0.0.1:${API_HOST_PORT:-8000}:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health/ready', timeout=2)"]
+      interval: 5s
+      timeout: 3s
+      retries: 24
+      start_period: 20s
+
+  dispatcher:
+    <<: *backend
+    command: ["supportguard", "runtime", "dispatcher"]
+    environment:
+      <<: *backend-environment
+      DATABASE_URL: postgresql+asyncpg://supportguard_dispatcher:${DISPATCHER_DATABASE_PASSWORD:-supportguard_dispatcher}@postgres:5432/supportguard
+      REDIS_URL: redis://dispatcher:dispatcher_dev@redis:6379/0
+    depends_on:
+      bootstrap-demo:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-m", "supportguard.runtime_health", "--service", "dispatcher", "--instance", "dispatcher:local-instance"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  reconciler:
+    <<: *backend
+    command: ["supportguard", "runtime", "reconciler"]
+    environment:
+      <<: *backend-environment
+      DATABASE_URL: postgresql+asyncpg://supportguard_reconciler:${RECONCILER_DATABASE_PASSWORD:-supportguard_reconciler}@postgres:5432/supportguard
+      REDIS_URL: redis://reconciler:reconciler_dev@redis:6379/0
+    depends_on:
+      bootstrap-demo:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-m", "supportguard.runtime_health", "--service", "reconciler", "--instance", "reconciler:local-instance"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  worker:
+    <<: *backend
+    command: ["sh", "-c", "SERVICE_INSTANCE_ID=$$HOSTNAME exec supportguard runtime worker"]
+    environment:
+      <<: *backend-environment
+      DATABASE_URL: postgresql+asyncpg://supportguard_worker:${WORKER_DATABASE_PASSWORD:-supportguard_worker}@postgres:5432/supportguard
+      REDIS_URL: redis://worker:worker_dev@redis:6379/0
+      DEMO_FAKE_PROVIDER: ${DEMO_FAKE_PROVIDER:-false}
+      ASYNC_RUNTIME_ENABLED: "true"
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
+      MCP_READ_DATABASE_URL: postgresql+asyncpg://supportguard_read_mcp:${READ_MCP_DATABASE_PASSWORD:-supportguard_read_mcp}@postgres:5432/supportguard
+      MCP_ACTION_DATABASE_URL: postgresql+asyncpg://supportguard_action_mcp:${ACTION_MCP_DATABASE_PASSWORD:-supportguard_action_mcp}@postgres:5432/supportguard
+    stop_grace_period: 20s
+    depends_on:
+      bootstrap-demo:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "python -m supportguard.runtime_health --service worker --instance $$HOSTNAME"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  frontend:
+    image: ${FRONTEND_IMAGE:-supportguard-frontend:local}
+    build:
+      context: frontend
+      dockerfile: Dockerfile
+      args:
+        NODE_BASE_IMAGE: ${NODE_BASE_IMAGE:-node:22-alpine}
+        NGINX_BASE_IMAGE: ${NGINX_BASE_IMAGE:-nginxinc/nginx-unprivileged:1.27-alpine}
+        CODE_VERSION: ${CODE_VERSION:-development}
+    logging: *local-logging
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m,mode=1777
+      - /var/cache/nginx:size=16m
+      - /var/run:size=1m
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${FRONTEND_HOST_PORT:-5173}:8080"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib@sha256:125bdbeb7590cc1952c5b3430ecf14063568980c2c93d5b38676cc0446ed8108
+    profiles: ["observability"]
+    command: ["--config=/etc/otelcol/config.yaml"]
+    volumes:
+      - ./ops/otel-collector.yaml:/etc/otelcol/config.yaml:ro
+    logging: *local-logging
+    depends_on:
+      - tempo
+
+  tempo:
+    image: grafana/tempo@sha256:1ce31d6d7ffab62189685e8c47881d4a561c5d38bd0dbd66e40ca83cef07923d
+    profiles: ["observability"]
+    command: ["-config.file=/etc/tempo.yaml"]
+    volumes:
+      - ./ops/tempo.yaml:/etc/tempo.yaml:ro
+    logging: *local-logging
+    ports:
+      - "127.0.0.1:${TEMPO_HOST_PORT:-3200}:3200"
+
+volumes:
+  supportguard-postgres:
+  supportguard-redis:

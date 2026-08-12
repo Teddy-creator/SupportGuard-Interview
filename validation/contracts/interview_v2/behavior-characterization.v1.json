@@ -1,0 +1,256 @@
+{
+  "schema_version": "supportguard.interview_v2.behavior_characterization.v1",
+  "status": "approved_frozen_input",
+  "authority": {
+    "spec_path": "docs/interview-edition-simplification-v2.0.md",
+    "authority_commit": "110d65c854f7dc98e85e775dc6070ee46726b2be",
+    "runtime_baseline_commit": "6255c8c0eb0dcedd877bfbf16a9695dad2a0c9eb"
+  },
+  "baseline_observed": [
+    {
+      "id": "IE-BC01",
+      "subject": "bounded_agent_topology",
+      "facts": {
+        "langgraph_node_count": 19,
+        "max_tool_rounds": 2,
+        "max_tool_attempts": 6,
+        "contains_legacy_escalation_node": true
+      },
+      "evidence_nodes": [
+        "backend/tests/test_v16_structural_characterization.py::test_v16_agent_topology_and_budgets_are_characterized"
+      ],
+      "migration_rule": "Preserve the two-round six-attempt bounded Decision-Tool-Observation loop while removing the unreachable escalation capability and private forwarding shells."
+    },
+    {
+      "id": "IE-BC02",
+      "subject": "public_http_surface",
+      "facts": {
+        "path_count": 26,
+        "source": "FastAPI OpenAPI path and method projection"
+      },
+      "evidence_nodes": [
+        "backend/tests/test_v16_structural_characterization.py::test_v16_public_api_surface_is_characterized"
+      ],
+      "migration_rule": "Any v2 surface reduction or route consolidation must preserve customer message, conversation, approval, run, event, session and health contracts used by IE-J12."
+    },
+    {
+      "id": "IE-BC03",
+      "subject": "capability_ownership",
+      "facts": {
+        "capability_count": 16,
+        "model_visible_read_capability_count": 9,
+        "policy_only_proposal_capability_count": 4,
+        "runtime_only_mutation_capability_count": 3,
+        "legacy_escalation_capability_present": true
+      },
+      "evidence_nodes": [
+        "backend/tests/test_v16_structural_characterization.py::test_v16_capability_ownership_is_characterized"
+      ],
+      "migration_rule": "The v2 target is exactly nine read, three proposal and three runtime-only mutation capabilities; create_support_escalation is removed rather than reassigned."
+    },
+    {
+      "id": "IE-BC04",
+      "subject": "mcp_process_lifecycle",
+      "facts": {
+        "stdio_server_count": 2,
+        "server_roles": [
+          "read",
+          "proposal"
+        ],
+        "long_lived_sessions": true,
+        "bounded_reconnect": true,
+        "clean_shutdown_required": true
+      },
+      "evidence_nodes": [
+        "backend/tests/test_read_mcp.py::test_read_server_handshake_discovery_and_scoped_call",
+        "backend/tests/test_read_mcp.py::test_action_server_isolated_discovery_and_proposal_only",
+        "backend/tests/test_read_mcp.py::test_backend_manages_long_lived_mcp_sessions_and_clean_shutdown",
+        "backend/tests/test_read_mcp.py::test_retryable_stdio_process_loss_reaps_old_pid_and_rehandshakes"
+      ],
+      "migration_rule": "MCP file consolidation may not collapse the two process capabilities or weaken initialize, discovery, Schema Hash, reconnect, close and zero-orphan ownership."
+    },
+    {
+      "id": "IE-BC05",
+      "subject": "shared_action_pipeline",
+      "facts": {
+        "action_types": [
+          "refund",
+          "api_key_revocation",
+          "entitlement_change"
+        ],
+        "requires_independent_approval": true,
+        "runtime_effect_is_model_visible": false
+      },
+      "evidence_nodes": [
+        "backend/tests/test_v1213_identity_bound_e2e.py::test_three_actions_bind_exact_http_runtime_and_resource_effects",
+        "backend/tests/test_postgres_finalizer_faults.py::test_all_high_risk_interrupt_finalizers_publish_one_pending_approval"
+      ],
+      "migration_rule": "All three actions converge on one ActionSpec-Approval-RuntimeEffect pipeline without action-specific Graph branches."
+    },
+    {
+      "id": "IE-BC06",
+      "subject": "rag_and_citation_lineage",
+      "facts": {
+        "hybrid_retrieval": true,
+        "rrf_fusion": true,
+        "online_cross_encoder_enabled": false,
+        "citation_bound_to_canonical_publication": true,
+        "tool_invocation_and_observation_trace_required": true
+      },
+      "evidence_nodes": [
+        "backend/tests/test_v124_postgres_mcp_vertical.py::test_agent_search_trace_binds_exact_tool_invocation_and_full_decisions",
+        "backend/tests/test_v1512_citation_message_binding.py::test_citations_bind_only_to_the_canonical_answer_publication"
+      ],
+      "migration_rule": "Retrieval module movement may not detach selected evidence, supporting spans, source locators or citations from the exact scoped trace and answer publication."
+    },
+    {
+      "id": "IE-BC07",
+      "subject": "postgres_authority_and_redis_delivery",
+      "facts": {
+        "authoritative_store": "postgresql",
+        "delivery_store": "redis_streams",
+        "delivery_semantics": "at_least_once",
+        "redis_state_rebuildable_from_postgres": true
+      },
+      "evidence_nodes": [
+        "backend/tests/test_runtime_queue.py::test_real_redis_outbox_publish_and_inbox_delivery",
+        "backend/tests/test_runtime_queue.py::test_redis_flush_is_rebuilt_from_postgres_outbox"
+      ],
+      "migration_rule": "Runtime consolidation must keep PostgreSQL as business truth and prove Redis loss can be repaired from the durable Outbox without duplicate business effect."
+    },
+    {
+      "id": "IE-BC08",
+      "subject": "conversation_first_product_state",
+      "facts": {
+        "customer_and_approver_workspaces_are_distinct": true,
+        "composer_remains_available_while_approval_waits": true,
+        "archived_conversation_requires_explicit_restore": true,
+        "late_response_must_not_overwrite_newer_projection": true
+      },
+      "evidence_nodes": [
+        "frontend/src/App.test.tsx::preserves an unsent new-conversation draft when the mobile drawer returns to New",
+        "frontend/src/App.test.tsx::restores a turn, keeps the composer active while approval waits, and hides technical ids",
+        "frontend/src/App.test.tsx::hides the composer while archived and restores it after an explicit restore",
+        "frontend/src/App.test.tsx::keeps the newest projection when an older GET for the same conversation finishes late"
+      ],
+      "migration_rule": "Frontend state extraction must preserve route, query, stream, mutation and draft behavior rather than replacing it with static demo presentation."
+    }
+  ],
+  "preserved_public_contract": [
+    {
+      "requirement_id": "IE-PC01",
+      "name": "real_bounded_tool_use",
+      "assertions": [
+        "One explicit LangGraph Agent owns the run.",
+        "A Decision may select only injected read tools.",
+        "Every successful or failed tool result becomes a persisted Observation before replan or stop.",
+        "Tool rounds never exceed two and physical execution attempts never exceed six.",
+        "Repeated no-progress calls terminate."
+      ],
+      "current_test_nodes": [
+        "backend/tests/test_v16_structural_characterization.py::test_v16_agent_topology_and_budgets_are_characterized",
+        "backend/tests/test_read_mcp.py::test_graph_owned_stdio_rehandshake_occurs_between_two_physical_sends"
+      ]
+    },
+    {
+      "requirement_id": "IE-PC02",
+      "name": "deterministic_authorization_boundary",
+      "assertions": [
+        "The model can classify, select read tools and form typed candidates but cannot authorize mutation.",
+        "Proposal MCP is callable only by deterministic Policy.",
+        "Runtime effects require an independent human decision and transaction-time revalidation."
+      ],
+      "current_test_nodes": [
+        "backend/tests/test_agent_graph.py::test_model_schema_cannot_request_runtime_only_refund_execution",
+        "backend/tests/test_read_mcp.py::test_action_server_isolated_discovery_and_proposal_only",
+        "backend/tests/test_approvals.py::test_execution_revalidates_changed_billing_version"
+      ]
+    },
+    {
+      "requirement_id": "IE-PC03",
+      "name": "tenant_safe_observation_and_effect",
+      "assertions": [
+        "Trusted identity and tenant scope are not derived from message text or Provider output.",
+        "Read observations, proposals, approvals and effects remain tenant scoped.",
+        "Cross-tenant denial reveals no foreign resource existence and creates zero action."
+      ],
+      "current_test_nodes": [
+        "backend/tests/test_postgres_rls.py::test_postgres_rls_denies_unscoped_and_isolates_tenants",
+        "backend/tests/test_approval_commands.py::test_approval_command_does_not_disclose_cross_tenant_id"
+      ]
+    },
+    {
+      "requirement_id": "IE-PC04",
+      "name": "traceable_grounded_answer",
+      "assertions": [
+        "Every material knowledge claim binds to an eligible source locator and supporting span.",
+        "Every material current-fact claim binds to a fresh scoped Observation.",
+        "Conflict, expired evidence and unanswerable questions are refused or limited rather than invented."
+      ],
+      "current_test_nodes": [
+        "backend/tests/test_v1512_citation_message_binding.py::test_citations_bind_only_to_the_canonical_answer_publication",
+        "backend/tests/test_v151_evidence_freshness.py::test_stale_usage_cannot_support_a_current_429_claim_and_requests_replan"
+      ]
+    },
+    {
+      "requirement_id": "IE-PC05",
+      "name": "resumable_effect_once_action",
+      "assertions": [
+        "Approval Snapshot and selected revision are immutable audit facts.",
+        "Checkpoint resume does not reset Provider or tool budgets.",
+        "Idempotent replay, duplicate click and worker takeover produce at most one business effect."
+      ],
+      "current_test_nodes": [
+        "backend/tests/test_approval_commands.py::test_edit_and_approve_appends_revision_without_mutating_base_snapshot",
+        "backend/tests/test_attempt_ledger.py::test_checkpoint_resume_cannot_decrease_consumed_budget",
+        "backend/tests/test_v1512_runtime_action_binding_postgres.py::test_runtime_action_old_fence_and_exact_replay_are_effect_once"
+      ]
+    },
+    {
+      "requirement_id": "IE-PC06",
+      "name": "fail_closed_real_mode",
+      "assertions": [
+        "Missing Secret, Provider initialization failure, native Tool Calling failure and dependency failure cannot silently select Fake Provider.",
+        "Customer-visible failures are typed and redacted.",
+        "Failure creates no unauthorized proposal, approval or effect."
+      ],
+      "current_test_nodes": [
+        "backend/tests/test_v124_rag_contract.py::test_provider_initialization_failure_is_durable_and_never_falls_back",
+        "backend/tests/test_observability_logging.py::test_json_logging_recursively_redacts_args_extra_and_exception"
+      ]
+    },
+    {
+      "requirement_id": "IE-PC07",
+      "name": "non_authoritative_memory",
+      "assertions": [
+        "Memory stores bounded sourced history and never grants mutation authority.",
+        "Fresh scoped observations supersede older facts.",
+        "Current account, subscription, billing, key and incident truth is read from authoritative tools."
+      ],
+      "current_test_nodes": [
+        "backend/tests/test_memory_and_tickets.py::test_terminal_summary_contains_only_sourced_facts_and_scoped_history",
+        "backend/tests/test_memory_and_tickets.py::test_new_observation_supersedes_prior_fact_and_preserves_freshness"
+      ]
+    },
+    {
+      "requirement_id": "IE-PC08",
+      "name": "conversation_and_approver_product_separation",
+      "assertions": [
+        "Customers can continue the conversation while a proposal awaits approval.",
+        "Only the approver workspace exposes human decision controls.",
+        "Loading, Error and Empty states are distinct and stale responses cannot overwrite newer state."
+      ],
+      "current_test_nodes": [
+        "frontend/src/App.test.tsx::restores a turn, keeps the composer active while approval waits, and hides technical ids",
+        "frontend/src/App.test.tsx::keeps approval actions in the independent approver workspace",
+        "frontend/src/App.test.tsx::keeps the newest projection when an older GET for the same conversation finishes late"
+      ]
+    }
+  ],
+  "characterization_policy": {
+    "baseline_observed_is_not_final_target": true,
+    "private_method_or_exact_legacy_node_names_may_not_become_final_public_contract": true,
+    "preserved_public_contract_must_pass_before_and_after_pruning": true,
+    "historical_results_may_not_be_rewritten": true
+  }
+}

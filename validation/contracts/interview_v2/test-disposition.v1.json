@@ -1,0 +1,323 @@
+{
+  "schema_version": "supportguard.interview_v2.test_disposition.v1",
+  "status": "phase6_completed",
+  "authority": {
+    "spec_path": "docs/interview-edition-simplification-v2.0.md",
+    "behavior_characterization_path": "validation/contracts/interview_v2/behavior-characterization.v1.json",
+    "safety_manifest_path": "validation/contracts/interview_v2/safety-invariant-manifest.v1.json",
+    "archive_baseline_commit": "6255c8c0eb0dcedd877bfbf16a9695dad2a0c9eb",
+    "phase6_archive_source_commit": "328bc8606fdfbe50c9f3530646e72c1c21269c12",
+    "phase6_archive_manifest_path": "validation/evidence/interview_v2/phase6/archive-transition-manifest.v1.json",
+    "phase6_candidate_sha": "30254587585fa2169cab071a926c501e06dac9a6",
+    "phase6_candidate_tree": "199ca61783c5857cc95f83a468f1b80a5a313d81",
+    "phase6_validation_receipt_path": "validation/evidence/interview_v2/phase6/phase6-validation-receipt.v1.json"
+  },
+  "groups": [
+    {
+      "old_test_group": "legacy_v16_graph_topology",
+      "old_test_nodes": [
+        "backend/tests/test_v16_structural_characterization.py::test_v16_agent_topology_and_budgets_are_characterized"
+      ],
+      "requirement_ids": [
+        "IE-BC01",
+        "IE-PC01"
+      ],
+      "disposition": "replaced_by_new_contract",
+      "replacement_test_nodes": [
+        "backend/tests/test_phase4_graph_composition_contract.py::test_support_graph_contains_only_composition_and_run_entrypoint",
+        "backend/tests/test_phase4_graph_composition_contract.py::test_current_graph_has_one_generic_action_proposal_branch",
+        "backend/tests/test_phase4_decision_owner_contract.py::test_decision_owner_and_compatibility_facade_preserve_identity",
+        "backend/tests/test_phase4_tool_loop_owner_contract.py::test_tool_loop_owner_and_compatibility_facade_preserve_identity"
+      ],
+      "before_result": {
+        "status": "pass",
+        "candidate": "6255c8c0eb0dcedd877bfbf16a9695dad2a0c9eb",
+        "evidence_class": "archive_runtime_baseline"
+      },
+      "after_result": {
+        "old_test_current_workspace": "absent",
+        "old_test_archive_source": "git_recoverable",
+        "replacement_current_contract": "pass",
+        "historical_result_rewritten": false
+      }
+    },
+    {
+      "old_test_group": "legacy_v16_capability_ownership",
+      "old_test_nodes": [
+        "backend/tests/test_v16_structural_characterization.py::test_v16_capability_ownership_is_characterized"
+      ],
+      "requirement_ids": [
+        "IE-BC03",
+        "IE-PC02",
+        "IE-S03"
+      ],
+      "disposition": "replaced_by_new_contract",
+      "replacement_test_nodes": [
+        "backend/tests/test_phase4_mcp_runtime_contract.py::test_current_capability_owner_is_exactly_nine_three_three",
+        "backend/tests/test_phase4_mcp_runtime_contract.py::test_current_action_mcp_discovery_and_frozen_hash_are_exactly_three_tools",
+        "backend/tests/test_phase4_mcp_runtime_contract.py::test_forged_live_escalation_is_rejected_before_transport"
+      ],
+      "before_result": {
+        "status": "pass",
+        "candidate": "6255c8c0eb0dcedd877bfbf16a9695dad2a0c9eb",
+        "evidence_class": "archive_runtime_baseline"
+      },
+      "after_result": {
+        "old_test_current_workspace": "absent",
+        "old_test_archive_source": "git_recoverable",
+        "replacement_current_contract": "pass",
+        "historical_result_rewritten": false
+      }
+    },
+    {
+      "old_test_group": "legacy_v124_thirteen_tool_vertical",
+      "old_test_nodes": [
+        "backend/tests/test_v124_postgres_mcp_vertical.py::test_restricted_postgres_roles_call_all_thirteen_stdio_mcp_tools"
+      ],
+      "requirement_ids": [
+        "IE-BC03",
+        "IE-BC04",
+        "IE-S03",
+        "IE-S04"
+      ],
+      "disposition": "replaced_by_new_contract",
+      "replacement_test_nodes": [
+        "backend/tests/test_v124_postgres_mcp_vertical.py::test_current_restricted_postgres_roles_call_all_twelve_stdio_mcp_tools",
+        "backend/tests/test_phase4_escalation_retirement_postgres.py::test_three_current_action_proposals_complete_real_stdio_and_postgres",
+        "backend/tests/test_phase4_mcp_runtime_contract.py::test_current_action_mcp_discovery_and_frozen_hash_are_exactly_three_tools"
+      ],
+      "before_result": {
+        "status": "pass",
+        "candidate": "6255c8c0eb0dcedd877bfbf16a9695dad2a0c9eb",
+        "evidence_class": "archive_runtime_baseline"
+      },
+      "after_result": {
+        "old_test_current_workspace": "absent",
+        "old_test_archive_source": "git_recoverable",
+        "replacement_current_contract": "pass",
+        "historical_result_rewritten": false
+      }
+    },
+    {
+      "old_test_group": "legacy_v12_capability_cardinality",
+      "old_test_nodes": [
+        "backend/tests/test_v12_capability_contracts.py::test_v12_capability_sets_are_frozen_and_disjoint"
+      ],
+      "requirement_ids": [
+        "IE-BC03",
+        "IE-S03"
+      ],
+      "disposition": "replaced_by_new_contract",
+      "replacement_test_nodes": [
+        "backend/tests/test_phase4_mcp_runtime_contract.py::test_current_capability_owner_is_exactly_nine_three_three"
+      ],
+      "before_result": {
+        "status": "pass",
+        "candidate": "6255c8c0eb0dcedd877bfbf16a9695dad2a0c9eb",
+        "evidence_class": "archive_runtime_baseline"
+      },
+      "after_result": {
+        "old_test_current_workspace": "absent",
+        "old_test_archive_source": "git_recoverable",
+        "replacement_current_contract": "pass",
+        "historical_result_rewritten": false
+      }
+    },
+    {
+      "old_test_group": "legacy_v1512_escalation_node_defense",
+      "old_test_nodes": [
+        "backend/tests/test_v1512_graph_safe_convergence.py::test_v1512_escalation_node_is_a_zero_capability_defense"
+      ],
+      "requirement_ids": [
+        "IE-BC01",
+        "IE-S03"
+      ],
+      "disposition": "replaced_by_new_contract",
+      "replacement_test_nodes": [
+        "backend/tests/test_phase4_mcp_runtime_contract.py::test_current_graph_has_no_live_escalation_node_or_edge",
+        "backend/tests/test_phase4_mcp_runtime_contract.py::test_current_runtime_has_no_escalation_reservation_or_graph_adapter",
+        "backend/tests/test_phase4_policy_owner_contract.py::test_unsupported_handoff_is_bound_to_a_safe_publication"
+      ],
+      "before_result": {
+        "status": "pass",
+        "candidate": "6255c8c0eb0dcedd877bfbf16a9695dad2a0c9eb",
+        "evidence_class": "archive_runtime_baseline"
+      },
+      "after_result": {
+        "old_test_current_workspace": "absent",
+        "old_test_archive_source": "git_recoverable",
+        "replacement_current_contract": "pass",
+        "historical_result_rewritten": false
+      }
+    },
+    {
+      "old_test_group": "legacy_v16_public_api_surface",
+      "old_test_nodes": [
+        "backend/tests/test_v16_structural_characterization.py::test_v16_public_api_surface_is_characterized"
+      ],
+      "requirement_ids": [
+        "IE-BC02"
+      ],
+      "disposition": "replaced_by_new_contract",
+      "replacement_test_nodes": [
+        "backend/tests/test_phase4_accepted_message_contract.py::test_message_route_surface_is_unchanged",
+        "backend/tests/test_api.py::test_public_mutation_openapi_success_and_upgrade_contracts_are_exact"
+      ],
+      "before_result": {
+        "status": "pass",
+        "candidate": "6255c8c0eb0dcedd877bfbf16a9695dad2a0c9eb",
+        "evidence_class": "archive_runtime_baseline"
+      },
+      "after_result": {
+        "old_test_current_workspace": "absent",
+        "old_test_archive_source": "git_recoverable",
+        "replacement_current_contract": "pass",
+        "historical_result_rewritten": false
+      }
+    }
+  ],
+  "safety_keep_mappings": [
+    {
+      "old_test_group": "inherited_safety_IE-S01_model_authority",
+      "requirement_ids": ["IE-S01"],
+      "disposition": "keep",
+      "current_test_nodes": [
+        "backend/tests/test_agent_graph.py::test_model_schema_cannot_request_runtime_only_refund_execution",
+        "backend/tests/test_v1512_conversation_action_graph.py::test_action_state_provider_advice_cannot_grant_action_authority"
+      ]
+    },
+    {
+      "old_test_group": "inherited_safety_IE-S02_tenant_rls",
+      "requirement_ids": ["IE-S02"],
+      "disposition": "keep",
+      "current_test_nodes": [
+        "backend/tests/test_postgres_rls.py::test_postgres_rls_denies_unscoped_and_isolates_tenants",
+        "backend/tests/test_postgres_service_roles.py::test_runtime_logins_are_non_owner_non_superuser_and_rls_isolates",
+        "backend/tests/test_explicit_tenant_contract.py::test_trusted_principal_requires_an_explicit_tenant"
+      ]
+    },
+    {
+      "old_test_group": "inherited_safety_IE-S03_mcp_isolation",
+      "requirement_ids": ["IE-S03"],
+      "disposition": "keep",
+      "current_test_nodes": [
+        "backend/tests/test_phase4_mcp_runtime_contract.py::test_current_capability_owner_is_exactly_nine_three_three",
+        "backend/tests/test_read_mcp.py::test_read_server_handshake_discovery_and_scoped_call",
+        "backend/tests/test_read_mcp.py::test_action_server_isolated_discovery_and_proposal_only"
+      ]
+    },
+    {
+      "old_test_group": "inherited_safety_IE-S04_mcp_lifecycle",
+      "requirement_ids": ["IE-S04"],
+      "disposition": "keep",
+      "current_test_nodes": [
+        "backend/tests/test_read_mcp.py::test_backend_manages_long_lived_mcp_sessions_and_clean_shutdown",
+        "backend/tests/test_read_mcp.py::test_retryable_stdio_process_loss_reaps_old_pid_and_rehandshakes",
+        "backend/tests/test_read_mcp.py::test_real_pending_call_is_cancelled_before_exact_child_pids_exit",
+        "backend/tests/test_mcp_supervisor.py::test_supervisor_shutdown_cancels_and_drains_pending_calls"
+      ]
+    },
+    {
+      "old_test_group": "inherited_safety_IE-S05_hitl_snapshot",
+      "requirement_ids": ["IE-S05"],
+      "disposition": "keep",
+      "current_test_nodes": [
+        "backend/tests/test_postgres_finalizer_faults.py::test_all_high_risk_interrupt_finalizers_publish_one_pending_approval",
+        "backend/tests/test_approval_commands.py::test_edit_and_approve_appends_revision_without_mutating_base_snapshot",
+        "backend/tests/test_approval_commands.py::test_runtime_job_create_rejects_cross_scope_resume_approval"
+      ]
+    },
+    {
+      "old_test_group": "inherited_safety_IE-S06_transaction_revalidation",
+      "requirement_ids": ["IE-S06"],
+      "disposition": "keep",
+      "current_test_nodes": [
+        "backend/tests/test_approvals.py::test_execution_revalidates_changed_billing_version",
+        "backend/tests/test_approvals.py::test_edit_and_approve_changes_only_refund_reason_and_action_hash",
+        "backend/tests/test_postgres_finalizer_faults.py::test_finalizer_actual_ticket_head_conflict_commits_fail_closed_terminal"
+      ]
+    },
+    {
+      "old_test_group": "inherited_safety_IE-S07_idempotency_resume",
+      "requirement_ids": ["IE-S07"],
+      "disposition": "keep",
+      "current_test_nodes": [
+        "backend/tests/test_runtime_foundation.py::test_idempotency_same_hash_reuses_and_different_hash_conflicts",
+        "backend/tests/test_approvals.py::test_approved_refund_is_atomic_and_repeated_resume_is_idempotent",
+        "backend/tests/test_v125_idempotency_postgres.py::test_concurrent_same_key_claim_creates_exactly_one_resource_group"
+      ]
+    },
+    {
+      "old_test_group": "inherited_safety_IE-S08_lease_fence",
+      "requirement_ids": ["IE-S08"],
+      "disposition": "keep",
+      "current_test_nodes": [
+        "backend/tests/test_runtime_foundation.py::test_new_claim_increments_fence_and_rejects_old_writer",
+        "backend/tests/test_runtime_foundation.py::test_expired_lease_rejects_current_owner_and_token",
+        "backend/tests/test_segments.py::test_only_current_fence_can_finalize_private_checkpoint",
+        "backend/tests/test_segments.py::test_prepared_old_fence_never_becomes_canonical"
+      ]
+    },
+    {
+      "old_test_group": "inherited_safety_IE-S09_checkpoint_budget",
+      "requirement_ids": ["IE-S09"],
+      "disposition": "keep",
+      "current_test_nodes": [
+        "backend/tests/test_attempt_ledger.py::test_checkpoint_resume_cannot_decrease_consumed_budget",
+        "backend/tests/test_segments.py::test_checkpoint_written_recovery_runs_finalizer_only_without_new_attempts",
+        "backend/tests/test_v159_action_core.py::test_graph_rehydrates_v1_checkpoint_without_new_provider_or_tool_call"
+      ]
+    },
+    {
+      "old_test_group": "inherited_safety_IE-S10_effect_once",
+      "requirement_ids": ["IE-S10"],
+      "disposition": "keep",
+      "current_test_nodes": [
+        "backend/tests/test_v1512_runtime_action_binding_postgres.py::test_runtime_action_old_fence_and_exact_replay_are_effect_once",
+        "backend/tests/test_v1213_identity_bound_e2e.py::test_three_actions_bind_exact_http_runtime_and_resource_effects",
+        "backend/tests/test_postgres_finalizer_faults.py::test_v126_api_approval_capability_serializes_duplicate_decisions"
+      ]
+    },
+    {
+      "old_test_group": "inherited_safety_IE-S11_citation_lineage",
+      "requirement_ids": ["IE-S11"],
+      "disposition": "keep",
+      "current_test_nodes": [
+        "backend/tests/test_v1512_citation_message_binding.py::test_citations_bind_only_to_the_canonical_answer_publication",
+        "backend/tests/test_segments.py::test_draft_proposal_without_citation_lineage_never_becomes_actionable",
+        "backend/tests/test_v151_evidence_freshness.py::test_stale_usage_cannot_support_a_current_429_claim_and_requests_replan"
+      ]
+    },
+    {
+      "old_test_group": "inherited_safety_IE-S12_pii_secret_egress",
+      "requirement_ids": ["IE-S12"],
+      "disposition": "keep",
+      "current_test_nodes": [
+        "backend/tests/test_agent_graph.py::test_redaction_removes_email_and_key_before_provider",
+        "backend/tests/test_observability_logging.py::test_json_logging_recursively_redacts_args_extra_and_exception",
+        "backend/tests/test_api.py::test_run_inspector_is_exactly_bound_and_redacts_runtime_internals"
+      ]
+    },
+    {
+      "old_test_group": "inherited_safety_IE-S13_provider_fail_closed",
+      "requirement_ids": ["IE-S13"],
+      "disposition": "keep",
+      "current_test_nodes": [
+        "backend/tests/test_v124_rag_contract.py::test_provider_initialization_failure_is_durable_and_never_falls_back",
+        "backend/tests/test_v151_provider_contract.py::test_deepseek_does_not_retry_authentication_failure",
+        "backend/tests/test_v151_provider_contract.py::test_deepseek_terminal_retry_failure_preserves_attempt_count_through_decide"
+      ]
+    },
+    {
+      "old_test_group": "inherited_safety_IE-S14_postgres_truth",
+      "requirement_ids": ["IE-S14"],
+      "disposition": "keep",
+      "current_test_nodes": [
+        "backend/tests/test_runtime_queue.py::test_real_redis_outbox_publish_and_inbox_delivery",
+        "backend/tests/test_runtime_queue.py::test_redis_flush_is_rebuilt_from_postgres_outbox",
+        "backend/tests/test_memory_and_tickets.py::test_terminal_summary_contains_only_sourced_facts_and_scoped_history",
+        "backend/tests/test_memory_and_tickets.py::test_new_observation_supersedes_prior_fact_and_preserves_freshness"
+      ]
+    }
+  ]
+}

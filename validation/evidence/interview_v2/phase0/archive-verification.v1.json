@@ -1,0 +1,23 @@
+{
+  "contract_version": "supportguard-interview-v2-archive-verification.v1",
+  "status": "passed",
+  "observed_at": "2026-08-11T13:23:34Z",
+  "archive_tag": "archive/interview-v2.0-baseline",
+  "remote": "origin",
+  "remote_url": "git@github.com:Teddy-creator/SupportGuard.git",
+  "transport": "ssh.github.com:443",
+  "remote_tag_object_sha": "d274ca18abe7c9c4c324a2d6caa7bbec0622f9b9",
+  "remote_peeled_commit_sha": "6255c8c0eb0dcedd877bfbf16a9695dad2a0c9eb",
+  "expected_commit_sha": "6255c8c0eb0dcedd877bfbf16a9695dad2a0c9eb",
+  "manifest_sha256": "6f620e39bbbc42f03744f603e8bb0dd7e6026bbbfbef2aab774544adcceda07f",
+  "restore_receipt": "validation/evidence/interview_v2/phase0/archive-restore-receipt.v1.json",
+  "restore_result": "pass",
+  "restore_worktree": "/tmp/supportguard-v2-restore-dry-run",
+  "restore_worktree_removed": true,
+  "restore_worktree_registry_matches": 0,
+  "notes": [
+    "Only the invocation-owned restore worktree was removed.",
+    "No global prune or unrelated worktree cleanup was performed.",
+    "The remote tag and peeled commit were verified with git ls-remote after push."
+  ]
+}

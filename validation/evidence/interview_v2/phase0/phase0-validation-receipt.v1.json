@@ -1,0 +1,85 @@
+{
+  "contract_version": "supportguard-interview-v2-phase0-validation.v1",
+  "status": "passed",
+  "verified_at": "2026-08-11T21:40:00+08:00",
+  "authority_commit": "110d65c854f7dc98e85e775dc6070ee46726b2be",
+  "archive_baseline_commit": "6255c8c0eb0dcedd877bfbf16a9695dad2a0c9eb",
+  "scope": "phase0-authority-reversibility-and-frozen-inputs",
+  "results": [
+    {
+      "command": "uv run python scripts/validate_interview_v2_phase0.py",
+      "result": "pass",
+      "summary": {
+        "archive_files": 2617,
+        "archive_restore": "pass",
+        "remote_archive_verification": "passed",
+        "code_map_entries": 12,
+        "owner_maps": 3,
+        "baseline_observations": 8,
+        "preserved_public_contracts": 8,
+        "safety_invariants": 14,
+        "frozen_ie_p16": 16,
+        "frozen_ie_f06": 6,
+        "frozen_ie_j12": 12,
+        "frozen_rag_dev": 30
+      }
+    },
+    {
+      "command": "uv run pytest backend/tests/test_interview_v2_phase0_contracts.py",
+      "result": "pass",
+      "passed": 1,
+      "failed": 0
+    },
+    {
+      "command": "frozen backend characterization selectors -m 'not postgres and not redis and not mcp'",
+      "result": "pass",
+      "passed": 32,
+      "deselected_external_partition": 19,
+      "failed": 0,
+      "note": "External PostgreSQL, Redis and MCP characterization remains part of later phase and final full verification; it is not represented as executed here."
+    },
+    {
+      "command": "pnpm --dir frontend test -- --run",
+      "result": "pass",
+      "test_files_passed": 5,
+      "passed": 60,
+      "failed": 0
+    },
+    {
+      "command": "uv run python scripts/validate_interview_docs.py",
+      "result": "pass",
+      "v20_activation": "phase0"
+    },
+    {
+      "command": "uv run ruff check scripts/archive_interview_v2.py scripts/validate_interview_v2_phase0.py backend/tests/test_interview_v2_phase0_contracts.py",
+      "result": "pass"
+    },
+    {
+      "command": "uv run mypy scripts/archive_interview_v2.py scripts/validate_interview_v2_phase0.py",
+      "result": "pass"
+    }
+  ],
+  "contract_sha256": {
+    "behavior_characterization": "e8c11dd05d82b1ebdf6ba627261aec612411752ea4eee15208de7b6385eabcda",
+    "candidate_identity_schema": "2b3c0739f0a9ebbe675ba63235bfb5795fb7fe65c3f74d3f17676aa75e806fc4",
+    "code_map_owner_dependency": "5f9f7b3c1bd05039409ea2a244f2a2cc305915e3616767cdae9b9a69f018f52d",
+    "ie_f06": "8cf149e20fc2977bcfa289335afba02167e28e4e8ff1722063c396b612c3422d",
+    "ie_j12": "648d93ca4974ff10b8cc4fadab510710b81157006c93ae2cdf2edfdb065589fc",
+    "ie_p16": "0e8f518da1b3418f79ff89940f77c0bef3078e7ef517dbe31ea07a9b349ca998",
+    "rag_dev30_contract": "24fbcc4d4ba0694ba0683b9ffb6527b1c5af9a848e3d4f1fc54451e6e02decae",
+    "rag_dev30_dataset": "28c652e71d15dac7a5382c219c9d6cadab117f13abf81a595d91f8b30614ac86",
+    "safety_invariant_manifest": "e562b55f5b614016a86dc0ce24354595c17e7163e0f0c7e5c39a37c28dbfda6a"
+  },
+  "prohibited_execution": {
+    "evaluation_v6_holdout_accessed": false,
+    "cross_encoder_executed": false,
+    "historical_gate_or_parity_executed": false,
+    "real_provider_executed": false
+  },
+  "claims": {
+    "phase0_complete": true,
+    "runtime_simplification_complete": false,
+    "current_candidate_verified": false,
+    "final_definition_of_done_complete": false
+  }
+}

@@ -1,0 +1,7 @@
+user default off
+user api on >api_dev ~supportguard:* &supportguard:* +ping +time +hmget +hset +pexpire +eval +subscribe +unsubscribe +acl|whoami +client|id
+user dispatcher on >dispatcher_dev ~supportguard:* +ping +xadd +acl|whoami +client|id
+user reconciler on >reconciler_dev ~supportguard:* +ping +xrange +xinfo +xpending +eval +acl|whoami +client|id
+user worker on >worker_dev ~supportguard:* &supportguard:* +ping +time +xgroup +xreadgroup +xack +xautoclaim +xpending +incr +pexpire +eval +zadd +zrem +zremrangebyscore +zcard +zscore +zrange +publish +acl|whoami +client|id
+user maintenance on >maintenance_dev ~supportguard:* +ping +xrange +xlen +xpending +xinfo +xdel +hgetall +hset +pexpire +eval +acl|whoami +client|id
+user integration on >integration_dev ~supportguard:test:* ~supportguard:retention:* +ping +xadd +xrange +xlen +xgroup +xreadgroup +xack +xautoclaim +xpending +xinfo +xdel +hgetall +hset +pexpire +pttl +del +eval +acl|whoami +client|id

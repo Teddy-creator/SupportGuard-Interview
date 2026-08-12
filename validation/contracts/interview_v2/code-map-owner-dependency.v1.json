@@ -1,0 +1,378 @@
+{
+  "schema_version": "supportguard.interview_v2.code_map_owner_dependency.v1",
+  "status": "approved_frozen_input",
+  "authority": {
+    "spec_path": "docs/interview-edition-simplification-v2.0.md",
+    "authority_commit": "110d65c854f7dc98e85e775dc6070ee46726b2be",
+    "archive_baseline_commit": "6255c8c0eb0dcedd877bfbf16a9695dad2a0c9eb"
+  },
+  "entry_count": 12,
+  "one_hop_dependency_limit": 2,
+  "entries": [
+    {
+      "id": "IE-CM01",
+      "ordinal": 1,
+      "target_entry_path": "backend/src/supportguard/api/messages.py",
+      "target_exists_at_authority_commit": false,
+      "current_owner_paths": [
+        "backend/src/supportguard/api/endpoints/conversations.py",
+        "backend/src/supportguard/services/commands.py",
+        "backend/src/supportguard/services/admission.py"
+      ],
+      "target_one_hop_dependencies": [
+        "backend/src/supportguard/api/contracts.py",
+        "backend/src/supportguard/services/admission.py"
+      ],
+      "owns": [
+        "accepted customer message contract",
+        "request idempotency boundary",
+        "conversation query entry"
+      ],
+      "must_not_own": [
+        "provider decision",
+        "business mutation authorization",
+        "runtime effect execution"
+      ]
+    },
+    {
+      "id": "IE-CM02",
+      "ordinal": 2,
+      "target_entry_path": "backend/src/supportguard/agent/graph.py",
+      "target_exists_at_authority_commit": true,
+      "current_owner_paths": [
+        "backend/src/supportguard/agent/graph.py"
+      ],
+      "target_one_hop_dependencies": [
+        "backend/src/supportguard/agent/decision.py",
+        "backend/src/supportguard/agent/tool_loop.py"
+      ],
+      "owns": [
+        "single LangGraph composition root",
+        "typed node and edge registration",
+        "bounded agent lifecycle"
+      ],
+      "must_not_own": [
+        "node implementation forwarding shells",
+        "SQL or MCP execution",
+        "business authorization"
+      ]
+    },
+    {
+      "id": "IE-CM03",
+      "ordinal": 3,
+      "target_entry_path": "backend/src/supportguard/agent/decision.py",
+      "target_exists_at_authority_commit": false,
+      "current_owner_paths": [
+        "backend/src/supportguard/agent/nodes/decision.py",
+        "backend/src/supportguard/agent/nodes/decision_support.py"
+      ],
+      "target_one_hop_dependencies": [
+        "backend/src/supportguard/providers/deepseek.py",
+        "backend/src/supportguard/agent/contracts.py"
+      ],
+      "owns": [
+        "native provider decision request",
+        "provider output schema validation",
+        "typed AgentDecision construction"
+      ],
+      "must_not_own": [
+        "tool transport execution",
+        "tenant authorization",
+        "action execution"
+      ]
+    },
+    {
+      "id": "IE-CM04",
+      "ordinal": 4,
+      "target_entry_path": "backend/src/supportguard/agent/tool_loop.py",
+      "target_exists_at_authority_commit": false,
+      "current_owner_paths": [
+        "backend/src/supportguard/agent/nodes/read_loop.py",
+        "backend/src/supportguard/agent/tool_policy.py",
+        "backend/src/supportguard/services/attempts.py",
+        "backend/src/supportguard/services/tool_ledger.py"
+      ],
+      "target_one_hop_dependencies": [
+        "backend/src/supportguard/mcp/runtime.py",
+        "backend/src/supportguard/services/tool_ledger.py"
+      ],
+      "owns": [
+        "read-tool allowlist enforcement",
+        "tool-round and transport-attempt budgets",
+        "Observation persistence and replan input"
+      ],
+      "must_not_own": [
+        "business authorization",
+        "proposal or runtime mutation",
+        "provider fallback policy"
+      ]
+    },
+    {
+      "id": "IE-CM05",
+      "ordinal": 5,
+      "target_entry_path": "backend/src/supportguard/agent/evidence.py",
+      "target_exists_at_authority_commit": true,
+      "current_owner_paths": [
+        "backend/src/supportguard/agent/evidence.py",
+        "backend/src/supportguard/agent/current_facts.py",
+        "backend/src/supportguard/rag/citations.py"
+      ],
+      "target_one_hop_dependencies": [
+        "backend/src/supportguard/agent/contracts.py",
+        "backend/src/supportguard/rag/citations.py"
+      ],
+      "owns": [
+        "evidence requirements",
+        "material claim validation",
+        "citation and current-fact binding"
+      ],
+      "must_not_own": [
+        "retrieval transport",
+        "action authorization",
+        "business effect"
+      ]
+    },
+    {
+      "id": "IE-CM06",
+      "ordinal": 6,
+      "target_entry_path": "backend/src/supportguard/agent/policy.py",
+      "target_exists_at_authority_commit": false,
+      "current_owner_paths": [
+        "backend/src/supportguard/agent/nodes/action_flow.py",
+        "backend/src/supportguard/policies/gate.py",
+        "backend/src/supportguard/agent/action_specs.py",
+        "backend/src/supportguard/agent/obligations.py"
+      ],
+      "target_one_hop_dependencies": [
+        "backend/src/supportguard/agent/evidence.py",
+        "backend/src/supportguard/actions/service.py"
+      ],
+      "owns": [
+        "pure deterministic publication policy",
+        "pure deterministic action admission policy",
+        "typed PolicyDecision"
+      ],
+      "must_not_own": [
+        "provider calls",
+        "SQL or MCP execution",
+        "mutation execution"
+      ]
+    },
+    {
+      "id": "IE-CM07",
+      "ordinal": 7,
+      "target_entry_path": "backend/src/supportguard/actions/service.py",
+      "target_exists_at_authority_commit": false,
+      "current_owner_paths": [
+        "backend/src/supportguard/services/actions.py",
+        "backend/src/supportguard/services/segment_approval.py",
+        "backend/src/supportguard/services/segment_finalization.py",
+        "backend/src/supportguard/approvals/coordinator.py",
+        "backend/src/supportguard/approvals/snapshot.py"
+      ],
+      "target_one_hop_dependencies": [
+        "backend/src/supportguard/approvals/snapshot.py",
+        "backend/src/supportguard/db/security_contract.py"
+      ],
+      "owns": [
+        "three typed ActionSpecs",
+        "proposal approval resume pipeline",
+        "transaction-revalidated effect-once finalization"
+      ],
+      "must_not_own": [
+        "provider decision",
+        "memory as current execution fact",
+        "unapproved effect"
+      ]
+    },
+    {
+      "id": "IE-CM08",
+      "ordinal": 8,
+      "target_entry_path": "backend/src/supportguard/rag/service.py",
+      "target_exists_at_authority_commit": true,
+      "current_owner_paths": [
+        "backend/src/supportguard/rag/service.py",
+        "backend/src/supportguard/rag/ranking.py",
+        "backend/src/supportguard/rag/repository.py",
+        "backend/src/supportguard/rag/temporal.py"
+      ],
+      "target_one_hop_dependencies": [
+        "backend/src/supportguard/rag/repository.py",
+        "backend/src/supportguard/rag/ranking.py"
+      ],
+      "owns": [
+        "hybrid retrieval and RRF fusion",
+        "scope temporal and authority eligibility",
+        "evidence selection and locator output"
+      ],
+      "must_not_own": [
+        "online Cross-Encoder by default",
+        "publication authorization",
+        "business mutation"
+      ]
+    },
+    {
+      "id": "IE-CM09",
+      "ordinal": 9,
+      "target_entry_path": "backend/src/supportguard/mcp/runtime.py",
+      "target_exists_at_authority_commit": false,
+      "current_owner_paths": [
+        "backend/src/supportguard/mcp/manager.py",
+        "backend/src/supportguard/mcp/client.py",
+        "backend/src/supportguard/mcp/process.py",
+        "backend/src/supportguard/mcp/read_server.py",
+        "backend/src/supportguard/mcp/action_server.py"
+      ],
+      "target_one_hop_dependencies": [
+        "backend/src/supportguard/mcp/client.py",
+        "backend/src/supportguard/tools/capabilities.py"
+      ],
+      "owns": [
+        "two long-lived stdio MCP sessions",
+        "initialize discovery and Schema Hash",
+        "timeout reconnect close and process ownership"
+      ],
+      "must_not_own": [
+        "model-selected proposal calls",
+        "runtime effect execution",
+        "business authorization"
+      ]
+    },
+    {
+      "id": "IE-CM10",
+      "ordinal": 10,
+      "target_entry_path": "backend/src/supportguard/runtime/worker.py",
+      "target_exists_at_authority_commit": false,
+      "current_owner_paths": [
+        "backend/src/supportguard/worker.py",
+        "backend/src/supportguard/services/runtime_queue.py",
+        "backend/src/supportguard/services/runtime_jobs.py",
+        "backend/src/supportguard/services/action_effect_reconciliation.py"
+      ],
+      "target_one_hop_dependencies": [
+        "backend/src/supportguard/runtime/delivery.py",
+        "backend/src/supportguard/runtime/finalizer.py"
+      ],
+      "owns": [
+        "Outbox and Redis delivery coordination",
+        "Lease Fence and worker takeover",
+        "agent run and runtime finalizer dispatch"
+      ],
+      "must_not_own": [
+        "Redis as authoritative business state",
+        "model authorization",
+        "unfenced writes"
+      ]
+    },
+    {
+      "id": "IE-CM11",
+      "ordinal": 11,
+      "target_entry_path": "backend/src/supportguard/db/security_contract.py",
+      "target_exists_at_authority_commit": false,
+      "current_owner_paths": [
+        "backend/src/supportguard/db/models.py",
+        "backend/src/supportguard/db/permissions.py",
+        "backend/src/supportguard/db/role_contract.py",
+        "backend/src/supportguard/db/reference_contract.py",
+        "backend/src/supportguard/db/scope.py"
+      ],
+      "target_one_hop_dependencies": [
+        "backend/src/supportguard/db/models.py",
+        "backend/src/supportguard/db/seed.py"
+      ],
+      "owns": [
+        "RLS Grant and capability contract",
+        "tenant and reference constraints",
+        "baseline schema and seed identity"
+      ],
+      "must_not_own": [
+        "request identity inferred from user text",
+        "application bypass of database policy",
+        "legacy in-place upgrade support"
+      ]
+    },
+    {
+      "id": "IE-CM12",
+      "ordinal": 12,
+      "target_entry_path": "frontend/src/App.tsx",
+      "target_exists_at_authority_commit": true,
+      "current_owner_paths": [
+        "frontend/src/App.tsx",
+        "frontend/src/pages/ConversationPage.tsx",
+        "frontend/src/pages/ApprovalPage.tsx"
+      ],
+      "target_one_hop_dependencies": [
+        "frontend/src/pages/ConversationPage.tsx",
+        "frontend/src/pages/ApprovalPage.tsx"
+      ],
+      "owns": [
+        "customer and approver route composition",
+        "role-aware product entry",
+        "conversation-first surface selection"
+      ],
+      "must_not_own": [
+        "domain state mutation",
+        "client-side authorization",
+        "duplicated page state machines"
+      ]
+    }
+  ],
+  "owner_maps": {
+    "demo_429": {
+      "ordinals": [1, 10, 2, 3, 4, 9, 8, 5, 6, 12],
+      "entry_ids": [
+        "IE-CM01",
+        "IE-CM10",
+        "IE-CM02",
+        "IE-CM03",
+        "IE-CM04",
+        "IE-CM09",
+        "IE-CM08",
+        "IE-CM05",
+        "IE-CM06",
+        "IE-CM12"
+      ]
+    },
+    "demo_duplicate_charge_refund": {
+      "ordinals": [1, 10, 2, 3, 4, 9, 8, 5, 6, 7, 11, 12],
+      "entry_ids": [
+        "IE-CM01",
+        "IE-CM10",
+        "IE-CM02",
+        "IE-CM03",
+        "IE-CM04",
+        "IE-CM09",
+        "IE-CM08",
+        "IE-CM05",
+        "IE-CM06",
+        "IE-CM07",
+        "IE-CM11",
+        "IE-CM12"
+      ]
+    },
+    "demo_cross_tenant_denial": {
+      "ordinals": [1, 10, 2, 3, 4, 9, 6, 11, 12],
+      "entry_ids": [
+        "IE-CM01",
+        "IE-CM10",
+        "IE-CM02",
+        "IE-CM03",
+        "IE-CM04",
+        "IE-CM09",
+        "IE-CM06",
+        "IE-CM11",
+        "IE-CM12"
+      ]
+    }
+  },
+  "complexity_contract": {
+    "mastered_core_target_nonblank_noncomment_loc": {
+      "minimum": 6000,
+      "maximum": 8000
+    },
+    "mastered_core_hard_maximum_nonblank_noncomment_loc": 12000,
+    "core_decision_function_hard_maximum_loc": 199,
+    "runtime_dependency_cycles": 0,
+    "duplicate_business_owners": 0
+  }
+}

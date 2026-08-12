@@ -1,0 +1,213 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.11"
+          enable-cache: true
+      - run: uv sync --frozen --all-packages --dev
+      - run: uv lock --check
+      - run: uv run ruff check backend validation/src
+      - run: uv run mypy backend/src
+      - run: MYPYPATH=backend/src:validation/src uv run mypy --namespace-packages --explicit-package-bases validation/src
+      - run: make phase2-package-boundary
+      - run: make public-mirror-verify
+      - run: uv run pytest -m "not mcp" --ignore-glob='backend/tests/test_eval*'
+      - run: uv run bandit -c pyproject.toml -r backend/src validation/src
+      - run: uv run python scripts/pip_audit_retry.py
+      - name: Current docs and public evaluation contracts
+        run: |
+          make docs-validate
+          make eval-validate
+          uv run pytest \
+            backend/tests/test_cli_status.py \
+            backend/tests/test_interview_docs.py \
+            backend/tests/test_phase6_archive_transition.py
+          uv run python scripts/security_boundaries.py
+
+  integration:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_DB: supportguard
+          POSTGRES_USER: supportguard
+          POSTGRES_PASSWORD: supportguard
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U supportguard -d supportguard"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+      redis:
+        image: redis:7.4-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      DATABASE_URL: postgresql+asyncpg://supportguard:supportguard@localhost:5432/supportguard
+      TEST_DATABASE_URL: postgresql+asyncpg://supportguard:supportguard@localhost:5432/supportguard
+      TEST_FINALIZER_DATABASE_URL: postgresql+asyncpg://supportguard:supportguard@localhost:5432/supportguard
+      TEST_WORKER_DATABASE_URL: postgresql+asyncpg://supportguard_worker:supportguard_worker@localhost:5432/supportguard
+      MCP_READ_DATABASE_URL: postgresql+asyncpg://supportguard_read_mcp:supportguard_read_mcp@localhost:5432/supportguard
+      MCP_ACTION_DATABASE_URL: postgresql+asyncpg://supportguard_action_mcp:supportguard_action_mcp@localhost:5432/supportguard
+      TEST_REDIS_URL: redis://integration:integration_dev@localhost:6379/0
+      TEST_WORKER_REDIS_URL: redis://worker:worker_dev@localhost:6379/0
+      TEST_RECONCILER_REDIS_URL: redis://reconciler:reconciler_dev@localhost:6379/0
+      TEST_API_REDIS_URL: redis://api:api_dev@localhost:6379/0
+      APP_ENV: test
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.11"
+          enable-cache: true
+      - run: uv sync --frozen --dev --extra local-embeddings
+      - run: uv run python scripts/configure_redis_acl.py
+      - run: uv run supportguard db bootstrap-interview-roles
+      - name: Empty database Interview baseline migration and schema drift
+        run: |
+          uv run supportguard db baseline-upgrade
+          uv run alembic -c alembic-interview.ini heads
+          uv run alembic -c alembic-interview.ini check
+      - run: uv run python scripts/run_isolated_integration.py integration
+      - run: make test-mcp
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: frontend/package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm test
+      - run: pnpm build
+
+  product-e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      APP_ENV: development
+      AUTH_MODE: development
+      DEMO_FAKE_PROVIDER: "true"
+      EMBEDDING_MODE: deterministic-fixture
+      TEST_DATABASE_URL: postgresql+asyncpg://supportguard:supportguard@localhost:5432/supportguard
+      PLAYWRIGHT_BASE_URL: http://127.0.0.1:5173
+      CI: "true"
+      COMPOSE_PROJECT_NAME: supportguard-ci-${{ github.run_id }}-${{ github.run_attempt }}
+      CODE_VERSION: ${{ github.sha }}
+      BACKEND_IMAGE: supportguard-backend:supportguard-ci-${{ github.run_id }}-${{ github.run_attempt }}
+      FRONTEND_IMAGE: supportguard-frontend:supportguard-ci-${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.11"
+          enable-cache: true
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: frontend/package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+      # Keep the frozen v1.2.14 one-line command manifest unchanged; this
+      # product-experience lane is a separately scoped acceptance carrier.
+      - name: Install backend dependencies
+        run: uv sync --frozen --dev
+      - name: Install frontend dependencies
+        run: pnpm --dir frontend install --frozen-lockfile
+      - name: Install Chromium
+        run: pnpm --dir frontend exec playwright install --with-deps chromium
+      - name: Verify current browser test discovery
+        run: uv run python scripts/validate_e2e_discovery.py
+      - name: Start product stack
+        run: |
+          uv run python scripts/demo_environment.py start \
+            --project "$COMPOSE_PROJECT_NAME" \
+            --build
+      - name: Verify product stack
+        run: make compose-verify
+      - name: Refresh deterministic demo facts
+        run: make demo-preflight DEMO_PROJECT="$COMPOSE_PROJECT_NAME"
+      - name: Run product browser acceptance
+        run: pnpm --dir frontend test:e2e
+      - name: Remove owned product project
+        if: always()
+        run: |
+          uv run python scripts/demo_environment.py teardown \
+            --project "$COMPOSE_PROJECT_NAME" \
+            --delete-volumes \
+            --confirm-project "$COMPOSE_PROJECT_NAME"
+      - name: Remove owned product builder, cache and images
+        if: always()
+        run: |
+          uv run python scripts/demo_environment.py cleanup-build \
+            --project "$COMPOSE_PROJECT_NAME" \
+            --confirm-project "$COMPOSE_PROJECT_NAME"
+
+  image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build wheel-only backend image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: backend/Dockerfile
+          push: false
+          load: true
+          tags: supportguard-backend:ci
+          build-args: CODE_VERSION=${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Verify backend runtime image boundary
+        run: |
+          python3 scripts/runtime_image_contract.py inventory \
+            --image supportguard-backend:ci \
+            --expected-revision "${{ github.sha }}"
+          python3 scripts/runtime_image_contract.py smoke \
+            --image supportguard-backend:ci
+      - uses: docker/build-push-action@v6
+        with:
+          context: frontend
+          file: frontend/Dockerfile
+          push: false
+          tags: supportguard-frontend:ci
+          build-args: CODE_VERSION=${{ github.sha }}

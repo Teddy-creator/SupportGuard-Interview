@@ -1,0 +1,173 @@
+{
+  "schema": "supportguard-mcp-process-owner-manifest.v1",
+  "owners": [
+    {
+      "node": "backend/tests/test_read_mcp.py::test_read_server_handshake_discovery_and_scoped_call",
+      "partition": "hermetic",
+      "database_class": "temporary-sqlite",
+      "role_class": "test-capability",
+      "children": {
+        "supportguard.mcp.read_server": 2,
+        "supportguard.mcp.action_server": 1
+      },
+      "minimum_calls": 13,
+      "requires_reconnect": false
+    },
+    {
+      "node": "backend/tests/test_read_mcp.py::test_action_server_isolated_discovery_and_proposal_only",
+      "partition": "hermetic",
+      "database_class": "temporary-sqlite",
+      "role_class": "test-capability",
+      "children": {"supportguard.mcp.action_server": 2},
+      "minimum_calls": 1,
+      "requires_reconnect": false
+    },
+    {
+      "node": "backend/tests/test_read_mcp.py::test_backend_manages_long_lived_mcp_sessions_and_clean_shutdown",
+      "partition": "hermetic",
+      "database_class": "temporary-sqlite",
+      "role_class": "test-capability",
+      "children": {
+        "supportguard.mcp.read_server": 1,
+        "supportguard.mcp.action_server": 1
+      },
+      "minimum_calls": 0,
+      "requires_reconnect": false
+    },
+    {
+      "node": "backend/tests/test_read_mcp.py::test_retryable_stdio_process_loss_reaps_old_pid_and_rehandshakes",
+      "partition": "hermetic",
+      "database_class": "temporary-sqlite",
+      "role_class": "test-capability",
+      "children": {
+        "supportguard.mcp.read_server": 2,
+        "supportguard.mcp.action_server": 1
+      },
+      "minimum_calls": 1,
+      "requires_reconnect": true
+    },
+    {
+      "node": "backend/tests/test_read_mcp.py::test_graph_owned_stdio_rehandshake_occurs_between_two_physical_sends",
+      "partition": "hermetic",
+      "database_class": "temporary-sqlite",
+      "role_class": "test-capability",
+      "children": {
+        "supportguard.mcp.read_server": 2,
+        "supportguard.mcp.action_server": 1
+      },
+      "minimum_calls": 1,
+      "requires_reconnect": true
+    },
+    {
+      "node": "backend/tests/test_read_mcp.py::test_real_pending_call_is_cancelled_before_exact_child_pids_exit",
+      "partition": "hermetic",
+      "database_class": "temporary-sqlite",
+      "role_class": "test-capability",
+      "children": {
+        "supportguard.mcp.read_server": 1,
+        "supportguard.mcp.action_server": 1
+      },
+      "minimum_calls": 0,
+      "requires_reconnect": false
+    },
+    {
+      "node": "backend/tests/test_phase4_escalation_retirement_postgres.py::test_three_current_action_proposals_complete_real_stdio_and_postgres",
+      "partition": "postgres",
+      "database_class": "compose-postgresql",
+      "role_class": "restricted-action",
+      "children": {"supportguard.mcp.action_server": 1},
+      "minimum_calls": 3,
+      "requires_reconnect": false
+    },
+    {
+      "node": "backend/tests/test_v1212_production_agent_vertical.py::test_public_http_to_restricted_mcp_agent_finalizer_vertical",
+      "partition": "postgres",
+      "database_class": "compose-postgresql-redis",
+      "role_class": "api-dispatcher-worker-restricted-mcp",
+      "children": {
+        "supportguard.mcp.read_server": 1,
+        "supportguard.mcp.action_server": 1
+      },
+      "minimum_calls": 3,
+      "requires_reconnect": false
+    },
+    {
+      "node": "backend/tests/test_v1213_identity_bound_e2e.py::test_three_actions_bind_exact_http_runtime_and_resource_effects",
+      "partition": "postgres",
+      "database_class": "compose-postgresql-redis",
+      "role_class": "api-dispatcher-worker-restricted-mcp",
+      "children": {
+        "supportguard.mcp.read_server": 1,
+        "supportguard.mcp.action_server": 1
+      },
+      "minimum_calls": 6,
+      "requires_reconnect": false
+    },
+    {
+      "node": "backend/tests/test_v124_postgres_mcp_vertical.py::test_current_restricted_postgres_roles_call_all_twelve_stdio_mcp_tools",
+      "partition": "postgres",
+      "database_class": "compose-postgresql",
+      "role_class": "restricted-read-and-action",
+      "children": {
+        "supportguard.mcp.read_server": 1,
+        "supportguard.mcp.action_server": 1
+      },
+      "minimum_calls": 12,
+      "requires_reconnect": false
+    },
+    {
+      "node": "backend/tests/test_v124_postgres_mcp_vertical.py::test_action_capabilities_serialize_concurrent_double_execution",
+      "partition": "postgres",
+      "database_class": "compose-postgresql",
+      "role_class": "restricted-action",
+      "children": {"supportguard.mcp.action_server": 6},
+      "minimum_calls": 6,
+      "requires_reconnect": false
+    },
+    {
+      "node": "backend/tests/test_v124_postgres_mcp_vertical.py::test_agent_search_trace_binds_exact_tool_invocation_and_full_decisions",
+      "partition": "postgres",
+      "database_class": "compose-postgresql",
+      "role_class": "restricted-read",
+      "children": {"supportguard.mcp.read_server": 1},
+      "minimum_calls": 1,
+      "requires_reconnect": false
+    },
+    {
+      "node": "backend/tests/test_v124_postgres_mcp_vertical.py::test_inactive_subscription_keeps_scoped_policy_search_readable",
+      "partition": "postgres",
+      "database_class": "compose-postgresql",
+      "role_class": "restricted-read",
+      "children": {"supportguard.mcp.read_server": 1},
+      "minimum_calls": 2,
+      "requires_reconnect": false
+    },
+    {
+      "node": "backend/tests/test_v124_postgres_mcp_vertical.py::test_restricted_missing_billing_record_is_a_domain_denial",
+      "partition": "postgres",
+      "database_class": "compose-postgresql",
+      "role_class": "restricted-read",
+      "children": {"supportguard.mcp.read_server": 1},
+      "minimum_calls": 1,
+      "requires_reconnect": false
+    },
+    {
+      "node": "backend/tests/test_v124_postgres_mcp_vertical.py::test_v158_read_mcp_compare_without_anchor_publishes_two_traced_groups",
+      "partition": "postgres",
+      "database_class": "compose-postgresql",
+      "role_class": "restricted-read",
+      "children": {"supportguard.mcp.read_server": 1},
+      "minimum_calls": 1,
+      "requires_reconnect": false
+    },
+    {
+      "node": "backend/tests/test_v124_postgres_mcp_vertical.py::test_contextual_historical_read_mcp_query_publishes_both_version_groups",
+      "partition": "postgres",
+      "database_class": "compose-postgresql",
+      "role_class": "restricted-read",
+      "children": {"supportguard.mcp.read_server": 1},
+      "minimum_calls": 1,
+      "requires_reconnect": false
+    }
+  ]
+}
