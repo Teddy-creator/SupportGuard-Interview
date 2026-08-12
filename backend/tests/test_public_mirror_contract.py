@@ -6,6 +6,11 @@ import yaml
 
 from supportguard.validation.public_mirror import validate_public_git_boundary
 
+PGVECTOR_IMAGE = (
+    "pgvector/pgvector@sha256:"
+    "1d533553fefe4f12e5d80c7b80622ba0c382abb5758856f52983d8789179f0fb"
+)
+
 
 def test_public_mirror_excludes_private_history_and_binds_source_snapshot() -> None:
     result = validate_public_git_boundary(Path.cwd())
@@ -33,3 +38,10 @@ def test_public_ci_runs_baseline_upgrade_as_the_migrator_role() -> None:
     assert migration["env"]["DATABASE_URL"].startswith(
         "postgresql+asyncpg://supportguard_migrator:supportguard_migrator@"
     )
+    assert integration["services"]["postgres"]["image"] == PGVECTOR_IMAGE
+
+
+def test_public_compose_pins_the_phase3_catalog_image() -> None:
+    compose = yaml.safe_load(Path("docker-compose.yml").read_text(encoding="utf-8"))
+
+    assert compose["services"]["postgres"]["image"] == PGVECTOR_IMAGE
