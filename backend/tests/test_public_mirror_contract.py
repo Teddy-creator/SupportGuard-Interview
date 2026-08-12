@@ -39,6 +39,8 @@ def test_public_ci_runs_baseline_upgrade_as_the_migrator_role() -> None:
         "postgresql+asyncpg://supportguard_migrator:supportguard_migrator@"
     )
     assert integration["services"]["postgres"]["image"] == PGVECTOR_IMAGE
+    assert migration["run"].count("supportguard db baseline-upgrade") == 2
+    assert "alembic -c alembic-interview.ini check" not in migration["run"]
 
 
 def test_public_compose_pins_the_phase3_catalog_image() -> None:

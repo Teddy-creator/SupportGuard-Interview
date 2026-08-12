@@ -1201,7 +1201,9 @@ describe("Conversation-first product experience", () => {
     fireEvent.click(
       await screen.findByRole("button", { name: /Aster Customer/ }),
     );
-    fireEvent.click(screen.getByRole("button", { name: "切换为审批者" }));
+    fireEvent.click(
+      await screen.findByRole("button", { name: "切换为审批者" }),
+    );
     expect(
       await screen.findByRole("heading", {
         name: "暂时无法打开 SupportGuard",
