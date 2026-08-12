@@ -64,6 +64,13 @@ def test_hosted_ci_success_requires_real_steps_and_exact_sha() -> None:
     }
 
 
+def test_hosted_ci_uses_the_authorized_public_mirror_repository() -> None:
+    module = _module()
+
+    assert module.PUBLIC_MIRROR_PROVENANCE.is_file()
+    assert module.REPOSITORY == "Teddy-creator/SupportGuard-Interview"
+
+
 def test_hosted_ci_zero_step_billing_failure_is_external_blocker() -> None:
     module = _module()
     receipt = module.normalize_run(

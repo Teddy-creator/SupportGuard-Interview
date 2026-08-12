@@ -14,7 +14,10 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 GH_BIN = shutil.which("gh") or "/usr/local/bin/gh"
-REPOSITORY = "Teddy-creator/SupportGuard"
+PRIVATE_REPOSITORY = "Teddy-creator/SupportGuard"
+PUBLIC_REPOSITORY = "Teddy-creator/SupportGuard-Interview"
+PUBLIC_MIRROR_PROVENANCE = ROOT / "public-mirror-provenance.v1.json"
+REPOSITORY = PUBLIC_REPOSITORY if PUBLIC_MIRROR_PROVENANCE.is_file() else PRIVATE_REPOSITORY
 WORKFLOW = "CI"
 BRANCH = "main"
 EXPECTED_JOBS = {"backend", "integration", "frontend", "product-e2e", "image"}
