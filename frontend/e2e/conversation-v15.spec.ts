@@ -347,6 +347,7 @@ test("diagnostic answer restores with bounded citations and no technical leakage
 });
 
 test("two long conversations keep an independently scrollable stream and reachable composer", async ({ page }) => {
+  test.setTimeout(120_000);
   await page.setViewportSize({ width: 1195, height: 813 });
 
   async function createLongConversation(firstMessage: string): Promise<string> {

@@ -167,6 +167,8 @@ jobs:
         run: make compose-verify
       - name: Refresh deterministic demo facts
         run: make demo-preflight DEMO_PROJECT="$COMPOSE_PROJECT_NAME"
+      - name: Refresh temporal facts immediately before browser acceptance
+        run: make demo-temporal-refresh DEMO_PROJECT="$COMPOSE_PROJECT_NAME"
       - name: Run product browser acceptance
         run: pnpm --dir frontend test:e2e
       - name: Upload browser failure diagnostics

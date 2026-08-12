@@ -1,4 +1,4 @@
-.PHONY: install dev dev-build dev-rebuild dev-backend dev-frontend demo-inventory demo-start demo-stop demo-reset demo-teardown demo-cleanup-image demo-cleanup-build cleanup-build demo-preflight e2e-discovery docs-validate phase2-package-boundary phase6-archive-verify public-mirror-verify test test-integration test-e2e test-faults lint typecheck security test-mcp-hermetic test-mcp-postgres test-mcp eval-validate load-test compose-verify db-up db-migrate db-seed db-down knowledge-ingest
+.PHONY: install dev dev-build dev-rebuild dev-backend dev-frontend demo-inventory demo-start demo-stop demo-reset demo-teardown demo-cleanup-image demo-cleanup-build cleanup-build demo-temporal-refresh demo-preflight e2e-discovery docs-validate phase2-package-boundary phase6-archive-verify public-mirror-verify test test-integration test-e2e test-faults lint typecheck security test-mcp-hermetic test-mcp-postgres test-mcp eval-validate load-test compose-verify db-up db-migrate db-seed db-down knowledge-ingest
 
 DEMO_PROJECT ?= supportguard-v15ui
 PHASE2_CANDIDATE_SHA ?= $(shell git rev-parse --verify HEAD)
@@ -58,8 +58,10 @@ demo-cleanup-build:
 
 cleanup-build: demo-cleanup-build
 
-demo-preflight:
+demo-temporal-refresh:
 	docker compose -p $(DEMO_PROJECT) run --rm --no-deps bootstrap-demo supportguard demo temporal-refresh --tenant tenant_demo
+
+demo-preflight: demo-temporal-refresh
 	docker compose -p $(DEMO_PROJECT) run --rm --no-deps bootstrap-demo supportguard demo temporal-preflight --tenant tenant_demo
 	docker compose -p $(DEMO_PROJECT) run --rm --no-deps worker supportguard demo resource-preflight --tenant tenant_demo
 
