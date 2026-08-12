@@ -322,6 +322,7 @@ def test_execute_boundary_builds_two_wheels_and_probes_both_clean_environments(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     invocations: list[tuple[str, tuple[str, ...]]] = []
+    sync_project_environments: list[str] = []
     temporary_roots: list[str] = []
 
     def run_checked(**kwargs: object) -> dict[str, object]:
@@ -344,7 +345,10 @@ def test_execute_boundary_builds_two_wheels_and_probes_both_clean_environments(
                 {"supportguard/validation/cli.py": b""},
                 dist_info="supportguard_validation-0.1.0.dist-info",
             )
-        elif name.startswith("create-"):
+        elif name.startswith("sync-"):
+            sync_project_environments.append(
+                str(kwargs["environment"]["UV_PROJECT_ENVIRONMENT"])  # type: ignore[index]
+            )
             venv = tmp_path / ("runtime-venv" if "runtime" in name else "validation-venv")
             (venv / "bin").mkdir(parents=True)
             for executable in ("python", "supportguard", "supportguard-validation"):
@@ -369,14 +373,18 @@ def test_execute_boundary_builds_two_wheels_and_probes_both_clean_environments(
     assert [name for name, _ in invocations] == [
         "build-runtime-wheel",
         "build-validation-wheel",
-        "create-runtime-venv",
-        "create-validation-venv",
+        "sync-runtime-dependencies",
+        "sync-validation-dependencies",
         "install-runtime-wheel",
         "install-runtime-and-validation-wheels",
     ]
     for name, argv in invocations:
-        if name.startswith(("build-", "create-", "install-")):
+        if name.startswith(("build-", "sync-", "install-")):
             assert "--offline" in argv
+    assert sync_project_environments == [
+        str(tmp_path / "runtime-venv"),
+        str(tmp_path / "validation-venv"),
+    ]
     assert set(temporary_roots) == {str(tmp_path / "tmp")}
     assert report["wheels"]["overlapping_paths"] == []
     assert report["runtime_environment"]["cli_exposes_eval"] is False

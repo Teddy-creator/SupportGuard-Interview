@@ -9,7 +9,6 @@ import re
 import shutil
 import stat
 import subprocess  # nosec B404
-import sys
 import tempfile
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import asdict, dataclass
@@ -298,25 +297,30 @@ def _execute_boundary(work: Path, repository_root: Path) -> dict[str, Any]:
     if graph_report.forbidden_reachability:
         raise PackageBoundaryError("phase2_runtime_import_graph_forbidden_reachability")
 
-    for name, venv in (
-        ("create-runtime-venv", runtime_venv),
-        ("create-validation-venv", validation_venv),
+    for name, venv, sync_scope in (
+        ("sync-runtime-dependencies", runtime_venv, ("--no-dev",)),
+        (
+            "sync-validation-dependencies",
+            validation_venv,
+            ("--all-packages", "--dev"),
+        ),
     ):
+        sync_environment = dict(environment)
+        sync_environment["UV_PROJECT_ENVIRONMENT"] = str(venv)
         commands.append(
             _run_checked(
                 name=name,
                 argv=(
                     uv_executable,
-                    "venv",
+                    "sync",
+                    "--frozen",
                     "--offline",
                     "--no-python-downloads",
-                    "--no-project",
-                    "--python",
-                    sys.executable,
-                    str(venv),
+                    "--no-install-workspace",
+                    *sync_scope,
                 ),
-                cwd=work,
-                environment=environment,
+                cwd=repository_root,
+                environment=sync_environment,
             )
         )
 
@@ -332,6 +336,7 @@ def _execute_boundary(work: Path, repository_root: Path) -> dict[str, Any]:
                 "--offline",
                 "--no-config",
                 "--strict",
+                "--no-deps",
                 "--python",
                 str(runtime_python),
                 str(runtime_wheel),
@@ -350,6 +355,7 @@ def _execute_boundary(work: Path, repository_root: Path) -> dict[str, Any]:
                 "--offline",
                 "--no-config",
                 "--strict",
+                "--no-deps",
                 "--python",
                 str(validation_python),
                 str(runtime_wheel),

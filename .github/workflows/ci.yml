@@ -90,6 +90,8 @@ jobs:
       - run: uv run python scripts/configure_redis_acl.py
       - run: uv run supportguard db bootstrap-interview-roles
       - name: Empty database Interview baseline migration and schema drift
+        env:
+          DATABASE_URL: postgresql+asyncpg://supportguard_migrator:supportguard_migrator@localhost:5432/supportguard
         run: |
           uv run supportguard db baseline-upgrade
           uv run alembic -c alembic-interview.ini heads

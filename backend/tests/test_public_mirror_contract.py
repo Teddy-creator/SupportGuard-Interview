@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import yaml
+
 from supportguard.validation.public_mirror import validate_public_git_boundary
 
 
@@ -14,3 +16,20 @@ def test_public_mirror_excludes_private_history_and_binds_source_snapshot() -> N
     assert result["public_repository"] == "Teddy-creator/SupportGuard-Interview"
     assert result["private_source_reachable"] is False
     assert result["tag_count"] == 0
+
+
+def test_public_ci_runs_baseline_upgrade_as_the_migrator_role() -> None:
+    workflow = yaml.safe_load(Path(".github/workflows/ci.yml").read_text(encoding="utf-8"))
+    integration = workflow["jobs"]["integration"]
+    migration = next(
+        step
+        for step in integration["steps"]
+        if step.get("name") == "Empty database Interview baseline migration and schema drift"
+    )
+
+    assert integration["env"]["DATABASE_URL"].startswith(
+        "postgresql+asyncpg://supportguard:supportguard@"
+    )
+    assert migration["env"]["DATABASE_URL"].startswith(
+        "postgresql+asyncpg://supportguard_migrator:supportguard_migrator@"
+    )
