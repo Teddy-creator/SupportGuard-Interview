@@ -61,7 +61,8 @@ cleanup-build: demo-cleanup-build
 demo-temporal-refresh:
 	docker compose -p $(DEMO_PROJECT) run --rm --no-deps bootstrap-demo supportguard demo temporal-refresh --tenant tenant_demo
 
-demo-preflight: demo-temporal-refresh
+demo-preflight:
+	docker compose -p $(DEMO_PROJECT) run --rm --no-deps bootstrap-demo supportguard demo temporal-refresh --tenant tenant_demo
 	docker compose -p $(DEMO_PROJECT) run --rm --no-deps bootstrap-demo supportguard demo temporal-preflight --tenant tenant_demo
 	docker compose -p $(DEMO_PROJECT) run --rm --no-deps worker supportguard demo resource-preflight --tenant tenant_demo
 
