@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from supportguard.contracts.timestamps import (
     format_canonical_utc_timestamp,
     parse_canonical_utc_timestamp,
+    parse_database_utc_timestamp,
 )
 from supportguard.db.models import AuditEvent, IdempotencyRequest, SupportTicket, new_id
 from supportguard.services.runtime_jobs import IdempotencyRepository, RuntimeConflict
@@ -80,7 +81,7 @@ class ConversationLifecycleCoordinator:
             return LifecycleAccepted(
                 conversation_id=str(value["conversation_id"]),
                 lifecycle=str(value["lifecycle"]),
-                accepted_at=parse_canonical_utc_timestamp(value["accepted_at"]),
+                accepted_at=parse_database_utc_timestamp(value["accepted_at"]),
                 reused=bool(value["reused"]),
             )
 

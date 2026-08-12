@@ -2,6 +2,9 @@ from __future__ import annotations
 
 import json
 import os
+from datetime import UTC, datetime
+from types import SimpleNamespace
+from typing import Any
 from uuid import uuid4
 
 import pytest
@@ -28,6 +31,20 @@ from supportguard.services.proposal_withdrawals import ProposalWithdrawalCoordin
 from supportguard.services.runtime_jobs import RuntimeConflict
 
 
+class _PostgresLifecycleSession:
+    def get_bind(self) -> SimpleNamespace:
+        return SimpleNamespace(dialect=SimpleNamespace(name="postgresql"))
+
+    async def scalar(self, *_args: object, **_kwargs: object) -> dict[str, Any]:
+        # PostgreSQL JSON rendering legitimately trims trailing fractional zeros.
+        return {
+            "conversation_id": "ticket_timestamp_boundary",
+            "lifecycle": "archived",
+            "accepted_at": "2026-08-12T17:25:57.7+00:00",
+            "reused": False,
+        }
+
+
 async def _accept_new(db_session):
     return await CommandCoordinator(
         db_session, provider_identity=("deterministic-fake", "fake", "native_fixture")
@@ -38,6 +55,23 @@ async def _accept_new(db_session):
         message="余额充足，为什么并发受限？",
         trace_id="trace-v15-create",
     )
+
+
+async def test_postgres_lifecycle_accepts_database_json_timestamp_precision() -> None:
+    coordinator = ConversationLifecycleCoordinator(_PostgresLifecycleSession())  # type: ignore[arg-type]
+
+    accepted = await coordinator.transition(
+        tenant_id="tenant_demo",
+        customer_id="cust_demo",
+        principal_id="user_customer_demo",
+        conversation_id="ticket_timestamp_boundary",
+        lifecycle="archived",
+        idempotency_key="archive-timestamp-boundary",
+        trace_id="trace-timestamp-boundary",
+    )
+
+    assert accepted.accepted_at == datetime(2026, 8, 12, 17, 25, 57, 700000, tzinfo=UTC)
+    assert accepted.response()["accepted_at"] == "2026-08-12T17:25:57.700000+00:00"
 
 
 async def test_first_message_atomically_creates_conversation_message_and_turn(db_session):
