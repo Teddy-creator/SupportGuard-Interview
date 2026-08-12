@@ -804,7 +804,7 @@ async def test_takeover_exhausted_transport_fails_closed_and_cancels_remaining()
                 tenant_id="tenant_demo",
                 ticket_id=ticket_id,
                 role="user",
-                content="exhaust the bounded transport before takeover",
+                content="exhaust the bounded account status transport before takeover",
             )
         )
         await session.flush()
@@ -918,8 +918,8 @@ async def test_takeover_exhausted_transport_fails_closed_and_cancels_remaining()
                 delivery_generation=2,
                 fencing_token=new_lease.fencing_token,
                 trace_id=f"trace_exhausted_replay_{suffix}",
-                user_message="exhaust the bounded transport before takeover",
-                redacted_message="exhaust the bounded transport before takeover",
+                user_message="exhaust the bounded account status transport before takeover",
+                redacted_message="exhaust the bounded account status transport before takeover",
                 classification={
                     "issue_type": "api_diagnostics",
                     "policy_boundary": "allowed",
