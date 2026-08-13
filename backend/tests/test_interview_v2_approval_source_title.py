@@ -201,7 +201,7 @@ async def test_postgres_approval_source_and_greeting_title_match_sqlite_contract
     run_id = f"run_v20_source_{suffix}"
     proposal_id = f"proposal_v20_source_{suffix}"
     approval_id = f"approval_v20_source_{suffix}"
-    resource_id = f"bill_v20_source_{suffix}"
+    resource_id = f"key_v20_source_{suffix}"
     try:
         async with setup.begin() as connection:
             await connection.execute(text("SET LOCAL ROLE supportguard_owner"))
@@ -269,10 +269,10 @@ async def test_postgres_approval_source_and_greeting_title_match_sqlite_contract
                     "resource_version,action_payload,observation_binding,action_hash,"
                     "status,status_version"
                     ") VALUES ("
-                    ":proposal,'tenant_demo',:run,:identity,'refund',"
+                    ":proposal,'tenant_demo',:run,:identity,'api_key_revocation',"
                     "CAST(:resource AS text),2,"
                     "pg_catalog.jsonb_build_object("
-                    "'billing_record_id',CAST(:resource AS text))::json,"
+                    "'api_key_id',CAST(:resource AS text))::json,"
                     "CAST('[]' AS json),:action_hash,'bound',1)"
                 ),
                 {
@@ -290,10 +290,10 @@ async def test_postgres_approval_source_and_greeting_title_match_sqlite_contract
                     "resource_id,origin_turn_id,action_payload,review_context,action_hash,"
                     "business_version,status,idempotency_key,status_version,checkpoint_version"
                     ") VALUES ("
-                    ":approval,'tenant_demo',:ticket,'cust_demo',:proposal,:run,'refund',"
-                    "'billing_record_id',CAST(:resource AS text),:turn,"
+                    ":approval,'tenant_demo',:ticket,'cust_demo',:proposal,:run,"
+                    "'api_key_revocation','api_key_id',CAST(:resource AS text),:turn,"
                     "pg_catalog.jsonb_build_object("
-                    "'billing_record_id',CAST(:resource AS text))::json,"
+                    "'api_key_id',CAST(:resource AS text))::json,"
                     "CAST('{}' AS json),:action_hash,2,'pending',:idempotency,1,0)"
                 ),
                 {

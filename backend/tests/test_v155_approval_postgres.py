@@ -12,9 +12,7 @@ from supportguard.services.commands import CommandCoordinator
 
 
 def _role_url(base: str, role: str) -> str:
-    return make_url(base).set(username=role, password=role).render_as_string(
-        hide_password=False
-    )
+    return make_url(base).set(username=role, password=role).render_as_string(hide_password=False)
 
 
 @pytest.mark.asyncio
@@ -30,14 +28,9 @@ async def test_pending_approval_is_not_squeezed_out_by_recent_terminal_history()
     pending_id = f"approval_v155_pending_{suffix}"
     try:
         async with api_factory() as session, session.begin():
+            await session.execute(text("SELECT set_config('app.tenant_id','tenant_demo',true)"))
             await session.execute(
-                text("SELECT set_config('app.tenant_id','tenant_demo',true)")
-            )
-            await session.execute(
-                text(
-                    "SELECT set_config("
-                    "'app.principal_id','user_customer_demo',true)"
-                )
+                text("SELECT set_config('app.principal_id','user_customer_demo',true)")
             )
             await session.execute(
                 text("SELECT set_config('app.principal_role','customer_admin',true)")
@@ -56,20 +49,17 @@ async def test_pending_approval_is_not_squeezed_out_by_recent_terminal_history()
 
         async with admin.begin() as connection:
             await connection.execute(text("SET LOCAL app.tenant_id='tenant_demo'"))
-            await connection.execute(
-                text("SET LOCAL app.principal_id='v155-approval-fixture'")
-            )
-            await connection.execute(
-                text("SET LOCAL app.principal_role='system_worker'")
-            )
+            await connection.execute(text("SET LOCAL app.principal_id='v155-approval-fixture'"))
+            await connection.execute(text("SET LOCAL app.principal_role='system_worker'"))
             customer = (
-                await connection.execute(
-                    text(
-                        "SELECT tenant_id,id FROM customers "
-                        "ORDER BY created_at,id LIMIT 1"
+                (
+                    await connection.execute(
+                        text("SELECT tenant_id,id FROM customers ORDER BY created_at,id LIMIT 1")
                     )
                 )
-            ).mappings().one()
+                .mappings()
+                .one()
+            )
             tenant_id = str(customer["tenant_id"])
             customer_id = str(customer["id"])
             ticket_id = accepted.ticket_id
@@ -81,9 +71,9 @@ async def test_pending_approval_is_not_squeezed_out_by_recent_terminal_history()
                     "status,status_version,created_at,updated_at)"
                     " SELECT 'proposal_v155_terminal_' || :suffix || '_' || g,"
                     ":tenant_id,:run_id,"
-                    "'refund:v155:terminal:' || :suffix || ':' || g,'refund',"
-                    "'bill_terminal_' || g,1,"
-                    "jsonb_build_object('billing_record_id','bill_terminal_' || g),"
+                    "'api-key:v155:terminal:' || :suffix || ':' || g,"
+                    "'api_key_revocation','key_terminal_' || g,1,"
+                    "jsonb_build_object('api_key_id','key_terminal_' || g),"
                     "'[]'::jsonb,repeat('a',64),'bound',1,"
                     "now() + (g || ' seconds')::interval,"
                     "now() + (g || ' seconds')::interval"
@@ -104,8 +94,9 @@ async def test_pending_approval_is_not_squeezed_out_by_recent_terminal_history()
                     "created_at,updated_at)"
                     " SELECT 'approval_v155_terminal_' || :suffix || '_' || g,"
                     ":tenant_id,:ticket_id,:customer_id,"
-                    "'proposal_v155_terminal_' || :suffix || '_' || g,:run_id,'refund',"
-                    "jsonb_build_object('billing_record_id','bill_terminal_' || g),"
+                    "'proposal_v155_terminal_' || :suffix || '_' || g,:run_id,"
+                    "'api_key_revocation',"
+                    "jsonb_build_object('api_key_id','key_terminal_' || g),"
                     "'{\"risk\":\"high\"}'::jsonb,repeat('a',64),1,'pending',"
                     "'v155-terminal-' || :suffix || '-' || g,"
                     "now() + (g || ' seconds')::interval,"
@@ -135,8 +126,9 @@ async def test_pending_approval_is_not_squeezed_out_by_recent_terminal_history()
                     "id,tenant_id,run_id,proposal_identity,action_type,resource_id,"
                     "resource_version,action_payload,observation_binding,action_hash,"
                     "status,status_version,created_at,updated_at)"
-                    " VALUES(:id,:tenant_id,:run_id,:identity,'refund','bill_pending',1,"
-                    "'{\"billing_record_id\":\"bill_pending\"}'::jsonb,'[]'::jsonb,"
+                    " VALUES(:id,:tenant_id,:run_id,:identity,'api_key_revocation',"
+                    "'key_pending',1,"
+                    "'{\"api_key_id\":\"key_pending\"}'::jsonb,'[]'::jsonb,"
                     "repeat('b',64),'bound',1,now()-interval '1 day',"
                     "now()-interval '1 day')"
                 ),
@@ -155,8 +147,8 @@ async def test_pending_approval_is_not_squeezed_out_by_recent_terminal_history()
                     "business_version,status,idempotency_key,"
                     "created_at,updated_at)"
                     " VALUES(:id,:tenant_id,:ticket_id,:customer_id,:proposal_id,"
-                    ":run_id,'refund',"
-                    "'{\"billing_record_id\":\"bill_pending\"}'::jsonb,"
+                    ":run_id,'api_key_revocation',"
+                    '\'{"api_key_id":"key_pending"}\'::jsonb,'
                     "'{\"risk\":\"high\"}'::jsonb,repeat('b',64),1,'pending',"
                     ":idempotency_key,now()-interval '1 day',now()-interval '1 day')"
                 ),
@@ -182,9 +174,7 @@ async def test_pending_approval_is_not_squeezed_out_by_recent_terminal_history()
             await connection.execute(
                 text("SELECT set_config('app.principal_role','approver',true)")
             )
-            payload = await connection.scalar(
-                text("SELECT supportguard_api_list_approvals(200)")
-            )
+            payload = await connection.scalar(text("SELECT supportguard_api_list_approvals(200)"))
 
         assert isinstance(payload, list)
         assert len(payload) == 200
@@ -196,7 +186,7 @@ async def test_pending_approval_is_not_squeezed_out_by_recent_terminal_history()
         assert pending_index < first_terminal_index
         assert all(item["status"] == "pending" for item in payload[:first_terminal_index])
         assert pending["status"] == "pending"
-        assert pending["resource_summary"] == "bill_pending"
+        assert pending["resource_summary"] == "key_pending"
         assert pending["source_label"] == "请检查我的待审批请求。"
         assert isinstance(pending["conversation_action_sources"], dict)
         assert set(pending) == {
