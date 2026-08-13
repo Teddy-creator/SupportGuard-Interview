@@ -23,10 +23,12 @@ production-shaped versus actually production-integrated.
    visibility changes, protected Evaluation access, or making Interview Edition the default before final
    Human Acceptance.
 7. Current Phase, exact Candidate, local receipt, and Hosted CI disposition are recorded in
-   `docs/release-verification.md`. Phase 6 Candidate `30254587585fa2169cab071a926c501e06dac9a6`
-   completed controlled pruning and the Authority Transition; the current phase is Phase 7, blocked before
-   protected execution by Hosted CI's external zero-step account condition. This constitution never upgrades
-   historical or local evidence into a Hosted CI or final Definition of Done claim.
+   `docs/release-verification.md`. Phase 7 Candidate `b132c395c2edf2d7d72477dc9051bffc3d7f4024`
+   passed its zero-cost proof set and Hosted CI, then its one allowed complete IE-P16 finished `11/16` and
+   entered the Confirmation Gate. On 2026-08-13 the user authorized exactly one replacement Candidate;
+   the failed Receipt, cost and clean teardown remain immutable, and no second IE-P16 is allowed until the
+   replacement is a new clean SHA with all prerequisite proofs green. This constitution never upgrades
+   historical or partial evidence into a final Definition of Done claim.
 8. On 2026-08-12 the user explicitly authorized the history-free, MIT-licensed public mirror
    `Teddy-creator/SupportGuard-Interview`. This authorization does not publish or modify the private canonical
    repository, its Archive Tags, historical Actions records, protected Evaluation inputs, or private evidence.

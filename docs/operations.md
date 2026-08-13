@@ -9,10 +9,12 @@
 Phase 1 本地正确性、Phase 2 Runtime / Validation 包边界、Phase 3 Schema / 应用边界、Phase 4 Agent /
 MCP / Action、Phase 5 前端状态与 Phase 6 Authority Transition 均已完成。Phase 6 Candidate
 `30254587585fa2169cab071a926c501e06dac9a6` 的 Receipt 位于
-`validation/evidence/interview_v2/phase6/phase6-validation-receipt.v1.json`；当前进入但尚未完成 Phase 7。
-Phase 6 Hosted CI Run `31573174199` 的 5 个 Job 均为零步骤，并因账户 Payment / Spending Limit
-登记为 `external_zero_step_blocker`；本地验证没有替代 Hosted CI。Phase 7 与最终 Definition of
-Done 仍未完成。
+`validation/evidence/interview_v2/phase6/phase6-validation-receipt.v1.json`。Phase 7 Candidate
+`b132c395c2edf2d7d72477dc9051bffc3d7f4024` 的零成本证明与 Hosted CI Run `31633888433` 已通过；
+其唯一一次真实 IE-P16 为 `11/16`，完整失败 Receipt 位于
+`validation/evidence/interview_v2/phase7/attempts/`，费用与零残留清理均保留。用户已授权恰好一个
+replacement Candidate；旧 SHA 不得重跑，替代 SHA 必须先重新通过全部零成本和 Hosted 前置证明。
+Phase 7 与最终 Definition of Done 仍未完成。
 
 ## Interview Edition Archive 恢复
 

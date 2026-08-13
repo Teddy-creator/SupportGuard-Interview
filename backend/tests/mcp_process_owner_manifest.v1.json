@@ -80,6 +80,15 @@
       "requires_reconnect": false
     },
     {
+      "node": "backend/tests/test_phase4_escalation_retirement_postgres.py::test_refund_proposal_uses_active_fence_when_ticket_projection_has_converged",
+      "partition": "postgres",
+      "database_class": "compose-postgresql",
+      "role_class": "restricted-action",
+      "children": {"supportguard.mcp.action_server": 1},
+      "minimum_calls": 1,
+      "requires_reconnect": false
+    },
+    {
       "node": "backend/tests/test_v1212_production_agent_vertical.py::test_public_http_to_restricted_mcp_agent_finalizer_vertical",
       "partition": "postgres",
       "database_class": "compose-postgresql-redis",

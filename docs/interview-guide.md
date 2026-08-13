@@ -163,14 +163,12 @@ b203 因而先补齐独立事件 Reader；随后 MCP 纵向切片证明工单详
 Formal 或 Journey Acceptance
 通过证据。
 
-**当前 v2.0 证明到哪里？** Candidate
-`30254587585fa2169cab071a926c501e06dac9a6` 已完成 Phase 6 受控 Pruning：2,197 个历史文件从当前
-工作区迁出但仍可由 Archive Tag、Source Commit 与 Manifest 恢复；当前只剩 8 份权威文档，历史
-Oracle 结果没有被改写。Hermetic Backend `1315/1315`、Current Integration `225/225`、MCP
-`6/6 + 10/10`、Frontend `81/81`、双 wheel 与 Runtime-only 镜像均通过，清理残留为 `0`。Hosted
-CI Run `31573174199` 的 5 个 Job 均为零步骤并登记为 `external_zero_step_blocker`。因此当前进入但
-尚未完成 Phase 7；不能宣称 Hosted CI 全绿、RAG Dev30、IE-P16、IE-J12、Holdout、Cross-Encoder
-或最终 Definition of Done 已完成。
+**当前 v2.0 证明到哪里？** Phase 0～6 已完成且 Archive 可恢复。Phase 7 Candidate
+`b132c395c2edf2d7d72477dc9051bffc3d7f4024` 已通过 RAG Dev30、IE-F06、IE-J12、完整确定性 / 集成 /
+MCP / Browser / Clean Compose 证明和 Hosted CI Run `31633888433`；但它的一次性真实 DeepSeek
+IE-P16 仅为 `11/16`。安全合同与零残留通过，语义合同失败，最高实际估算费用为 `¥0.349337`。
+该 Receipt 不可改写、旧 SHA 不重跑；用户只授权一个新 Candidate 的通用修复。因此不能宣称
+Phase 7、Human Acceptance、Holdout、Cross-Encoder 或最终 Definition of Done 已完成。
 
 **正式 37 项之前如何避免“手写我都测过了”？** 仓库固定八条 Preflight Lane，并要求
 clean `HEAD == origin/main`、固定 Matrix/Manifest Hash、真实 PostgreSQL/RLS 与 MCP

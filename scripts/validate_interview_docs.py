@@ -48,6 +48,15 @@ PHASE6_HOSTED_RECEIPT = Path("validation/evidence/interview_v2/phase6/hosted-ci-
 PHASE6_HOSTED_RECEIPT_SHA256: Final = (
     "6bdb72e7b60ca994b561df1b88c7738acffedffe0d15f740b8a5902c07e1a41e"
 )
+PHASE7_FAILED_CANDIDATE: Final = "b132c395c2edf2d7d72477dc9051bffc3d7f4024"
+PHASE7_FAILED_TREE: Final = "78ed357459173ebb5354f24396fb42e96a22a98d"
+PHASE7_FAILED_P16_RECEIPT = Path(
+    "validation/evidence/interview_v2/phase7/attempts/"
+    "ie-p16-b132c395c2edf2d7d72477dc9051bffc3d7f4024.json"
+)
+PHASE7_FAILED_P16_RECEIPT_SHA256: Final = (
+    "68cf3f1d4c9bb8ade2fdca5b7b5d404cef3dc5822d751e34fbc416d245ec6bfa"
+)
 TEST_DISPOSITION = Path("validation/contracts/interview_v2/test-disposition.v1.json")
 _MARKDOWN_LINK = re.compile(r"\[[^\]]+\]\(([^)]+)\)")
 
@@ -102,8 +111,26 @@ def validate() -> dict[str, object]:
     _validate_markdown_links(tracked_docs)
     for raw_path in CURRENT_DOCS:
         content = (ROOT / raw_path).read_text(encoding="utf-8")
-        if "Phase 7" not in content or PHASE6_CANDIDATE not in content:
+        if "Phase 7" not in content or PHASE7_FAILED_CANDIDATE not in content:
             raise RuntimeError(f"current_documentation_phase_identity_missing:{raw_path}")
+
+    failed_p16_path = ROOT / PHASE7_FAILED_P16_RECEIPT
+    if _sha256(failed_p16_path) != PHASE7_FAILED_P16_RECEIPT_SHA256:
+        raise RuntimeError("phase7_failed_p16_receipt_hash_mismatch")
+    failed_p16 = _load_json(failed_p16_path)
+    if (
+        failed_p16.get("schema") != "supportguard.interview_v2.ie_p16_receipt.v1"
+        or failed_p16.get("candidate", {}).get("candidate_sha") != PHASE7_FAILED_CANDIDATE
+        or failed_p16.get("candidate", {}).get("git_tree_sha") != PHASE7_FAILED_TREE
+        or failed_p16.get("denominator") != 16
+        or failed_p16.get("executed") != 16
+        or failed_p16.get("passed") != 11
+        or failed_p16.get("failed") != 5
+        or failed_p16.get("claims", {}).get("safety_pass") is not True
+        or failed_p16.get("claims", {}).get("semantic_pass") is not False
+        or failed_p16.get("claims", {}).get("cleanup_pass") is not True
+    ):
+        raise RuntimeError("phase7_failed_p16_receipt_semantics_mismatch")
 
     phase5_path = ROOT / PHASE5_RECEIPT
     phase5_hosted_path = ROOT / PHASE5_HOSTED_RECEIPT
@@ -198,6 +225,11 @@ def validate() -> dict[str, object]:
         "v20_phase6_receipt_sha256": PHASE6_RECEIPT_SHA256,
         "v20_phase6_hosted_receipt_sha256": PHASE6_HOSTED_RECEIPT_SHA256,
         "v20_phase6_hosted_disposition": phase6_hosted["classification"],
+        "phase7_failed_candidate_sha": PHASE7_FAILED_CANDIDATE,
+        "phase7_failed_tree_sha": PHASE7_FAILED_TREE,
+        "phase7_failed_p16_receipt_sha256": PHASE7_FAILED_P16_RECEIPT_SHA256,
+        "phase7_failed_p16_result": "11/16",
+        "phase7_replacement_authorized": True,
         "active_dataset": evaluation["active_dataset"],
         "protected_holdout": evaluation["protected_holdout"],
         "cross_encoder": evaluation["cross_encoder"],

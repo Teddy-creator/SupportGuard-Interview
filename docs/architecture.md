@@ -2,7 +2,7 @@
 
 > **v2.0 Authority Notice（2026-08-11）**：当前唯一的新工作权威是
 > `docs/interview-edition-simplification-v2.0.md`，操作宪法是根目录 `AGENTS.md`。用户已授权
-> Phase 0～7；Phase 0～6 已完成，Hosted CI 外部阻塞已登记，当前进入但尚未完成 Phase 7；Phase 6 Candidate `30254587585fa2169cab071a926c501e06dac9a6` 已完成 Authority Transition 与受控 Pruning，当前工作区只保留 8 份权威文档，Archive 可恢复，Runtime / Validation wheel、Current Integration、MCP 与 Runtime-only 镜像边界通过；Phase 7 与最终 Definition of Done 未完成。
+> Phase 0～7；Phase 0～6 已完成。Phase 7 Candidate `b132c395c2edf2d7d72477dc9051bffc3d7f4024` 的零成本证明与 Hosted CI 已通过，但其唯一一次 IE-P16 为 `11/16`；失败 Receipt、费用与清理已保存，用户只批准一个 replacement Candidate。当前 Interview Head 为 `i202_refund_fence_authority`，Phase 7 与最终 Definition of Done 仍未完成。
 > 精简前基线固定为 `6255c8c0eb0dcedd877bfbf16a9695dad2a0c9eb`。下方
 > 2026-07-28 的“当前”表述是不可改写的精简前架构状态，不覆盖 v2.0。
 

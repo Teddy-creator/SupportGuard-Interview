@@ -37,10 +37,14 @@ def test_mcp_partition_manifest_is_exact_mutually_exclusive_and_complete() -> No
     hermetic = set(module.HERMETIC_NODES)
     postgres = set(module.POSTGRES_NODES)
     assert len(hermetic) == 6
-    assert len(postgres) == 10
+    assert len(postgres) == 11
     assert (
         "backend/tests/test_phase4_escalation_retirement_postgres.py::"
         "test_three_current_action_proposals_complete_real_stdio_and_postgres"
+    ) in postgres
+    assert (
+        "backend/tests/test_phase4_escalation_retirement_postgres.py::"
+        "test_refund_proposal_uses_active_fence_when_ticket_projection_has_converged"
     ) in postgres
     assert hermetic.isdisjoint(postgres)
     assert all((ROOT / node.split("::", 1)[0]).is_file() for node in hermetic | postgres)

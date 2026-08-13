@@ -178,3 +178,57 @@ async def test_three_current_action_proposals_complete_real_stdio_and_postgres(
         }
     finally:
         await engine.dispose()
+
+
+@pytest.mark.asyncio
+@pytest.mark.mcp
+async def test_refund_proposal_uses_active_fence_when_ticket_projection_has_converged(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    owner = _load_vertical_fixture_owner()
+    admin_url = _url()
+    common, bindings, _reads, reservations = await owner._runtime_fixture(admin_url)
+    engine = create_async_engine(admin_url)
+    try:
+        async with engine.begin() as connection:
+            await connection.execute(
+                text("UPDATE support_tickets SET status='resolved' WHERE id=:ticket_id"),
+                {"ticket_id": common["ticket_id"]},
+            )
+            effect_count_before = int(
+                await connection.scalar(text("SELECT count(*) FROM business_actions")) or 0
+            )
+
+        monkeypatch.setenv("APP_ENV", "test")
+        monkeypatch.setenv("MCP_ACTION_DATABASE_URL", _url("supportguard_action_mcp"))
+        arguments = {
+            **common,
+            **owner._action_cases(str(common["run_id"]))["propose_refund"],
+            "tool_call_id": "phase7_refund_projection_lag",
+            "observation_binding": bindings,
+            "mcp_context": owner._capability_context(
+                "propose_refund", reservations["propose_refund"]
+            ),
+        }
+        async with owner.action_mcp_session() as session:
+            payload = owner.structured_result(await session.call_tool("propose_refund", arguments))
+        assert payload.get("domain_error") is not True, payload
+        assert payload["status"] == "draft"
+        assert payload["action_type"] == "refund"
+        assert payload["resource_id"] == "bill_demo_duplicate"
+
+        async with engine.connect() as connection:
+            proposal_count = await connection.scalar(
+                text(
+                    "SELECT count(*) FROM proposal_records "
+                    "WHERE run_id=:run_id AND action_type='refund'"
+                ),
+                {"run_id": common["run_id"]},
+            )
+            effect_count = await connection.scalar(
+                text("SELECT count(*) FROM business_actions"),
+            )
+        assert proposal_count == 1
+        assert effect_count == effect_count_before
+    finally:
+        await engine.dispose()

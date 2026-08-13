@@ -14,7 +14,7 @@ def test_current_interview_documentation_matches_repository_facts() -> None:
         "result": "pass",
         "v20_activation": "phase7",
         "current_authority_document_count": 8,
-        "current_database_head": "i201_retire_escalation",
+        "current_database_head": "i202_refund_fence_authority",
         "v20_phase5_candidate_sha": "70717d8f19a9cbe3d8ead99db228c93f1577acc4",
         "v20_phase5_tree_sha": "853acfafd9782e2ce2d984cdd75da959718045a8",
         "v20_phase5_receipt_sha256": (
@@ -39,6 +39,13 @@ def test_current_interview_documentation_matches_repository_facts() -> None:
             "6bdb72e7b60ca994b561df1b88c7738acffedffe0d15f740b8a5902c07e1a41e"
         ),
         "v20_phase6_hosted_disposition": "external_zero_step_blocker",
+        "phase7_failed_candidate_sha": "b132c395c2edf2d7d72477dc9051bffc3d7f4024",
+        "phase7_failed_tree_sha": "78ed357459173ebb5354f24396fb42e96a22a98d",
+        "phase7_failed_p16_receipt_sha256": (
+            "68cf3f1d4c9bb8ade2fdca5b7b5d404cef3dc5822d751e34fbc416d245ec6bfa"
+        ),
+        "phase7_failed_p16_result": "11/16",
+        "phase7_replacement_authorized": True,
         "active_dataset": None,
         "protected_holdout": "not_accessed",
         "cross_encoder": "not_executed",

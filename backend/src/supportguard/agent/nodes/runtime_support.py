@@ -13,8 +13,15 @@ from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from supportguard.actions.service import get_action_spec, get_action_spec_by_policy_capability
+from supportguard.agent.api_diagnostics import (
+    api_rate_limit_control_separation_present,
+    api_rate_limit_knowledge_query,
+    pending_api_rate_limit_diagnostic_tools,
+    required_api_rate_limit_diagnostic_reads,
+)
 from supportguard.agent.constants import (
     MAX_GROUNDED_KNOWLEDGE_QUERY_CHARACTERS,
+    MAX_READ_TOOL_CALLS_PER_DECISION,
     MAX_TOOL_ATTEMPTS,
     MAX_TOOL_ROUNDS,
 )
@@ -154,6 +161,7 @@ class GraphRuntimeSupport:
         trusted_action_state_fact: bool = False,
         explicit_first_step: bool = False,
         knowledge_read_failed: bool = False,
+        rate_limit_diagnostic_reads_complete: bool = False,
     ) -> str:
         if finish_reason == "needs_clarification":
             if requested_action == "refund":
@@ -214,6 +222,14 @@ class GraphRuntimeSupport:
             return "\n".join(texts)
         if not texts:
             return safe_failure_answer(finish_reason or "insufficient_evidence")
+        if (
+            issue_type == "api_diagnostics"
+            and rate_limit_diagnostic_reads_complete
+            and not api_rate_limit_control_separation_present(texts)
+        ):
+            texts.append(
+                "诊断边界：账户余额与运行并发是两套独立控制；余额充足不会提高套餐并发上限。"
+            )
         if issue_type == "api_diagnostics" and not any(
             marker in "".join(texts) for marker in ("下一步", "建议", "检查", "查看", "重试")
         ):
@@ -511,6 +527,9 @@ class GraphRuntimeSupport:
                 if current_run_tool_observation(state, "search_knowledge") is not None
                 else {"search_knowledge"}
             )
+        diagnostic_requirements = required_api_rate_limit_diagnostic_reads(state)
+        if diagnostic_requirements:
+            return set(pending_api_rate_limit_diagnostic_tools(state))
         current_fact_requirements = requested_current_fact_requirements(state)
         if current_fact_requirements:
             pending_fact_tools = {
@@ -1149,6 +1168,7 @@ class GraphRuntimeSupport:
     def _required_evidence_decision(self, state: AgentState) -> AgentDecision | None:
         """Turn a deterministic evidence requirement into one bounded Read Tool decision."""
 
+        pending_diagnostic_tools = pending_api_rate_limit_diagnostic_tools(state)
         fact_requirements = requested_current_fact_requirements(state)
         pending_fact_tools = list(
             dict.fromkeys(
@@ -1172,67 +1192,86 @@ class GraphRuntimeSupport:
         )
         require_knowledge = self._clarification_requires_knowledge_first(state)
         if (
-            not (close_partial_fact_plan or require_knowledge or pending_referential_tools)
-            or state["tool_rounds"] >= MAX_TOOL_ROUNDS
-            or state["tool_attempts"] >= MAX_TOOL_ATTEMPTS
+            not (
+                pending_diagnostic_tools
+                or close_partial_fact_plan
+                or require_knowledge
+                or pending_referential_tools
+            )
+            or state.get("tool_rounds", 0) >= MAX_TOOL_ROUNDS
+            or state.get("tool_attempts", 0) >= MAX_TOOL_ATTEMPTS
         ):
             return None
-        query = str(state.get("redacted_message", "")).strip()
+        query = (
+            api_rate_limit_knowledge_query(state)
+            if pending_diagnostic_tools
+            else str(state.get("redacted_message", "")).strip()
+        )
         if not query:
             return None
         tool_calls: list[dict[str, Any]] = []
+        remaining_tool_attempts = max(
+            0,
+            MAX_TOOL_ATTEMPTS - int(state.get("tool_attempts", 0)),
+        )
+        batch_limit = min(MAX_READ_TOOL_CALLS_PER_DECISION, remaining_tool_attempts)
+        scheduled_tools: set[str] = set()
+
+        def schedule(tool_name: str, *, prefix: str, arguments: dict[str, Any]) -> None:
+            if len(tool_calls) >= batch_limit or tool_name in scheduled_tools:
+                return
+            tool_calls.append(
+                {
+                    "tool_call_id": f"{prefix}_{uuid4().hex}",
+                    "call": {"name": tool_name, "arguments": arguments},
+                }
+            )
+            scheduled_tools.add(tool_name)
+
+        for tool_name in pending_diagnostic_tools:
+            schedule(
+                tool_name,
+                prefix="required_api_diagnostic",
+                arguments=(
+                    {"query": query}
+                    if tool_name == "search_knowledge"
+                    else {"window": "1m"}
+                    if tool_name == "query_api_usage"
+                    else {}
+                ),
+            )
         if referential_billing is not None:
             billing_record_id, _ = referential_billing
             if "search_knowledge" in pending_referential_tools:
-                tool_calls.append(
-                    {
-                        "tool_call_id": f"required_billing_knowledge_{uuid4().hex}",
-                        "call": {
-                            "name": "search_knowledge",
-                            "arguments": {"query": query},
-                        },
-                    }
+                schedule(
+                    "search_knowledge",
+                    prefix="required_billing_knowledge",
+                    arguments={"query": query},
                 )
             if "query_billing_record" in pending_referential_tools:
-                tool_calls.append(
-                    {
-                        "tool_call_id": f"required_billing_record_{uuid4().hex}",
-                        "call": {
-                            "name": "query_billing_record",
-                            "arguments": {"billing_record_id": billing_record_id},
-                        },
-                    }
+                schedule(
+                    "query_billing_record",
+                    prefix="required_billing_record",
+                    arguments={"billing_record_id": billing_record_id},
                 )
         if require_knowledge:
             query = self._ground_versioned_knowledge_query(state, query)
-            tool_calls.append(
-                {
-                    "tool_call_id": f"required_knowledge_{uuid4().hex}",
-                    "call": {
-                        "name": "search_knowledge",
-                        "arguments": {"query": query},
-                    },
-                }
+            schedule(
+                "search_knowledge",
+                prefix="required_knowledge",
+                arguments={"query": query},
             )
             if state.get("classification", {}).get("needs_realtime_facts") is True:
-                tool_calls.append(
-                    {
-                        "tool_call_id": f"required_account_{uuid4().hex}",
-                        "call": {"name": "query_account", "arguments": {}},
-                    }
+                schedule(
+                    "query_account",
+                    prefix="required_account",
+                    arguments={},
                 )
-        existing_tools = {str(item["call"]["name"]) for item in tool_calls}
         for tool_name in pending_fact_tools:
-            if tool_name in existing_tools:
-                continue
-            tool_calls.append(
-                {
-                    "tool_call_id": f"required_current_fact_{uuid4().hex}",
-                    "call": {
-                        "name": tool_name,
-                        "arguments": ({"window": "1m"} if tool_name == "query_api_usage" else {}),
-                    },
-                }
+            schedule(
+                tool_name,
+                prefix="required_current_fact",
+                arguments=({"window": "1m"} if tool_name == "query_api_usage" else {}),
             )
         return AgentDecision.model_validate(
             {

@@ -11,6 +11,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from supportguard.actions.service import get_action_spec
+from supportguard.agent.api_diagnostics import api_rate_limit_diagnostic_reads_complete
 from supportguard.agent.comparison_publication import canonicalize_comparison_citation_groups
 from supportguard.agent.constants import MAX_LLM_CALLS, MAX_TOOL_ATTEMPTS, MAX_TOOL_ROUNDS
 from supportguard.agent.context import (
@@ -1895,6 +1896,7 @@ class ActionFlowNodes:
                 str(state.get("redacted_message", ""))
             ),
             knowledge_read_failed=failed_current_tool_observation(state, "search_knowledge"),
+            rate_limit_diagnostic_reads_complete=api_rate_limit_diagnostic_reads_complete(state),
         )
         if (
             resolution.integrity

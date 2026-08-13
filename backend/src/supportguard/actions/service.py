@@ -505,20 +505,6 @@ ACTION_SPECS: Final[Mapping[ActionType, ActionSpec]] = MappingProxyType(
                     allowed_resource_statuses=("active",),
                 ),
                 EvidenceObligationSpec(
-                    obligation_id="usage_current",
-                    kind="usage",
-                    capabilities=("query_api_usage",),
-                    required_data_fields=(
-                        "window",
-                        "window_start",
-                        "window_end",
-                        "concurrency_current",
-                        "concurrency_peak",
-                        "freshness_status",
-                        "resource_version",
-                    ),
-                ),
-                EvidenceObligationSpec(
                     obligation_id="entitlement_policy_current",
                     kind="knowledge",
                     capabilities=("search_knowledge",),

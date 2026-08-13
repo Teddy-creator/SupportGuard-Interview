@@ -660,6 +660,52 @@ async def test_draft_proposal_without_citation_lineage_never_becomes_actionable(
 
 
 @pytest.mark.asyncio
+async def test_refund_draft_uses_active_fence_not_ticket_projection_status(
+    db_session: AsyncSession,
+) -> None:
+    await seed_business_facts(db_session)
+    run = await db_session.get(AgentRun, "run_demo")
+    ticket = await db_session.get(SupportTicket, "ticket_demo")
+    assert run is not None and ticket is not None
+    run.status = "queued"
+    jobs = RuntimeJobRepository(db_session)
+    job = await jobs.create(tenant_id="tenant_demo", run_id=run.id, kind="agent_start")
+    lease = await jobs.claim(job_id=job.id, owner="worker-a", now=datetime.now(UTC))
+    observation_binding = await seed_closed_refund_observation_binding(
+        db_session, lease, segment_id="segment_projection_lag"
+    )
+    # Ticket status is a customer projection that may converge independently.
+    # The current run/job/fence and closed evidence ledger remain authoritative.
+    ticket.status = "resolved"
+    await db_session.flush()
+
+    draft = await BusinessService(db_session).propose_refund_draft(
+        ToolCallContext(
+            tenant_id="tenant_demo",
+            customer_id="cust_demo",
+            ticket_id="ticket_demo",
+            run_id=run.id,
+            job_id=job.id,
+            segment_id="segment_projection_lag",
+            delivery_generation=1,
+            fencing_token=lease.fencing_token,
+            observation_binding=observation_binding,
+            tool_call_id="proposal_projection_lag",
+            trace_id="trace_projection_lag",
+        ),
+        RefundProposalInput(
+            billing_record_id="bill_duplicate",
+            refund_reason="Explicit duplicate relation verified.",
+            idempotency_key="draft-refund-projection-lag",
+        ),
+    )
+
+    assert draft.status == "draft"
+    assert draft.resource_id == "bill_duplicate"
+    assert await db_session.scalar(select(func.count()).select_from(ApprovalRequest)) == 0
+
+
+@pytest.mark.asyncio
 async def test_fenced_proposal_without_current_observation_binding_is_rejected(
     db_session: AsyncSession,
 ) -> None:

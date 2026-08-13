@@ -19,6 +19,7 @@ from supportguard.db.security_contract import (
     CURRENT_INTERVIEW_DATABASE_REVISION,
     DATABASE_PREFLIGHT,
     INTERVIEW_BASELINE_ROOT_REVISION,
+    INTERVIEW_ESCALATION_RETIREMENT_REVISION,
     LEGACY_FINAL_DATABASE_HEAD,
 )
 
@@ -36,11 +37,17 @@ I200_BASELINE_MANIFEST_SHA256: Final = (
 I200_BASELINE_NON_DATABASE_MANIFEST_SHA256: Final = (
     "2fd99b453a689840fea40d580c21d71119ef3b5f451ec443bc28f9ae6de43185"
 )
-CURRENT_BASELINE_MANIFEST_SHA256: Final = (
+I201_BASELINE_MANIFEST_SHA256: Final = (
     "9d4faabe4e2705803aea84316aabca8467f357a164560fa7123de23afae82e49"
 )
-CURRENT_BASELINE_NON_DATABASE_MANIFEST_SHA256: Final = (
+I201_BASELINE_NON_DATABASE_MANIFEST_SHA256: Final = (
     "ab4c1eefc5d7d8adda68eabd6403839eca84028187a721642f79c2a59c497cfc"
+)
+CURRENT_BASELINE_MANIFEST_SHA256: Final = (
+    "17cf263a4899241399deed8acfd678b06531f40192372ebc52e6547e851464d7"
+)
+CURRENT_BASELINE_NON_DATABASE_MANIFEST_SHA256: Final = (
+    "53d28dcdfbe0dad4f75f13ab5de21d57eefdecbcdad277b62f51d36943654027"
 )
 RUNTIME_TIMING_V1_CONFIG_HASH: Final = (
     "2c68017cce05fa144eb8aaaaccd9acc45bec3e6ca28d40f7f0269dc5bdee1672"
@@ -355,6 +362,8 @@ def catalog_security_manifest_sha256(
 def _expected_manifest_for_revision(revision: str) -> str:
     if revision == INTERVIEW_BASELINE_ROOT_REVISION:
         return I200_BASELINE_MANIFEST_SHA256
+    if revision == INTERVIEW_ESCALATION_RETIREMENT_REVISION:
+        return I201_BASELINE_MANIFEST_SHA256
     if revision == CURRENT_INTERVIEW_DATABASE_REVISION:
         return CURRENT_BASELINE_MANIFEST_SHA256
     raise InterviewBaselinePreflightError("interview_baseline_unknown_revision_rejected")
@@ -732,6 +741,13 @@ def verify_interview_migration_postcondition(connection: Connection) -> None:
             connection,
             revision=INTERVIEW_BASELINE_ROOT_REVISION,
             manifest_sha256=I200_BASELINE_MANIFEST_SHA256,
+        )
+        return
+    if rows == (INTERVIEW_ESCALATION_RETIREMENT_REVISION,):
+        _verify_interview_revision_postcondition(
+            connection,
+            revision=INTERVIEW_ESCALATION_RETIREMENT_REVISION,
+            manifest_sha256=I201_BASELINE_MANIFEST_SHA256,
         )
         return
     if rows == (CURRENT_INTERVIEW_DATABASE_REVISION,):

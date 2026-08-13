@@ -27,7 +27,7 @@ PROMPT_ASSET_VERSION = "v5+v1"
 PROMPT_VERSION = "agent_decide.v5+bound_evidence_synthesis.v1"
 AGENT_SCHEMA_VERSION = "agent-contract.v5.1"
 CONTEXT_VERSION = "context-v1.2"
-EXPECTED_PROMPT_HASH = "8f878813f43387d75c8d1aa4ecdbda755ec8814e006731c29d0852f84c81aec8"
+EXPECTED_PROMPT_HASH = "a414a76efb125d560071225253ffb9f5bfc8c1135ee2af52b5f4a044a27e3abc"
 EXPECTED_SCHEMA_HASH = "51c30150c8940975a08593e0121432a5c6a7c04c2786dc14186348506b2e90a1"
 _COMMIT_SHA = re.compile(r"^[0-9a-f]{40}(?:[0-9a-f]{24})?$")
 
@@ -87,11 +87,7 @@ class CanonicalRuntimeManifest:
     def identity_dict(self) -> dict[str, object]:
         """Return semantic runtime identity without repository provenance."""
 
-        return {
-            key: value
-            for key, value in self.as_dict().items()
-            if key != "code_commit"
-        }
+        return {key: value for key, value in self.as_dict().items() if key != "code_commit"}
 
     @property
     def content_hash(self) -> str:

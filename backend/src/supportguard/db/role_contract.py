@@ -72,7 +72,7 @@ MCP_OWNER_ONLY_HELPERS = (
         parallel="u",
         security_definer=False,
         search_path=("search_path=pg_catalog, public, supportguard_control",),
-        definition_sha256="202942b0ed90de5f8a1b302f389696b67e2e0625d6f4532c5416a3de656fe9c8",
+        definition_sha256="61d79bf221df47846391e5fddab333fab76cd8992cd02c7ab1e206fee0132bed",
     ),
     OwnerOnlyFunction(
         signature=("supportguard_action_observation_bound(jsonb,jsonb,text,text,text,integer)"),

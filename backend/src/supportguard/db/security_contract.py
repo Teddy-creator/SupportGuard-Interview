@@ -15,7 +15,8 @@ from supportguard.db.seed_contract import SEED_CONTRACT_SHA256, SEED_VERSION
 
 LEGACY_FINAL_DATABASE_HEAD: Final = "b207c0a1d001"
 INTERVIEW_BASELINE_ROOT_REVISION: Final = "i200_baseline_0001"
-CURRENT_INTERVIEW_DATABASE_REVISION: Final = "i201_retire_escalation"
+INTERVIEW_ESCALATION_RETIREMENT_REVISION: Final = "i201_retire_escalation"
+CURRENT_INTERVIEW_DATABASE_REVISION: Final = "i202_refund_fence_authority"
 
 
 @dataclass(frozen=True, slots=True)
@@ -105,6 +106,7 @@ DATABASE_PREFLIGHT: Final = EmptyDatabasePreflightContract(
     legacy_final_revision=LEGACY_FINAL_DATABASE_HEAD,
     accepted_existing_revisions=(
         INTERVIEW_BASELINE_ROOT_REVISION,
+        INTERVIEW_ESCALATION_RETIREMENT_REVISION,
         CURRENT_INTERVIEW_DATABASE_REVISION,
     ),
     application_schemas=("public", "supportguard_control"),
@@ -277,6 +279,22 @@ PHASE4_ESCALATION_RETIREMENT_CATALOG_DELTA: Final = (
         change="definition",
         rationale=(
             "reject escalation and unknown capability names before any business lookup or write"
+        ),
+    ),
+)
+
+
+PHASE7_REFUND_FENCE_CATALOG_DELTA: Final = (
+    InterviewCatalogDelta(
+        category="function",
+        identity=(
+            "public.supportguard_action_mcp_execute("
+            "p_capability_name text, p_model_arguments jsonb, p_trusted_context jsonb)"
+        ),
+        change="definition",
+        rationale=(
+            "use the active run/job fence and bound evidence as proposal authority instead of "
+            "the asynchronously converging ticket projection"
         ),
     ),
 )

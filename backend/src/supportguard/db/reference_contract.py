@@ -106,7 +106,7 @@ CURRENT_DATABASE_SURFACE = {
         219, "4d6631b3a2358f6e175b0026c882fb913c89e960c00a16b7fba3d9cc18a5c574"
     ),
     "functions": ReferenceSurfaceFingerprint(
-        129, "e6c17a700123fd6fb9ec46d10246efa625c9c6893eb9fef866086cb09215f005"
+        129, "07afb6b85b21d993ddf8da76d3536185620259bcb26a87c0d4fe33991a7b26f0"
     ),
     "triggers": ReferenceSurfaceFingerprint(
         111, "4cf2701649684d396f52f58566ccba6883e434e33decf6102a79b5921e59f86f"

@@ -1857,8 +1857,6 @@ async def test_v156_graph_accepts_only_scoped_durable_proposal_records(
         },
         {"tool_name": "search_knowledge"},
     ]
-    if action_type == "entitlement_change":
-        observation_binding.insert(1, {"tool_name": "query_api_usage"})
     eligibility = ProposalEligibility(
         eligible=True,
         action_type=cast(Any, action_type),

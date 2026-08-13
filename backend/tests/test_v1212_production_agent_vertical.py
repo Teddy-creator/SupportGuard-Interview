@@ -184,9 +184,7 @@ async def test_public_http_to_restricted_mcp_agent_finalizer_vertical(
             assert events_response.status_code == 200
             product_detail = detail.json()
             assert product_detail["latest_run"]["id"] == run_id
-            assert product_detail["latest_run"]["actual_runtime"]["provider_mode"] == (
-                "fake"
-            )
+            assert product_detail["latest_run"]["actual_runtime"]["provider_mode"] == ("fake")
             assert product_detail["latest_run"]["actual_runtime"]["source"] == (
                 "agent_call_attempt"
             )
@@ -251,9 +249,7 @@ async def test_public_http_to_restricted_mcp_agent_finalizer_vertical(
                     "Idempotency-Key": f"v1212-vertical-comparison-{suffix}",
                 },
                 json={
-                    "message": (
-                        "请对比 atlas-chat 当前版本和旧版本的上下文上限及 JSON 输出限制。"
-                    ),
+                    "message": ("请对比 atlas-chat 当前版本和旧版本的上下文上限及 JSON 输出限制。"),
                 },
             )
             assert comparison.status_code == 202, comparison.text
@@ -309,7 +305,7 @@ async def test_public_http_to_restricted_mcp_agent_finalizer_vertical(
             assert job is not None and job.status == "succeeded"
             assert run.tool_rounds == 1
             assert run.tool_attempts == 3
-            assert run.llm_calls == 4
+            assert run.llm_calls == 3
 
             llm_attempts = list(
                 (
@@ -323,7 +319,7 @@ async def test_public_http_to_restricted_mcp_agent_finalizer_vertical(
                     )
                 ).all()
             )
-            assert [item.ordinal for item in llm_attempts] == [1, 2, 3, 4]
+            assert [item.ordinal for item in llm_attempts] == [1, 2, 3]
             assert all(item.status == "succeeded" for item in llm_attempts)
 
             invocations = list(
@@ -499,12 +495,14 @@ async def test_public_http_to_restricted_mcp_agent_finalizer_vertical(
             assert len(historical_invocations) == len(historical_observations) == 1
             assert historical_invocations[0].outcome == "succeeded"
             assert historical_observations[0].status == "ok"
-            assert historical_observations[0].payload["trusted_retrieval_intent"][
-                "intent"
-            ] == "compare"
-            assert historical_observations[0].payload["trusted_retrieval_intent"][
-                "reason_code"
-            ] == "contextual_historical_comparison_semantics"
+            assert (
+                historical_observations[0].payload["trusted_retrieval_intent"]["intent"]
+                == "compare"
+            )
+            assert (
+                historical_observations[0].payload["trusted_retrieval_intent"]["reason_code"]
+                == "contextual_historical_comparison_semantics"
+            )
             markers = list(
                 (
                     await session.scalars(

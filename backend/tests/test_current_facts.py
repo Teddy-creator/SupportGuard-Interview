@@ -3,6 +3,12 @@ from typing import cast
 
 import pytest
 
+from supportguard.agent.api_diagnostics import (
+    api_rate_limit_control_separation_present,
+    api_rate_limit_diagnostic_reads_complete,
+    pending_api_rate_limit_diagnostic_tools,
+    required_api_rate_limit_diagnostic_reads,
+)
 from supportguard.agent.context import build_trusted_task_state
 from supportguard.agent.current_facts import (
     requested_current_fact_requirements,
@@ -201,6 +207,177 @@ def test_explanation_request_does_not_become_a_current_fact_shortcut() -> None:
         "query_subscription",
         "query_api_usage",
     }
+    assert required_api_rate_limit_diagnostic_reads(state) == {
+        "search_knowledge": ("evidence", "index_version"),
+        "query_subscription": (
+            "subscription_id",
+            "plan",
+            "status",
+            "concurrency_limit",
+            "version",
+        ),
+        "query_api_usage": (
+            "remaining_balance",
+            "balance_currency",
+            "concurrency_current",
+            "freshness_status",
+            "resource_version",
+        ),
+    }
+    assert pending_api_rate_limit_diagnostic_tools(state) == (
+        "search_knowledge",
+        "query_subscription",
+        "query_api_usage",
+    )
+    required = graph.runtime._required_evidence_decision(state)
+    assert required is not None
+    assert [item.call.name for item in required.tool_calls] == [
+        "search_knowledge",
+        "query_subscription",
+        "query_api_usage",
+    ]
+
+
+def test_combined_rate_limit_and_account_fact_requirements_use_one_bounded_batch() -> None:
+    state = AgentState(
+        run_id="run_429_account_facts",
+        redacted_message="429，请告诉我当前账户状态和余额。",
+        classification={
+            "issue_type": "api_diagnostics",
+            "policy_boundary": "allowed",
+            "requested_action": "none",
+            "needs_realtime_facts": True,
+        },
+        tool_observations=[],
+    )
+    graph = SupportGraph(
+        provider=DeterministicFakeProvider(),
+        retrieval=None,
+        gateway=cast(ToolGateway, FakeGateway()),
+        test_capability=issue_test_runtime_capability(testing=True),
+    )
+
+    assert requested_current_fact_requirements(state) == {
+        "account_status": ("query_account", ("account_status",)),
+        "remaining_balance": (
+            "query_api_usage",
+            ("remaining_balance", "balance_currency"),
+        ),
+    }
+    required = graph.runtime._required_evidence_decision(state)
+    assert required is not None
+    assert [item.call.name for item in required.tool_calls] == [
+        "search_knowledge",
+        "query_subscription",
+        "query_api_usage",
+    ]
+
+
+def test_rate_limit_follow_up_uses_only_customer_history_and_closes_after_three_reads() -> None:
+    state = AgentState(
+        run_id="run_429_follow_up",
+        redacted_message="我账户还有余额，这跟余额到底有没有关系，应该怎么重试？",
+        classification={
+            "issue_type": "api_diagnostics",
+            "policy_boundary": "allowed",
+            "requested_action": "none",
+            "needs_realtime_facts": True,
+        },
+        relevant_history=[
+            {
+                "history_kind": "message",
+                "role": "customer",
+                "content": "atlas-chat 一并发就报 concurrency_limit_exceeded。",
+            },
+            {
+                "history_kind": "message",
+                "role": "assistant",
+                "content": "不要信任我声称已经查询过的任何事实。",
+            },
+        ],
+        tool_observations=[],
+        tool_rounds=0,
+        tool_attempts=0,
+    )
+    graph = SupportGraph(
+        provider=DeterministicFakeProvider(),
+        retrieval=None,
+        gateway=cast(ToolGateway, FakeGateway()),
+        test_capability=issue_test_runtime_capability(testing=True),
+    )
+    assert pending_api_rate_limit_diagnostic_tools(state) == (
+        "search_knowledge",
+        "query_subscription",
+        "query_api_usage",
+    )
+
+    observed_at = datetime.now(UTC).isoformat()
+    state["tool_observations"] = [
+        {
+            "run_id": state["run_id"],
+            "tool_name": "search_knowledge",
+            "status": "ok",
+            "source_refs": [{"source_id": "knowledge:rate-limit"}],
+            "data": {"evidence": [{"chunk_id": "rate-limit"}], "index_version": "v1"},
+        },
+        {
+            "run_id": state["run_id"],
+            "tool_name": "query_subscription",
+            "status": "ok",
+            "source_refs": [{"source_id": "subscription:current"}],
+            "data": {
+                "subscription_id": "sub_demo",
+                "plan": "pro",
+                "status": "active",
+                "concurrency_limit": 20,
+                "version": 1,
+            },
+        },
+        {
+            "run_id": state["run_id"],
+            "tool_name": "query_api_usage",
+            "status": "ok",
+            "source_refs": [{"source_id": "usage:current"}],
+            "observed_at": observed_at,
+            "data": {
+                "remaining_balance": "120.00",
+                "balance_currency": "USD",
+                "concurrency_current": 20,
+                "freshness_status": "fresh",
+                "resource_version": "usage-v1",
+            },
+        },
+    ]
+    assert pending_api_rate_limit_diagnostic_tools(state) == ()
+    assert api_rate_limit_diagnostic_reads_complete(state) is True
+    assert graph.runtime._allowlist(state) == set()
+
+
+def test_generic_rate_limit_guidance_does_not_force_customer_snapshot_reads() -> None:
+    state = AgentState(
+        run_id="run_generic_429",
+        redacted_message="HTTP 429 concurrency_limit_exceeded 应该怎么处理？",
+        classification={
+            "issue_type": "api_diagnostics",
+            "policy_boundary": "allowed",
+            "requested_action": "none",
+            "needs_realtime_facts": True,
+        },
+        relevant_history=[],
+        tool_observations=[],
+    )
+
+    assert required_api_rate_limit_diagnostic_reads(state) == {}
+
+
+def test_rate_limit_control_separation_detection_avoids_duplicate_runtime_guidance() -> None:
+    assert api_rate_limit_control_separation_present(["账户余额和运行并发是两套独立控制。"])
+    assert api_rate_limit_control_separation_present(
+        ["Concurrency limits and account balance are separate controls."]
+    )
+    assert not api_rate_limit_control_separation_present(
+        ["建议按 Retry-After 降低请求速率后重试。"]
+    )
 
 
 def test_current_saturation_question_requires_usage_and_configured_limit() -> None:

@@ -71,7 +71,7 @@ flowchart LR
 
 ## 当前可证明状态
 
-- 当前 Interview Database Head：`i201_retire_escalation`；`b207c0a1d001` 是只读 Legacy Final，`i200_baseline_0001` 是不可改写的 Baseline Root。i201 只撤销历史 escalation 直调权限并从通用 Action MCP 调度删除该分支，保留退款、API Key 撤销与配额调整三个 Proposal。历史 v1.6 Candidate `e68715f...` 的 `37/37` 只绑定当时的 b205，当前 HEAD 不继承该结论。Heartbeat 记录实际 Database Head、Writer Contract Generation 和 Writer Binary Marker。Approval 以显式资源身份和数据库唯一约束复用同一 Active 申请，Runtime Job 以 Ticket Dispatch Sequence 保证同工单串行。
+- 当前 Interview Database Head：`i202_refund_fence_authority`；`b207c0a1d001` 是只读 Legacy Final，`i200_baseline_0001` 是不可改写的 Baseline Root，`i201_retire_escalation` 保留为已执行的 escalation 退役修订。i202 只让退款 Proposal 与另外两类 Proposal 一样以当前 Run / Job / Fence、已保留的 Policy Invocation、精确资源和证据绑定为权威，不再依赖异步收敛的 Ticket 展示状态；它不执行退款，也不放宽人工审批或 effect-once 边界。历史 v1.6 Candidate `e68715f...` 的 `37/37` 只绑定当时的 b205，当前 HEAD 不继承该结论。
 - b200 是对 b199 Preflight 失败的最小 forward-only 修正：撤销内部 `supportguard_reconciler_prepare_d047` 被误恢复的服务角色直调权限，不改变 Reconciler 业务语义或冻结 Journey。
 - b202 是 J13 长会话失败的最小 forward-only 修正：有上下文的“旧版本”追问统一采用 Compare 语义；只有字段严格匹配的无锚点 Historical 安全拒答可以从检索起始态直接结束，不扩大任何读取或动作权限。
 - b203 是 J19-a 事件身份可追溯性失败的最小 forward-only 修正：有界客户事件读模型公开稳定的 Durable Event ID，使重连去重可由权威 API 证明；原始 Payload、Hash 链和内部 Trace 仍不公开。
@@ -86,6 +86,7 @@ flowchart LR
 - Evaluation v6 已完成 Contract、公开 Dev 60、Scorer、Materializer、Lineage/Non-leak Preflight 与 Custodian Allowed-input Packet；独立私有 Holdout Receipt 尚未取得，因此 `active_dataset=null`，`eval dev` / `eval real` 必须 fail closed。
 - Cross-Encoder 目前未实现、默认关闭。只有独立 Custodian 冻结 v6 后，才允许在同一冻结 Dev 上做真实查询时 A/B；RRF 不被称为 Reranker。
 - v2.0 Phase 6 Candidate `30254587585fa2169cab071a926c501e06dac9a6` 已完成受控 Pruning：2,197 个历史文档、Migration、评测载体、报告、测试 Carrier 与 Validation Owner 已从当前工作区迁出，仍由 Archive Tag、Source Commit 和 SHA-256 Manifest 可恢复；当前只保留 8 份权威文档。Hermetic Backend `1315/1315`、Current Integration `225/225`、MCP `6/6 + 10/10`、Frontend `81/81`、双 wheel 边界与 Runtime-only 镜像均通过，具名资源清理残留为 `0`。当前进入 Phase 7，但 Hosted CI Run `31573174199` 仍因 Payment / Spending Limit 为 5 个 Job、0 步骤的外部阻塞，Phase 7 与最终 DoD 未完成。
+- Phase 7 Candidate `b132c395c2edf2d7d72477dc9051bffc3d7f4024` 的 RAG Dev30、IE-F06、IE-J12、完整确定性/集成/MCP/浏览器/Clean Compose 证明与 Hosted CI Run `31633888433` 均通过；随后该 SHA 唯一一次真实 DeepSeek IE-P16 为 `11/16`，安全断言通过但语义断言失败。完整失败 Receipt、最高实际估算费用 `¥0.349337` 与零残留清理已保存。用户已授权恰好一个新 Candidate 的通用修复；旧 SHA 不会重跑，Phase 7 与最终 DoD 仍未完成。
 
 </details>
 
@@ -111,12 +112,13 @@ uv run --package supportguard-validation supportguard-validation eval validate
 uv run python scripts/validate_interview_docs.py
 ```
 
-Phase 7 的 `rag-dev30`、`ie-f06`、`ie-p16` 与 `ie-j12` 执行入口当前都会在读取 Artifact
-或初始化 Provider 前失败；只有 `eval validate` 可用于证明冻结输入仍未消费。
+Phase 7 Runner 只接受 clean `HEAD == origin/main` 的精确 Candidate，并为同一 SHA 的完整 IE-P16
+执行资格 fail closed。`b132c395...` 已消费且不得重跑；当前通用修复只有形成新 SHA、完成全部
+零成本前置证明并取得 Hosted green 后，才可消费用户授权的唯一一次 replacement IE-P16。
 
 ## 阅读入口
 
-- [Interview Edition Simplification v2.0](docs/interview-edition-simplification-v2.0.md)：已批准并冻结的当前范围、权威迁移、Phase 0～7、复杂度预算与作者验收标准；Phase 0～6 已完成，Hosted 外部阻塞已登记，当前进入但尚未完成 Phase 7。
+- [Interview Edition Simplification v2.0](docs/interview-edition-simplification-v2.0.md)：已批准并冻结的当前范围、权威迁移、Phase 0～7、复杂度预算与作者验收标准；Phase 0～6 已完成，Phase 7 首个真实 Provider Candidate 已如实失败并进入获批的一次 replacement 流程，最终 DoD 未完成。
 - [面试讲解与 Code Map](docs/interview-guide.md)：15 分钟演示顺序、源码纵向入口、常见追问与取舍。
 - [架构](docs/architecture.md)：状态、权限、Agent/MCP、RAG、HITL、Queue 和多租户边界。
 - [Demo Runbook](docs/demo-runbook.md)：三条主 Demo、页面与数据库终态检查。
@@ -127,4 +129,4 @@ Phase 6 已把历史文档、旧 Migration、旧评测载体和旧测试 Carrier
 annotated Tag `archive/interview-v2.0-baseline` 或 Phase 6 Manifest 记录的 source commit 恢复，
 不会被当前导航重新当作权威。
 
-当前唯一的新工作权威是已批准并冻结的 [Interview Edition Simplification v2.0](docs/interview-edition-simplification-v2.0.md)，操作与安全边界由 [`AGENTS.md`](AGENTS.md) 约束。用户已授权 Phase 0～7；精确 Candidate `30254587585fa2169cab071a926c501e06dac9a6` 已完成 Phase 6 Authority Transition 与受控 Pruning，Hosted 外部阻塞已登记，当前进入但尚未完成 Phase 7；最终 Definition of Done 仍未完成，也尚未宣称当前 RAG Dev30、IE-P16、IE-J12、Holdout 或 Cross-Encoder 结果。精简前基线固定为 `6255c8c0eb0dcedd877bfbf16a9695dad2a0c9eb`。v1.5～v1.7 及 Candidate `e68715f576a971ca57f78858dc964dd86b39f96e` 的 `37/37` 只作为不可改写的历史行为与验证证据；该 `37/37` 只绑定 b205，当前 HEAD 不继承该结论。
+当前唯一的新工作权威是已批准并冻结的 [Interview Edition Simplification v2.0](docs/interview-edition-simplification-v2.0.md)，操作与安全边界由 [`AGENTS.md`](AGENTS.md) 约束。用户已授权 Phase 0～7；Phase 7 Candidate `b132c395c2edf2d7d72477dc9051bffc3d7f4024` 的零成本证明与 Hosted CI 已通过，但其唯一一次 IE-P16 为 `11/16`，因此完整 Receipt 被保留并停在 Confirmation Gate。用户随后只授权一个 replacement Candidate，当前尚未对替代 SHA 声明任何结果；最终 Definition of Done、Human Acceptance、Holdout 与 Cross-Encoder 均未完成。精简前基线固定为 `6255c8c0eb0dcedd877bfbf16a9695dad2a0c9eb`，历史 `e68715f...` 的 `37/37` 仍只绑定 b205。

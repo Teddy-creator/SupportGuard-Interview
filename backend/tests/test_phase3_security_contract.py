@@ -20,7 +20,7 @@ def test_baseline_identity_is_independent_and_empty_only() -> None:
     assert LEGACY_FINAL_DATABASE_HEAD == "b207c0a1d001"
     assert BASELINE_IDENTITY.revision == INTERVIEW_BASELINE_ROOT_REVISION
     assert CURRENT_PRODUCT_DATABASE_HEAD == CURRENT_INTERVIEW_DATABASE_REVISION
-    assert CURRENT_PRODUCT_DATABASE_HEAD == "i201_retire_escalation"
+    assert CURRENT_PRODUCT_DATABASE_HEAD == "i202_refund_fence_authority"
     assert BASELINE_IDENTITY.source_legacy_head == LEGACY_FINAL_DATABASE_HEAD
     assert BASELINE_IDENTITY.script_location == "backend/alembic_baseline"
     assert BASELINE_IDENTITY.version_table == "alembic_version"
@@ -28,6 +28,7 @@ def test_baseline_identity_is_independent_and_empty_only() -> None:
     assert DATABASE_PREFLIGHT.legacy_final_revision == LEGACY_FINAL_DATABASE_HEAD
     assert DATABASE_PREFLIGHT.accepted_existing_revisions == (
         INTERVIEW_BASELINE_ROOT_REVISION,
+        "i201_retire_escalation",
         CURRENT_INTERVIEW_DATABASE_REVISION,
     )
     assert DATABASE_PREFLIGHT.reject_legacy_history is True

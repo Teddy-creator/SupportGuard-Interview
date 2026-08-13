@@ -994,7 +994,7 @@ def test_graph_has_no_action_specific_candidate_canonicalizers() -> None:
     assert "self.action_flow_nodes.assemble_action" in graph_source
 
 
-def test_action_current_usage_read_is_canonicalized_to_freshest_window() -> None:
+def test_entitlement_usage_read_is_not_reclassified_as_an_action_obligation() -> None:
     case = _CASES["entitlement_change"]
     admitted = _admitted("entitlement_change", case)
     ledger = evaluate_action_obligations(
@@ -1035,9 +1035,9 @@ def test_action_current_usage_read_is_canonicalized_to_freshest_window() -> None
         decision,
     )
 
-    assert changed is True
+    assert changed is False
     assert canonical.tool_calls[0].call.arguments.model_dump(mode="json") == {}
-    assert canonical.tool_calls[1].call.arguments.model_dump(mode="json") == {"window": "1m"}
+    assert canonical.tool_calls[1].call.arguments.model_dump(mode="json") == {"window": "1h"}
     assert decision.tool_calls[1].call.arguments.model_dump(mode="json") == {"window": "1h"}
 
 
@@ -1242,29 +1242,6 @@ def _nominal_observations(
             suffix=f"{action_type}-knowledge",
         ),
     ]
-    if action_type == "entitlement_change":
-        observations.append(
-            _observation(
-                tool_name="query_api_usage",
-                data={
-                    "window": "1m",
-                    "window_start": (NOW - timedelta(minutes=1)).isoformat(),
-                    "window_end": NOW.isoformat(),
-                    "request_count": 100,
-                    "input_token_count": 1000,
-                    "output_token_count": 500,
-                    "concurrency_current": 20,
-                    "concurrency_peak": 20,
-                    "remaining_balance": "120.00",
-                    "balance_currency": "USD",
-                    "freshness_seconds": 1,
-                    "freshness_status": "fresh",
-                    "resource_version": "usage-v1",
-                },
-                scope_hash=admitted.scope_hash,
-                suffix="entitlement-usage",
-            )
-        )
     return observations
 
 

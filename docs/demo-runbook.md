@@ -5,7 +5,7 @@ v1.5.12 Matrix/Manifest 仍以 `candidate_sha=null`、`execution_state=unexecute
 输入，不回写执行状态；重构后 Candidate `e68715f...` 的仓库外 Receipt 已独立验证为 `37/37`，
 对应 v1.6 Verification 已提交。现场 Demo、公开 Journey Acceptance 与独立质量评测必须分开。
 
-当前 Interview Database Head 是 `i201_retire_escalation`；`b207c0a1d001` 只作为 Legacy Final，`i200_baseline_0001` 是不可改写的 Baseline Root。b193 以 `COLLATE "C"` 固定 SQL canonical JSON
+当前 Interview Database Head 是 `i202_refund_fence_authority`；`b207c0a1d001` 只作为 Legacy Final，`i200_baseline_0001` 是不可改写的 Baseline Root，`i201_retire_escalation` 是已执行的退役修订。i202 只移除退款 Proposal 对异步 Ticket 展示状态的额外依赖，继续强制当前 Run / Job / Fence、证据绑定、独立审批和零预执行 Effect。b193 以 `COLLATE "C"` 固定 SQL canonical JSON
 的 key 排序；b194 以 forward-only 方式为既有数据库补装运行身份和 Dead Job 收敛语义；
 b195 收紧终态动作重放为“完全绑定且效果可见”时的幂等返回；b196 令审批证据按冻结的
 RetrievalTrace 候选身份解析，而不是把支持片段 Locator 当作 Chunk Locator；b197 允许
@@ -23,10 +23,12 @@ b207 只追加审批来源的 Origin 有界 Keyset 分页与问候标题的同�
 当前 v2.0 Phase 6 Candidate 为 `30254587585fa2169cab071a926c501e06dac9a6`：Authority Transition、
 2,197 个历史文件的受控 Pruning、Archive 恢复、Test Disposition、8 份当前权威文档、双 wheel、
 Runtime-only 镜像、Hermetic Backend `1315/1315`、Current Integration `225/225`、MCP
-`6/6 + 10/10` 与 Frontend `81/81` 均通过，零残留清理完成，当前进入但尚未完成 Phase 7。Hosted
-CI Run `31573174199` 的 5 个 Job 均为零步骤，并因账户 Payment / Spending Limit 登记为
-`external_zero_step_blocker`。这不代表 Hosted CI、RAG Dev30、IE-P16、IE-J12、Holdout、
-Cross-Encoder、Phase 7 或最终 Definition of Done 已通过。
+`6/6 + 10/10` 与 Frontend `81/81` 均通过，零残留清理完成。Phase 7 Candidate
+`b132c395c2edf2d7d72477dc9051bffc3d7f4024`
+随后通过 RAG Dev30、IE-F06、IE-J12、Clean Compose 与 Hosted CI Run `31633888433`，但其一次性
+真实 IE-P16 为 `11/16`。失败 Receipt、费用与清理均已保存；用户只授权一个 replacement
+Candidate，旧 SHA 不得重跑。这不代表 Phase 7、Human Acceptance、Holdout、Cross-Encoder 或
+最终 Definition of Done 已通过。
 升级到该 Head 仍不等于执行过
 下述 Journey。
 
@@ -178,7 +180,7 @@ make v1512-journey-preflight \
 它严格执行 Backend、PostgreSQL/RLS、MCP、Two-worker、Frontend、Security、
 Clean Compose 和 Docs 八条 Lane：隔离 PostgreSQL/Redis 载体、19 条无 API Mock 的真实
 候选栈 Playwright、`pip-audit`、候选镜像 ID/Revision、容器 `CODE_VERSION`、服务拓扑、
-Readiness 与 b207 Head 都必须由输出或 JUnit 重新计算。失败命令也会留下 Receipt 和
+Readiness 与当前 Interview Head 都必须由输出或 JUnit 重新计算。失败命令也会留下 Receipt 和
 stdout/stderr；最终始终清理本次拥有的 Container、Network、Volume、Image、Buildx 与临时
 目录，并要求 residual 为零。该 Preflight 固定校验上述 Matrix/Manifest Hash，但不会改写
 其 `execution_state=unexecuted`，也不消费 Formal 授权。
@@ -196,8 +198,9 @@ Compose Project、Volume、临时镜像、Builder、Cache 和 MCP 子进程，�
 它们不替代 v1.5.12 Journey Acceptance，也不是 Dataset、Holdout 或泛化质量指标。
 
 历史 Evaluation v6 的公开 Dev、Scorer、Materializer 与旧 Provider Receipt 已在 Phase 6 归档，
-不得从当前工作区继承其结论。当前没有 Candidate-eligible Dataset；`make eval-validate` 只证明
-RAG Dev30、IE-F06、IE-P16 与 IE-J12 的冻结输入仍未消费。历史材料可通过 annotated Tag
+不得从当前工作区继承其结论。Phase 7 的冻结 RAG Dev30、IE-F06 与 IE-J12 已由 Candidate
+`b132c395...` 消费并通过；同一 SHA 的 IE-P16 已消费且失败，不能重跑。replacement Candidate
+只能在新 SHA 上重新生成自己的完整证据。历史材料可通过 annotated Tag
 `archive/interview-v2.0-baseline` 恢复，但不属于当前 Demo 验收命令。
 
 PostgreSQL MCP 分区使用 CI 同款 deterministic index fixture：先执行 `supportguard knowledge ingest --fixture`，再提供 `TEST_DATABASE_URL`、`MCP_READ_DATABASE_URL` 与 `MCP_ACTION_DATABASE_URL`。真实 Compose Demo 则使用默认 E5 index；两种 embedding contract 不得混用。

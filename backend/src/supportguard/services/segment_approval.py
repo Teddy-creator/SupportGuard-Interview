@@ -9,6 +9,7 @@ from sqlalchemy.dialects.postgresql import insert as postgresql_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from supportguard.agent.persistence import AgentRunStore, CanonicalEventHeadConflict
+from supportguard.agent.responses import render_pending_action_confirmation
 from supportguard.approvals.snapshot import approval_snapshot_hash, approval_snapshot_payload
 from supportguard.contracts.finalizer import (
     ActionfulApprovalResumeDelta,
@@ -1229,11 +1230,10 @@ class ApprovalResumeSegments(_ApprovalDependencies):
                 raise RuntimeConflict("active_approval_insert_missing")
             approval = persisted
             await claim_savepoint.commit()
-        answer = (
-            "我已核验相关事实，并提交了一项需要独立人工审批的高风险操作。审批期间你仍可继续提问。"
+        answer = render_pending_action_confirmation(
+            approval.action_type,
+            resource_id=approval.resource_id,
         )
-        if state and isinstance(state.get("final"), dict):
-            answer = str(state["final"].get("answer") or answer)
         await self._publish_message(
             ticket=ticket,
             run=run,

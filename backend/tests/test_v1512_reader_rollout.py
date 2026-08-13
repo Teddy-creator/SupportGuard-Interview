@@ -75,7 +75,7 @@ def test_schema_rollout_contract_accepts_only_the_interview_baseline() -> None:
         *POST_CONTRACT_HEADS,
     )
     assert POST_CONTRACT_HEADS[-1] == "b207c0a1d001"
-    assert CURRENT_PRODUCT_DATABASE_HEAD == "i201_retire_escalation"
+    assert CURRENT_PRODUCT_DATABASE_HEAD == "i202_refund_fence_authority"
     for head in legacy_heads:
         snapshot = schema_rollout_for_head(head)
         assert snapshot.database_head == head

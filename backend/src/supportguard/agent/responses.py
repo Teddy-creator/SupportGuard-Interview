@@ -17,6 +17,32 @@ class TerminalOutcomeRendering:
     material_claim: str | None
 
 
+def render_pending_action_confirmation(
+    action_type: str,
+    *,
+    resource_id: str,
+) -> str:
+    """Render one bound, inert proposal without trusting Provider wording."""
+
+    safe_resource = resource_id if _SAFE_RESOURCE_REF.fullmatch(resource_id) else "当前资源"
+    if action_type == "refund":
+        return (
+            f"账单 {safe_resource} 已核验为重复扣费，退款申请已提交独立人工审批；"
+            "审批完成前不会执行退款，你仍可继续提问。"
+        )
+    if action_type == "api_key_revocation":
+        return (
+            f"API Key {safe_resource} 的撤销申请已提交独立人工审批；"
+            "审批完成前不会执行撤销，你仍可继续提问。"
+        )
+    if action_type == "entitlement_change":
+        return (
+            f"订阅 {safe_resource} 的变更申请已提交独立人工审批；"
+            "审批完成前不会执行变更，你仍可继续提问。"
+        )
+    return "高风险操作已提交独立人工审批；审批完成前不会执行任何变更。"
+
+
 def render_executed_action_update(
     action_type: str,
     *,

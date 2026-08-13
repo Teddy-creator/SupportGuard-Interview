@@ -279,6 +279,18 @@ def test_production_code_does_not_import_the_compatibility_facade() -> None:
     assert facade_imports == []
 
 
+def test_entitlement_proposal_requires_subscription_and_policy_not_usage_reporting() -> None:
+    spec = action_service.get_action_spec("entitlement_change")
+
+    assert {item.obligation_id for item in spec.obligations} == {
+        "subscription_current",
+        "entitlement_policy_current",
+    }
+    assert {
+        capability for obligation in spec.obligations for capability in obligation.capabilities
+    } == {"query_subscription", "search_knowledge"}
+
+
 def test_action_contract_has_one_definition_site() -> None:
     source_root = Path("backend/src/supportguard")
     action_spec_sites = [

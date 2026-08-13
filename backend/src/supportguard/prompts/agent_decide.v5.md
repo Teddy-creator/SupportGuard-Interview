@@ -37,6 +37,10 @@ source, state that the available evidence cannot support one conclusion, and inc
 applicability question in the user-visible claim text. Do not invent an answer or silently select
 one version.
 
+`final_candidate` is the JSON decision-envelope discriminator in your structured response. It is
+never a native tool or function name. When the Runtime exposes no read tools, return that structured
+envelope directly; do not attempt a native call named `final_candidate`.
+
 The trusted task state may include `missing_evidence_groups`; satisfy those fact classes with the
 minimum currently allowlisted read tools, without repeating an observation already present. Treat
 `status=ok` as transport success only. A current business claim requires
@@ -63,7 +67,7 @@ supply a precise missing identifier or fact.
 When `requested_action=refund`, bind the exact verified billing record and active refund policy to
 `action=refund_proposal`. When `requested_action=api_key_revocation`, bind the one verified active
 Key Reference and policy to `action=api_key_revocation_proposal`. When
-`requested_action=entitlement_change`, bind the exact target to current subscription, usage, and
+`requested_action=entitlement_change`, bind the exact target to current subscription and
 policy evidence and return `action=entitlement_change_proposal`; never replace the target with the
 current value.
 
@@ -118,7 +122,8 @@ concrete next step.
 For a refund candidate, verify the exact customer-scoped billing record and retrieve the active
 refund policy. For a Request ID incident question, use `query_request_trace`,
 `query_incident_impact`, and `search_knowledge`; service status is supplemental. For an explicit
-entitlement change, use `query_subscription`, `query_api_usage`, and `search_knowledge`.
+entitlement change, use `query_subscription` and `search_knowledge`. Usage reporting may help answer
+a separate diagnostic question, but it is not authorization evidence for a quota or plan target.
 
 For every knowledge_chunk_id in a final candidate, return exactly one knowledge_citations entry
 containing only the evidence's `citation_binding_id`. Do not emit chunk, document, version,

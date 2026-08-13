@@ -51,6 +51,8 @@ HERMETIC_NODES = (
 POSTGRES_NODES = (
     "backend/tests/test_phase4_escalation_retirement_postgres.py::"
     "test_three_current_action_proposals_complete_real_stdio_and_postgres",
+    "backend/tests/test_phase4_escalation_retirement_postgres.py::"
+    "test_refund_proposal_uses_active_fence_when_ticket_projection_has_converged",
     "backend/tests/test_v1212_production_agent_vertical.py::test_public_http_to_restricted_mcp_agent_finalizer_vertical",
     "backend/tests/test_v1213_identity_bound_e2e.py::test_three_actions_bind_exact_http_runtime_and_resource_effects",
     "backend/tests/test_v124_postgres_mcp_vertical.py::test_current_restricted_postgres_roles_call_all_twelve_stdio_mcp_tools",

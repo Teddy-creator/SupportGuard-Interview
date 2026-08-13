@@ -110,6 +110,7 @@ def _mcp_boundary_reason(sqlstate: str | None, original: object) -> str:
         "P0002": "scoped_resource_missing",
     }.get(sqlstate or "", "database_boundary_failed")
 
+
 _READ_MCP_WRAPPERS = {
     name: f"supportguard_read_mcp_{name}"
     for name in (
@@ -962,8 +963,7 @@ class BusinessService:
         """v1.2 policy-only proposal: durable but not actionable before segment finalize."""
 
         await self.assert_fenced_context(context)
-        ticket = await self._get_scoped_ticket(context)
-        self._assert_actionable_ticket(ticket)
+        await self._get_scoped_ticket(context)
         billing = await self.session.scalar(
             select(BillingRecord).where(
                 BillingRecord.id == arguments.billing_record_id,

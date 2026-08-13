@@ -1037,6 +1037,7 @@ class FakeGateway:
                 "concurrency_current": 40,
                 "concurrency_peak": 45,
                 "remaining_balance": "120.00",
+                "balance_currency": "USD",
                 "resource_version": "usage-v3",
             }
         else:
@@ -6244,9 +6245,10 @@ async def test_single_graph_demo_a_uses_rag_and_bounded_read_tools() -> None:
     assert output["final"]["terminal_state"] == "resolved"
     assert output["tool_attempts"] == 3
     assert output["tool_rounds"] == 1
-    assert output["llm_calls"] == 3
+    assert output["llm_calls"] == 2
     assert output["final"]["knowledge_chunk_ids"] == ["plans-limits-regions-v4:c001:fixture"]
-    assert provider.decision_contexts[1]["retrieved_evidence"][0]["index_version"] == "fixture-v1"
+    assert len(provider.decision_contexts) == 1
+    assert provider.decision_contexts[0]["retrieved_evidence"][0]["index_version"] == "fixture-v1"
     assert output["redaction_count"] == 0
 
 
@@ -6555,7 +6557,7 @@ async def test_v159_repeated_premature_candidate_stops_as_semantic_no_progress()
         (
             "请把当前订阅的并发配额明确提升到 60",
             "entitlement_change_proposal",
-            3,
+            2,
         ),
     ],
 )

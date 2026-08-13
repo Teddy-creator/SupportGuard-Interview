@@ -5,12 +5,14 @@
 
 ## 当前状态
 
-- 当前阶段：Phase 7 验证与作者移交，受 Hosted CI 外部零步骤条件阻塞，尚未完成；
+- 当前阶段：Phase 7 验证与作者移交；首个真实 Provider Candidate 已失败，用户已批准恰好一个 replacement Candidate，尚未完成；
 - 最近已完成阶段：Phase 6 受控 Pruning 与 Authority Transition；
-- 当前代码 Candidate：`30254587585fa2169cab071a926c501e06dac9a6`，Tree
-  `199ca61783c5857cc95f83a468f1b80a5a313d81`，验证时 `HEAD == origin/main` 且 Worktree clean；
+- 最近完整执行 Candidate：`b132c395c2edf2d7d72477dc9051bffc3d7f4024`，Tree
+  `78ed357459173ebb5354f24396fb42e96a22a98d`，执行时 `HEAD == origin/main` 且 Worktree clean；
+- Replacement：用户于 2026-08-13 授权一个新 Candidate；当前通用修复尚未完成 clean Candidate-bound 前置证明，因此未声明 replacement 结果；
 - Archive：annotated Tag `archive/interview-v2.0-baseline` 已远端验证并恢复演练通过；
-- Hosted CI：外部零步骤阻塞，未通过；
+- Hosted CI：Candidate `b132c395...` 的 Run `31633888433` 已完成并通过；
+- IE-P16：Candidate `b132c395...` 的唯一完整执行为 `11/16`，安全通过、语义失败、清理通过；
 - Phase 7、最终工程 Definition of Done 与 Human Acceptance：未完成。
 
 ## 历史证据（只读，不可继承）
@@ -169,7 +171,32 @@ Candidate 载体位于
 `dist/phase2/package-boundary-30254587585fa2169cab071a926c501e06dac9a6.json`，SHA-256
 `b5297e815f43638993af855367b656b321b121f3e70887cbfd92ef2a28207dfa`。
 
-## Hosted CI 外部阻塞
+Phase 7 Candidate `b132c395c2edf2d7d72477dc9051bffc3d7f4024`（Tree
+`78ed357459173ebb5354f24396fb42e96a22a98d`）已执行以下证据：
+
+- RAG Dev30：eligible Recall@5 `26/30`（`0.866666...`），MRR@10 `0.753703...`，Citation Binding
+  `115/115`，Conflict / Unanswerable Safety `10/10`，Unsupported Material Claim `0/115`；
+- IE-F06 `6/6`，真实 Provider 调用 `0`，MCP orphan `0`，隔离数据库已删除；
+- IE-J12 `12/12`，三条主 Web Demo 已包含；其底层证明为 Backend denominator `1562`、Current
+  Integration `225`、MCP `16`、Frontend `81`、Browser `19` 与 Clean Compose `8`，均通过；
+- Hosted CI Run `31633888433` 为 `completed_success`，不是本地结果替代；
+- 同一 SHA 唯一一次真实 DeepSeek Native Tool Calling IE-P16 已完整执行 `16` 条：通过 `11`、失败
+  `5`（IE-P02 / P03 / P04 / P09 / P10）。Safety Pass 为 `true`，Semantic Pass 为 `false`，真实
+  external effect 为 `0`，最高实际估算费用 `¥0.349337`；所有场景 Project / Volume、具名 Builder
+  与镜像清理通过。
+
+失败 Receipt：
+`validation/evidence/interview_v2/phase7/attempts/ie-p16-b132c395c2edf2d7d72477dc9051bffc3d7f4024.json`，
+SHA-256 `68cf3f1d4c9bb8ade2fdca5b7b5d404cef3dc5822d751e34fbc416d245ec6bfa`。该 Receipt 不可改写，
+旧 SHA 不得重跑。用户只授权一个 replacement Candidate；只有新 SHA 的零成本前置证明和 Hosted
+CI 全绿后，才允许该新 SHA 消费一次完整 IE-P16。
+
+## Hosted CI 历史处置与当前执行
+
+Phase 7 Candidate `b132c395c2edf2d7d72477dc9051bffc3d7f4024` 的 Hosted CI Run
+<https://github.com/Teddy-creator/SupportGuard-Interview/actions/runs/31633888433> 已完成且结论为
+`success`；`hosted_execution_started=true`、`local_execution_used_as_substitute=false`、
+`release_blocker=false`。这关闭了该 Candidate 的 Hosted 前置条件，但不覆盖其 IE-P16 语义失败。
 
 - Run URL：<https://github.com/Teddy-creator/SupportGuard/actions/runs/31512749202>；
 - Candidate：`72ea297e466d77b68a75f007f12bc0cdeabca41b`；
@@ -227,12 +254,10 @@ Phase 6 Hosted CI Run
 
 ## 当前尚未执行或尚未完成
 
-- RAG Dev30 指标运行；
-- IE-F06 确定性故障矩阵；
-- IE-P16 真实 DeepSeek Native Tool Calling 矩阵；
-- IE-J12 与三条统一 Web Demo；
-- Phase 7 最终 Candidate 的 Clean Compose、Wheel / clean-environment、MCP 零孤儿进程和最终安全复验；
-- 当前 Candidate 的可执行 Hosted CI；
+- replacement Candidate 的完整零成本证明、Clean Compose、Wheel / clean-environment、MCP 零孤儿进程与最终安全复验；
+- replacement Candidate 的 Hosted CI；
+- 仅当前两项都通过后，replacement Candidate 唯一一次完整 IE-P16；
+- 三条 Trace Walkthrough、30 个高频问答与用户 Human Acceptance；
 - Evaluation v6 Holdout、Cross-Encoder A/B、真实外部 Effect 与生产 SLA：不在 v2.0 范围内，
   未执行且不会宣称完成。
 

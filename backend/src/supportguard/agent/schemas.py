@@ -5,6 +5,7 @@ from typing import Any, Literal
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from supportguard.actions.service import get_action_spec_by_proposal
+from supportguard.agent.constants import MAX_READ_TOOL_CALLS_PER_DECISION
 from supportguard.tools.gateway import ReadToolCall
 
 
@@ -213,7 +214,10 @@ class AgentDecision(BaseModel):
         "tool_calls", "final_candidate", "needs_clarification", "manual_takeover"
     ]
     decision_summary: str = Field(min_length=1, max_length=500)
-    tool_calls: list[NativeReadToolCall] = Field(default_factory=list, max_length=3)
+    tool_calls: list[NativeReadToolCall] = Field(
+        default_factory=list,
+        max_length=MAX_READ_TOOL_CALLS_PER_DECISION,
+    )
     candidate: CandidateResponse | None = None
     clarification_question: str | None = Field(default=None, max_length=2000)
 

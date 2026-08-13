@@ -11,7 +11,7 @@ from sqlalchemy import func, select, text
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 from supportguard.agent.graph import AgentState, SupportGraph
-from supportguard.agent.schemas import AgentDecision
+from supportguard.agent.schemas import AgentDecision, Classification
 from supportguard.contracts.canonical_json import canonical_json_hash
 from supportguard.contracts.tools import ObservationEnvelope, SourceRef, ToolCallContext
 from supportguard.db.models import (
@@ -101,6 +101,34 @@ class ObservationContextProvider(DeterministicFakeProvider):
         super().__init__()
         self.decisions = 0
 
+    async def generate(self, **kwargs: Any) -> ProviderCallResult[Any]:
+        if kwargs["output_schema"] is not Classification:
+            return await super().generate(**kwargs)
+        transport = canonical_transport_record(
+            {
+                "system": kwargs["system"],
+                "user": kwargs["user"],
+                "output_schema": kwargs["output_schema"].model_json_schema(),
+                "trace_metadata": kwargs["trace_metadata"],
+            }
+        )
+        return ProviderCallResult(
+            Classification(
+                issue_type="api_diagnostics",
+                risk="low",
+                policy_boundary="allowed",
+                requested_action="none",
+                requested_concurrency_limit=None,
+                needs_realtime_facts=True,
+                support_subject="customer_problem",
+                rationale="Fixture-owned current account fact request.",
+            ),
+            attempts=1,
+            usage=ProviderUsage(),
+            trace_metadata={},
+            transport=transport,
+        )
+
     async def decide(self, **kwargs: Any) -> ProviderCallResult[RawProviderDecision]:
         self.decisions += 1
         transport = canonical_transport_record(
@@ -128,33 +156,50 @@ class ObservationContextProvider(DeterministicFakeProvider):
         else:
             context = json.loads(str(kwargs["context"]))
             observations = {item["tool_name"]: item for item in context["latest_observations"]}
-            assert set(observations) == {"query_account", "query_api_usage"}
-            decision = AgentDecision.model_validate(
-                {
-                    "decision_type": "final_candidate",
-                    "decision_summary": "Answer from the current scoped Observations.",
-                    "candidate": {
-                        "answer": "当前账户状态为 active，余额为 120.00 USD。",
-                        "action": "answer",
-                        "knowledge_chunk_ids": [],
-                        "business_source_ids": [
-                            "customer:cust_demo",
-                            "usage:cust_demo:1m",
-                        ],
-                        "material_claims": [
+            if set(observations) == {"query_account"}:
+                decision = AgentDecision.model_validate(
+                    {
+                        "decision_type": "tool_calls",
+                        "decision_summary": "Read the current scoped balance.",
+                        "tool_calls": [
                             {
-                                "text": "当前账户状态为 active。",
-                                "observation_source_ids": ["customer:cust_demo"],
-                            },
-                            {
-                                "text": "当前余额为 120.00 USD。",
-                                "observation_source_ids": ["usage:cust_demo:1m"],
-                            },
+                                "tool_call_id": "usage-current",
+                                "call": {
+                                    "name": "query_api_usage",
+                                    "arguments": {"window": "1m"},
+                                },
+                            }
                         ],
-                        "proposed_arguments": {},
-                    },
-                }
-            )
+                    }
+                )
+            else:
+                assert set(observations) == {"query_account", "query_api_usage"}
+                decision = AgentDecision.model_validate(
+                    {
+                        "decision_type": "final_candidate",
+                        "decision_summary": "Answer from the current scoped Observations.",
+                        "candidate": {
+                            "answer": "当前账户状态为 active，余额为 120.00 USD。",
+                            "action": "answer",
+                            "knowledge_chunk_ids": [],
+                            "business_source_ids": [
+                                "customer:cust_demo",
+                                "usage:cust_demo:1m",
+                            ],
+                            "material_claims": [
+                                {
+                                    "text": "当前账户状态为 active。",
+                                    "observation_source_ids": ["customer:cust_demo"],
+                                },
+                                {
+                                    "text": "当前余额为 120.00 USD。",
+                                    "observation_source_ids": ["usage:cust_demo:1m"],
+                                },
+                            ],
+                            "proposed_arguments": {},
+                        },
+                    }
+                )
         return ProviderCallResult(
             raw_decision_from_typed(decision),
             attempts=1,
@@ -416,7 +461,7 @@ async def test_provider_visible_business_observation_has_durable_context_members
                 tenant_id="tenant_demo",
                 ticket_id=ticket_id,
                 role="user",
-                content="429，请告诉我当前账户状态和余额。",
+                content="请告诉我当前账户状态和余额。",
             )
         )
         await session.flush()
@@ -471,7 +516,7 @@ async def test_provider_visible_business_observation_has_durable_context_members
             delivery_generation=1,
             fencing_token=lease.fencing_token,
             trace_id=f"trace_context_{suffix}",
-            user_message="429，请告诉我当前账户状态和余额。",
+            user_message="请告诉我当前账户状态和余额。",
         )
 
     async with factory() as session:
@@ -482,7 +527,19 @@ async def test_provider_visible_business_observation_has_durable_context_members
             session=session,
         )
         output = await graph.run(state)
-        assert output["final"]["terminal_state"] == "resolved"
+        assert output["final"]["terminal_state"] == "resolved", {
+            key: output.get(key)
+            for key in (
+                "final",
+                "classification",
+                "agent_decision",
+                "agent_finish_reason",
+                "safe_stop_reason",
+                "tool_rounds",
+                "tool_attempts",
+                "tool_observations",
+            )
+        }
         assert provider.decisions >= 2
 
     async with factory() as session:

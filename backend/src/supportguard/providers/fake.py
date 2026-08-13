@@ -140,7 +140,7 @@ class DeterministicFakeProvider:
             if issue == "credential_security":
                 names.append("query_api_key_metadata")
             if issue == "entitlement_change":
-                names.extend(["query_subscription", "query_api_usage"])
+                names.append("query_subscription")
             if issue == "incident_support":
                 names.extend(["query_request_trace", "query_incident_impact"])
             calls = []
@@ -601,7 +601,7 @@ class DeterministicFakeProvider:
                     "系统将按确定性规则形成提案并等待人工审批。"
                 ),
                 "entitlement_change": (
-                    "已核验当前订阅、使用量与配额政策；系统将按确定性规则形成提案并等待人工审批。"
+                    "已核验当前订阅与配额政策；系统将按确定性规则形成提案并等待人工审批。"
                 ),
             }.get(issue, "已依据当前业务事实与产品政策完成核验。")
             output = output_schema.model_validate(

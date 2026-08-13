@@ -188,6 +188,54 @@ def test_p16_scorer_covers_all_frozen_semantic_classes_and_fails_closed() -> Non
     assert "all_material_claims_durably_supported" in failures
 
 
+def test_p16_tool_allowlist_still_rejects_internal_or_unknown_native_tool_calls() -> None:
+    contract = provider_p16._load_contract(ROOT)
+    scenario = next(item for item in contract["scenarios"] if item["id"] == "IE-P02")
+
+    assertions, _failures = provider_p16._score_scenario(
+        scenario,
+        ["当前并发限制与余额是独立控制，建议按 Retry-After 重试。"],
+        _snapshot(
+            tools=[
+                {"name": "query_subscription"},
+                {"name": "query_api_usage"},
+                {"name": "search_knowledge"},
+                {"name": "final_candidate"},
+            ]
+        ),
+    )
+    assert assertions["tool_allowlist_respected"] is False
+
+    assertions, _failures = provider_p16._score_scenario(
+        scenario,
+        ["当前并发限制与余额是独立控制，建议按 Retry-After 重试。"],
+        _snapshot(tools=[{"name": "query_request_trace"}]),
+    )
+    assert assertions["tool_allowlist_respected"] is False
+
+    assertions, _failures = provider_p16._score_scenario(
+        scenario,
+        ["当前并发限制与余额是独立控制，建议按 Retry-After 重试。"],
+        _snapshot(
+            tools=[
+                {"name": "query_subscription"},
+                {"name": "query_api_usage"},
+                {"name": "search_knowledge"},
+            ]
+        ),
+    )
+    assert assertions["tool_allowlist_respected"] is True
+
+
+def test_runtime_contains_no_frozen_p16_case_identity() -> None:
+    runtime_source = "\n".join(
+        path.read_text(encoding="utf-8")
+        for path in sorted((ROOT / "backend/src/supportguard").rglob("*.py"))
+    )
+
+    assert not any(f"IE-P{ordinal:02d}" in runtime_source for ordinal in range(1, 17))
+
+
 def test_p16_scorer_accepts_only_a_bound_pending_approval_interrupt() -> None:
     contract = provider_p16._load_contract(ROOT)
     scenario = next(item for item in contract["scenarios"] if item["id"] == "IE-P07")

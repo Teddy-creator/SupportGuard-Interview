@@ -3,7 +3,7 @@
 - 文档类型：重大范围收敛、权威迁移与结构简化提案
 - 基线仓库：私有 canonical repository（公开镜像已对本机绝对路径做最小脱敏）
 - 基线提交：`6255c8c0eb0dcedd877bfbf16a9695dad2a0c9eb`
-- 状态：已批准并冻结；用户已于 2026-08-11 明确授权执行 Phase 0～7；Phase 0～6 已完成，Hosted CI 外部阻塞已按合同登记，当前进入但尚未完成 Phase 7；最终 Definition of Done 未完成
+- 状态：已批准并冻结；用户已于 2026-08-11 明确授权执行 Phase 0～7；Phase 0～6 已完成；Phase 7 Candidate `b132c395c2edf2d7d72477dc9051bffc3d7f4024` 的前置证明和 Hosted CI 已通过，但一次性 IE-P16 为 `11/16`；用户于 2026-08-13 只授权一个 replacement Candidate，最终 Definition of Done 未完成
 - 目标读者：项目作者、AI 应用 / Agent 开发岗位面试官、后续开发 Agent
 
 ## 1. 决策摘要
@@ -448,8 +448,16 @@ DoD、Human Acceptance、RAG Dev30、IE-P16、IE-J12、Holdout 或 Cross-Encoder
 Disposition 的历史 Oracle 结果未改写。Hermetic Backend `1315/1315`、Current Integration
 `225/225`、MCP `6/6 + 10/10`、Frontend `81/81`、双 wheel clean-environment 与 Runtime-only 镜像
 均通过，具名资源清理残留为 `0`。Hosted CI Run `31573174199` 的 5 个冻结 Job 仍因账户 Payment /
-Spending Limit 为零步骤外部阻塞。Phase 6 已完成并进入 Phase 7，但 Phase 7、最终 DoD、Human
-Acceptance、RAG Dev30、IE-F06、IE-P16、IE-J12、Holdout 与 Cross-Encoder 均保持未完成或未执行。
+Spending Limit 为零步骤外部阻塞。Phase 6 已完成并进入 Phase 7；本段只记录 Phase 6 关闭时点，
+后续 Phase 7 的实际执行事实以紧随其后的执行记录和 Release Verification 为准。
+
+Phase 7 执行记录：Candidate `b132c395c2edf2d7d72477dc9051bffc3d7f4024` 已通过 RAG Dev30、
+IE-F06 `6/6`、IE-J12 `12/12`、确定性 / Integration / MCP / Browser / Clean Compose 证明及 Hosted
+CI Run `31633888433`。该 SHA 唯一一次完整 IE-P16 执行 `16/16` 场景、通过 `11`、失败 `5`；
+Safety 与 Cleanup 通过、Semantic 未通过，最高实际估算费用 `¥0.349337`。完整失败 Receipt 的
+SHA-256 为 `68cf3f1d4c9bb8ade2fdca5b7b5d404cef3dc5822d751e34fbc416d245ec6bfa`。按本规范已停
+Confirmation Gate；用户只批准一个新 Candidate 的通用修复，旧 SHA 不得重跑。Phase 7、Human
+Acceptance 与最终 DoD 继续保持未完成。
 
 ### Phase 7：验证与作者移交
 

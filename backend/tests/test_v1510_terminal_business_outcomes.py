@@ -13,6 +13,7 @@ from supportguard.agent.obligations import (
 )
 from supportguard.agent.responses import (
     render_executed_action_update,
+    render_pending_action_confirmation,
     render_terminal_business_outcome,
 )
 from supportguard.contracts.action_preconditions import (
@@ -50,9 +51,7 @@ def _admission(
         customer_id=CUSTOMER_ID,
         current_message_id="message-v1510",
         turn_group_id="turn-v1510",
-        requested_concurrency_limit=(
-            target if action_type == "entitlement_change" else None
-        ),
+        requested_concurrency_limit=(target if action_type == "entitlement_change" else None),
     )
 
 
@@ -86,10 +85,7 @@ def _observation(
                 admission.scope_hash
                 if tenant_id == TENANT_ID
                 else hashlib.sha256(
-                    (
-                        '{"customer_id":"customer-v1510",'
-                        f'"tenant_id":"{tenant_id}"}}'
-                    ).encode()
+                    (f'{{"customer_id":"customer-v1510","tenant_id":"{tenant_id}"}}').encode()
                 ).hexdigest()
             ),
         },
@@ -109,9 +105,7 @@ def _observation(
     if tool_name == "query_billing_record":
         payload["request_binding"] = {
             "arguments_hash": "a" * 64,
-            "resource_ref": admission.extracted_arguments.get(
-                "billing_record_id"
-            ),
+            "resource_ref": admission.extracted_arguments.get("billing_record_id"),
         }
     elif tool_name == "query_api_key_metadata":
         payload["request_binding"] = {
@@ -200,6 +194,39 @@ def test_committed_action_update_does_not_render_untrusted_result_values() -> No
     assert "javascript" not in answer
 
 
+@pytest.mark.parametrize(
+    ("action_type", "resource_id", "expected"),
+    [
+        ("refund", "bill_demo_duplicate", "重复扣费"),
+        ("api_key_revocation", "key_demo_compromised", "撤销申请"),
+        ("entitlement_change", "sub_demo", "变更申请"),
+    ],
+)
+def test_pending_action_confirmation_uses_bound_action_semantics(
+    action_type: str,
+    resource_id: str,
+    expected: str,
+) -> None:
+    answer = render_pending_action_confirmation(
+        action_type,
+        resource_id=resource_id,
+    )
+
+    assert expected in answer
+    assert "独立人工审批" in answer
+    assert "不会执行" in answer
+
+
+def test_pending_action_confirmation_does_not_render_unsafe_resource_reference() -> None:
+    answer = render_pending_action_confirmation(
+        "refund",
+        resource_id="<script>bad</script>",
+    )
+
+    assert "script" not in answer
+    assert "当前资源" in answer
+
+
 def test_refunded_billing_record_is_terminal_before_nullable_duplicate_field() -> None:
     admitted = _admission("refund")
     observation = _observation(
@@ -221,9 +248,7 @@ def test_refunded_billing_record_is_terminal_before_nullable_duplicate_field() -
     assert ledger.reason_code == "refund_status_not_actionable"
     assert ledger.terminal_outcome is not None
     assert ledger.terminal_outcome.observed_facts["status"] == "refunded"
-    assert ledger.terminal_outcome.binding.source_ids == (
-        "source-query_billing_record",
-    )
+    assert ledger.terminal_outcome.binding.source_ids == ("source-query_billing_record",)
     assert ledger.unsatisfied_capabilities == ()
 
 
