@@ -63,6 +63,7 @@ def test_phase7_validation_distribution_contains_only_current_owners() -> None:
         "evals/phase7_common.py",
         "evals/provider_p16.py",
         "evals/rag_dev30.py",
+        "evals/scenario_http.py",
         "evidence/__init__.py",
         "evidence/mcp_test_registry.py",
         "evidence/process_contract.py",

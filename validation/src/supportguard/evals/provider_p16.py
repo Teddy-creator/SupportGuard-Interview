@@ -11,7 +11,6 @@ import shutil
 import socket
 import subprocess  # nosec B404
 import tempfile
-import time
 from collections.abc import Mapping, Sequence
 from decimal import Decimal
 from pathlib import Path
@@ -51,6 +50,7 @@ from .phase7_common import (
     sha256_file,
     utc_now,
 )
+from .scenario_http import ScenarioHttpClient, ScenarioHttpTransportError
 
 _PRICE_SOURCE = "https://api-docs.deepseek.com/zh-cn/quick_start/pricing"
 _INPUT_CNY_PER_MILLION = Decimal("1")
@@ -64,6 +64,7 @@ _POSTGRES_PORT_BASE = 32400
 _REDIS_PORT_BASE = 32600
 _FRONTEND_PORT_BASE = 32800
 _TERMINAL_ACTIVITY = {"completed", "failed", "waiting_external"}
+_SAFE_DIAGNOSTIC_TOKEN = re.compile(r"^[A-Za-z0-9_.:-]{1,128}$")
 SUPPORTED_SEMANTIC_CLASSES = frozenset(
     {
         "429_diagnosis",
@@ -81,6 +82,22 @@ _SECRET_PATTERN = re.compile(r"\b(?:sk|ds)-[A-Za-z0-9_-]{12,}\b")
 
 class P16InfrastructureError(Phase7ContractError):
     """The complete Matrix could not be started safely."""
+
+
+class P16ScenarioExecutionError(RuntimeError):
+    """A body-free scenario failure with bounded HTTP diagnostics."""
+
+    def __init__(
+        self,
+        *,
+        failure_code: str,
+        ticket_id: str | None,
+        http_diagnostics: Mapping[str, object],
+    ) -> None:
+        super().__init__(failure_code)
+        self.failure_code = failure_code
+        self.ticket_id = ticket_id
+        self.http_diagnostics = dict(http_diagnostics)
 
 
 def _executable(name: str) -> str:
@@ -411,34 +428,41 @@ async def _knowledge_identity(database_url: str) -> dict[str, Any]:
         await engine.dispose()
 
 
-async def _customer_session(base_url: str) -> tuple[httpx.AsyncClient, str]:
-    client = httpx.AsyncClient(base_url=base_url, timeout=30)
-    response = await client.post(
-        "/api/demo-sessions",
-        json={"role": "customer", "customer_id": "cust_demo"},
-    )
-    response.raise_for_status()
-    return client, str(response.json()["csrf_token"])
+async def _customer_session(base_url: str, scenario_id: str) -> tuple[ScenarioHttpClient, str]:
+    client = ScenarioHttpClient(base_url, scenario_id=scenario_id)
+    try:
+        response = await client.bootstrap_session(
+            payload={"role": "customer", "customer_id": "cust_demo"},
+            deadline=client.deadline_after(60),
+        )
+        response.raise_for_status()
+        return client, str(response.json()["csrf_token"])
+    except Exception:
+        await client.aclose()
+        raise
 
 
 async def _wait_conversation(
-    client: httpx.AsyncClient,
+    client: ScenarioHttpClient,
     ticket_id: str,
     *,
     minimum_turns: int,
     timeout_seconds: float = 240,
 ) -> dict[str, Any]:
-    deadline = time.monotonic() + timeout_seconds
+    deadline = client.deadline_after(timeout_seconds)
     latest: dict[str, Any] = {}
-    while time.monotonic() < deadline:
-        response = await client.get(f"/api/conversations/{ticket_id}")
+    while client.before_deadline(deadline):
+        response = await client.poll(
+            f"/api/conversations/{ticket_id}",
+            deadline=deadline,
+        )
         response.raise_for_status()
         latest = response.json()
         turns = latest.get("turns", [])
         if len(turns) >= minimum_turns and turns[-1].get("activity_state") in _TERMINAL_ACTIVITY:
             return latest
         await asyncio.sleep(0.75)
-    raise P16InfrastructureError(f"conversation_timeout:{minimum_turns}")
+    raise P16InfrastructureError(f"conversation_deadline_exceeded:{minimum_turns}")
 
 
 def _assistant_text(conversation: dict[str, Any], turn_index: int) -> str:
@@ -454,29 +478,36 @@ def _assistant_text(conversation: dict[str, Any], turn_index: int) -> str:
 
 async def _execute_turns(
     base_url: str, scenario: Mapping[str, Any]
-) -> tuple[str, dict[str, Any], list[str]]:
-    client, csrf = await _customer_session(base_url)
+) -> tuple[str, dict[str, Any], list[str], dict[str, object]]:
+    scenario_id = str(scenario["id"])
+    client: ScenarioHttpClient | None = None
+    ticket_id: str | None = None
     try:
+        client, csrf = await _customer_session(base_url, scenario_id)
         turns = [str(item) for item in scenario["turns"]]
-        response = await client.post(
+        response = await client.submit(
             "/api/conversations",
-            json={"message": turns[0]},
+            operation="conversation_create",
+            payload={"message": turns[0]},
             headers={
                 "X-CSRF-Token": csrf,
-                "Idempotency-Key": f"{str(scenario['id']).lower()}-turn-1",
+                "Idempotency-Key": f"{scenario_id.lower()}-turn-1",
             },
+            deadline=client.deadline_after(60),
         )
         response.raise_for_status()
         ticket_id = str(response.json()["ticket_id"])
         conversation = await _wait_conversation(client, ticket_id, minimum_turns=1)
         for ordinal, message in enumerate(turns[1:], start=2):
-            response = await client.post(
+            response = await client.submit(
                 f"/api/conversations/{ticket_id}/messages",
-                json={"message": message},
+                operation="conversation_append",
+                payload={"message": message},
                 headers={
                     "X-CSRF-Token": csrf,
-                    "Idempotency-Key": f"{str(scenario['id']).lower()}-turn-{ordinal}",
+                    "Idempotency-Key": f"{scenario_id.lower()}-turn-{ordinal}",
                 },
+                deadline=client.deadline_after(60),
             )
             response.raise_for_status()
             conversation = await _wait_conversation(
@@ -485,9 +516,61 @@ async def _execute_turns(
                 minimum_turns=ordinal,
             )
         answers = [_assistant_text(conversation, index) for index in range(len(turns))]
-        return ticket_id, conversation, answers
+        return ticket_id, conversation, answers, client.diagnostics()
+    except Exception as exc:
+        if client is None:
+            diagnostics: Mapping[str, object] = {
+                "schema_version": "ie-p16-http-diagnostics.v1",
+                "request_attempts": 0,
+                "transport_retry_attempts": 0,
+                "operations": {},
+                "transport_failures": [],
+                "transport_failure_overflow": 0,
+                "payload_or_cookie_recorded": False,
+            }
+        else:
+            diagnostics = client.diagnostics()
+        raise P16ScenarioExecutionError(
+            failure_code=_scenario_execution_failure_code(exc),
+            ticket_id=ticket_id,
+            http_diagnostics=diagnostics,
+        ) from exc
     finally:
-        await client.aclose()
+        if client is not None:
+            await client.aclose()
+
+
+def _scenario_execution_failure_code(exc: BaseException) -> str:
+    if isinstance(exc, ScenarioHttpTransportError):
+        return f"{exc.code}:{exc.operation}"
+    if isinstance(exc, httpx.HTTPStatusError):
+        return f"evaluation_http_status_{exc.response.status_code}"
+    if isinstance(exc, P16InfrastructureError) and str(exc).startswith(
+        "conversation_deadline_exceeded:"
+    ):
+        return "conversation_deadline_exceeded"
+    return type(exc).__name__
+
+
+async def _recover_ticket_id(database_url: str, scenario_id: str) -> str | None:
+    engine = create_async_engine(database_url)
+    try:
+        async with engine.connect() as connection:
+            rows = (
+                await connection.execute(
+                    text(
+                        "SELECT response_snapshot->>'ticket_id' FROM idempotency_requests "
+                        "WHERE tenant_id='tenant_demo' AND principal_id='user_customer_demo' "
+                        "AND idempotency_key=:idempotency_key "
+                        "ORDER BY created_at DESC,id DESC LIMIT 2"
+                    ),
+                    {"idempotency_key": f"{scenario_id.lower()}-turn-1"},
+                )
+            ).all()
+        values = [str(row[0]) for row in rows if row[0]]
+        return values[0] if len(values) == 1 else None
+    finally:
+        await engine.dispose()
 
 
 async def _snapshot(database_url: str, ticket_id: str) -> dict[str, Any]:
@@ -682,6 +765,87 @@ async def _snapshot(database_url: str, ticket_id: str) -> dict[str, Any]:
             }
     finally:
         await engine.dispose()
+
+
+def _provider_usage(snapshot: Mapping[str, Any]) -> dict[str, int]:
+    attempts = snapshot.get("attempts", [])
+    return {
+        "prompt_tokens": sum(int(item["prompt_tokens"]) for item in attempts),
+        "completion_tokens": sum(int(item["completion_tokens"]) for item in attempts),
+    }
+
+
+def _provider_usage_is_complete(snapshot: Mapping[str, Any]) -> bool:
+    runs = snapshot.get("runs", [])
+    provider_attempts = [
+        item
+        for item in snapshot.get("attempts", [])
+        if item.get("call_kind") in {"llm", "structure_repair"}
+    ]
+    return (
+        bool(runs)
+        and all(item.get("status") in {"completed", "failed", "interrupted"} for item in runs)
+        and all(
+            item.get("status") == "succeeded"
+            or (
+                item.get("status") == "failed"
+                and int(item.get("prompt_tokens", 0)) + int(item.get("completion_tokens", 0)) > 0
+            )
+            for item in provider_attempts
+        )
+    )
+
+
+def _public_run_facts(snapshot: Mapping[str, Any]) -> list[dict[str, Any]]:
+    facts: list[dict[str, Any]] = []
+    for item in snapshot.get("runs", []):
+        error_code = item.get("error_code")
+        facts.append(
+            {
+                "status": item.get("status"),
+                "finish_reason": item.get("finish_reason"),
+                "error_code": (
+                    error_code
+                    if isinstance(error_code, str)
+                    and _SAFE_DIAGNOSTIC_TOKEN.fullmatch(error_code)
+                    and _SECRET_PATTERN.search(error_code) is None
+                    else None
+                ),
+                "tool_rounds": item.get("tool_rounds"),
+                "tool_attempts": item.get("tool_attempts"),
+                "llm_calls": item.get("llm_calls"),
+                "model": item.get("model"),
+                "provider_mode": item.get("provider_mode"),
+                "tool_call_mode": item.get("tool_call_mode"),
+            }
+        )
+    return facts
+
+
+def _diagnostic_snapshot(snapshot: Mapping[str, Any]) -> dict[str, Any]:
+    """Return body-free durable facts for a failed evaluation scenario."""
+
+    return {
+        "run_facts": _public_run_facts(snapshot),
+        "provider_attempts": [
+            {key: value for key, value in item.items() if key != "run_id"}
+            for item in snapshot.get("attempts", [])
+            if item.get("call_kind") in {"llm", "structure_repair"}
+        ],
+        "provider_usage_complete": _provider_usage_is_complete(snapshot),
+        "tool_invocation_count": sum(
+            int(item.get("count", 0)) for item in snapshot.get("tools", [])
+        ),
+        "proposal_count": len(snapshot.get("proposals", [])),
+        "approval_count": int(snapshot.get("approval_count", 0)),
+        "pending_approval_count": int(snapshot.get("pending_approval_count", 0)),
+        "effect_count": int(snapshot.get("action_count", 0)),
+        "citation_binding_count": int(snapshot.get("citation_binding_count", 0)),
+        "claim_count": int(snapshot.get("claim_count", 0)),
+        "unsupported_material_claim_count": int(
+            snapshot.get("unsupported_material_claim_count", 0)
+        ),
+    }
 
 
 def _contains(text_value: str, *groups: Sequence[str]) -> bool:
@@ -1107,10 +1271,12 @@ async def execute(
                 candidate_sha=candidate_sha,
                 ordinal=ordinal,
             )
-            scenario_failure: str | None = None
             scenario_result: dict[str, Any] | None = None
             teardown_failure: str | None = None
             residuals = {"containers": -1, "networks": -1, "volumes": -1}
+            ticket_id: str | None = None
+            snapshot: dict[str, Any] | None = None
+            http_diagnostics: dict[str, object] | None = None
             try:
                 _compose(
                     project,
@@ -1166,13 +1332,15 @@ async def execute(
                     != candidate_payload["knowledge_identity"]["index_version"]
                 ):
                     raise P16InfrastructureError("ie_p16_knowledge_index_drift")
-                ticket_id, conversation, answers = await _execute_turns(base_url, scenario)
+                ticket_id, conversation, answers, http_diagnostics = await _execute_turns(
+                    base_url,
+                    scenario,
+                )
                 snapshot = await _snapshot(database_url, ticket_id)
                 assertions, failures = _score_scenario(scenario, answers, snapshot)
-                prompt_tokens = sum(int(item["prompt_tokens"]) for item in snapshot["attempts"])
-                completion_tokens = sum(
-                    int(item["completion_tokens"]) for item in snapshot["attempts"]
-                )
+                provider_usage_observed = _provider_usage_is_complete(snapshot)
+                if not provider_usage_observed:
+                    failures.append("provider_usage_incomplete")
                 scenario_result = {
                     "id": scenario_id,
                     "semantic_class": scenario["class"],
@@ -1183,10 +1351,7 @@ async def execute(
                     "answer_sha256": [
                         hashlib.sha256(value.encode()).hexdigest() for value in answers
                     ],
-                    "run_facts": [
-                        {key: value for key, value in item.items() if key != "id"}
-                        for item in snapshot["runs"]
-                    ],
+                    "run_facts": _public_run_facts(snapshot),
                     "tools": [
                         {key: value for key, value in item.items() if key != "run_id"}
                         for item in snapshot["tools"]
@@ -1200,24 +1365,53 @@ async def execute(
                     "unsupported_material_claim_count": snapshot[
                         "unsupported_material_claim_count"
                     ],
-                    "provider_usage": {
-                        "prompt_tokens": prompt_tokens,
-                        "completion_tokens": completion_tokens,
-                    },
+                    "provider_usage": _provider_usage(snapshot),
+                    "provider_usage_observed": provider_usage_observed,
+                    "http_diagnostics": http_diagnostics,
                 }
                 _ = conversation  # product response is intentionally not persisted in the receipt
             except Exception as exc:
-                scenario_failure = type(exc).__name__
+                failure_code = type(exc).__name__
+                diagnostic_failure: str | None = None
+                if isinstance(exc, P16ScenarioExecutionError):
+                    failure_code = exc.failure_code
+                    ticket_id = ticket_id or exc.ticket_id
+                    http_diagnostics = dict(exc.http_diagnostics)
+                if ticket_id is None:
+                    try:
+                        ticket_id = await _recover_ticket_id(database_url, scenario_id)
+                    except Exception as recovery_exc:
+                        diagnostic_failure = f"ticket_recovery_failed:{type(recovery_exc).__name__}"
+                if ticket_id is not None and snapshot is None:
+                    try:
+                        snapshot = await _snapshot(database_url, ticket_id)
+                    except Exception as snapshot_exc:
+                        diagnostic_failure = (
+                            diagnostic_failure or f"snapshot_failed:{type(snapshot_exc).__name__}"
+                        )
                 scenario_result = {
                     "id": scenario_id,
                     "semantic_class": scenario["class"],
                     "turn_count": len(scenario["turns"]),
                     "passed": False,
-                    "failures": [f"scenario_execution_failed:{scenario_failure}"],
+                    "failures": [f"scenario_execution_failed:{failure_code}"],
                     "assertions": {},
                     "answer_sha256": [],
-                    "provider_usage": {"prompt_tokens": 0, "completion_tokens": 0},
+                    "provider_usage": (
+                        _provider_usage(snapshot)
+                        if snapshot is not None
+                        else {"prompt_tokens": 0, "completion_tokens": 0}
+                    ),
+                    "provider_usage_observed": (
+                        snapshot is not None and _provider_usage_is_complete(snapshot)
+                    ),
                 }
+                if http_diagnostics is not None:
+                    scenario_result["http_diagnostics"] = http_diagnostics
+                if snapshot is not None:
+                    scenario_result["diagnostic_snapshot"] = _diagnostic_snapshot(snapshot)
+                if diagnostic_failure is not None:
+                    scenario_result["diagnostic_snapshot_failure"] = diagnostic_failure
             finally:
                 try:
                     _compose(
@@ -1237,6 +1431,7 @@ async def execute(
                             "assertions": {},
                             "answer_sha256": [],
                             "provider_usage": {"prompt_tokens": 0, "completion_tokens": 0},
+                            "provider_usage_observed": False,
                         }
                     else:
                         scenario_result["passed"] = False
@@ -1284,6 +1479,10 @@ async def execute(
             cleanup_build_failure = type(exc).__name__
         prompt_tokens = sum(item["provider_usage"]["prompt_tokens"] for item in results)
         completion_tokens = sum(item["provider_usage"]["completion_tokens"] for item in results)
+        unobserved_scenario_ids = [
+            str(item["id"]) for item in results if item.get("provider_usage_observed") is not True
+        ]
+        provider_usage_observed_complete = not unobserved_scenario_ids
         estimated_cost = (
             Decimal(prompt_tokens) * _INPUT_CNY_PER_MILLION
             + Decimal(completion_tokens) * _OUTPUT_CNY_PER_MILLION
@@ -1321,6 +1520,8 @@ async def execute(
                 "prompt_tokens": prompt_tokens,
                 "completion_tokens": completion_tokens,
                 "estimated_max_actual_cny": str(estimated_cost.quantize(Decimal("0.000001"))),
+                "estimated_cost_is_complete": provider_usage_observed_complete,
+                "unobserved_scenario_ids": unobserved_scenario_ids,
                 "preflight_upper_bound_cny": str(upper_bound),
                 "confirmation_gate_cny": str(_COST_GATE_CNY),
             },
@@ -1334,6 +1535,7 @@ async def execute(
                 "cross_encoder_executed": False,
                 "historical_gate_or_parity_executed": False,
                 "real_external_effect_executed": False,
+                "provider_usage_observed_complete": provider_usage_observed_complete,
                 "cleanup_pass": scenario_cleanup_clean and build_cleanup_clean,
                 "complete_matrix_pass": complete_matrix_pass,
             },
