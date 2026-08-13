@@ -23,6 +23,7 @@ def test_conversation_detail_uses_one_database_capability_round_trip() -> None:
     )[0]
     assert postgres_branch.count("await session.scalar(") == 1
     assert "supportguard_api_get_run_citations" not in postgres_branch
+    assert "supportguard_api_get_refund_display" in postgres_branch
 
 
 @pytest.mark.postgres

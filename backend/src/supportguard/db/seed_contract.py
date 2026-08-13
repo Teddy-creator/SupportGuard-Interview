@@ -3,7 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import date, datetime
 from typing import Final
 
 SEED_VERSION: Final = "interview-seed.v1"
@@ -14,6 +14,9 @@ KNOWLEDGE_MANIFEST_SHA256: Final = (
 KNOWLEDGE_SOURCE_BUNDLE_SHA256: Final = (
     "2eac863537c11184c1ab3c79cd00455e1f243e0ebd73535605de155a455244b0"
 )
+
+DEMO_BILLING_SERVICE_PERIOD_START: Final = date(2026, 8, 1)
+DEMO_BILLING_SERVICE_PERIOD_END: Final = date(2026, 9, 1)
 
 
 SEED_MANIFEST: Final[dict[str, object]] = {
@@ -26,6 +29,7 @@ SEED_MANIFEST: Final[dict[str, object]] = {
             "api_request_traces.observed_at",
             "api_usage_buckets.bucket_start",
             "api_usage_buckets.bucket_end",
+            "billing_records.charged_at",
         ],
         "semantic_hash_excludes_wall_clock": True,
         "ordinary_seed_allows_explicit_temporal_refresh_rows": True,
@@ -50,6 +54,17 @@ SEED_MANIFEST: Final[dict[str, object]] = {
         "customer": "cust_demo",
         "subscription": "sub_demo",
         "billing": ["bill_demo_original", "bill_demo_duplicate"],
+        "billing_pair_policy": {
+            "amount": "49.00",
+            "currency": "USD",
+            "status": "charged",
+            "service_period": [
+                DEMO_BILLING_SERVICE_PERIOD_START.isoformat(),
+                DEMO_BILLING_SERVICE_PERIOD_END.isoformat(),
+            ],
+            "duplicate_relation": ["bill_demo_duplicate", "bill_demo_original"],
+            "application_window_days": 30,
+        },
         "api_key": "key_demo_leaked",
         "request_trace": "trace_demo_429",
         "service_incident": "incident_atlas_eu_resolved",

@@ -151,17 +151,17 @@ def test_each_mapped_class_has_one_domain_owner_and_stable_facade_identity() -> 
             assert getattr(model_facade, class_name) is owned_class
 
 
-def test_metadata_inventory_matches_pre_partition_baseline() -> None:
+def test_metadata_inventory_matches_current_schema_contract() -> None:
     payload = json.dumps(
         _metadata_signature(), sort_keys=True, separators=(",", ":"), default=str
     ).encode()
 
     assert len(Base.metadata.tables) == 66
-    assert sum(len(table.columns) for table in Base.metadata.tables.values()) == 952
-    assert sum(len(table.constraints) for table in Base.metadata.tables.values()) == 559
+    assert sum(len(table.columns) for table in Base.metadata.tables.values()) == 958
+    assert sum(len(table.constraints) for table in Base.metadata.tables.values()) == 562
     assert sum(len(table.indexes) for table in Base.metadata.tables.values()) == 35
     assert hashlib.sha256(payload).hexdigest() == (
-        "fcb3f7b3efa62bd4c8658c34b4a51428bd52bb17d7fe7fb55edffa92e187e632"
+        "495d79af9ab792e4728e89c84d874d35d12d0512383e606beae5bfe0523ca888"
     )
 
 

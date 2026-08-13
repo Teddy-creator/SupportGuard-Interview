@@ -61,6 +61,7 @@ export function CitationChip({
   const [open, setOpen] = useState(false);
   const citation = citations[0];
   const label = citation.title || `来源 ${index + 1}`;
+  const evidence = deduplicatedCitationEvidence(citations);
   return (
     <span className="citation-wrap">
       <button
@@ -75,7 +76,7 @@ export function CitationChip({
       {open ? (
         <span className="source-popover" role="note">
           <strong>{label}</strong>
-          {citations.map((item, evidenceIndex) => (
+          {evidence.map((item, evidenceIndex) => (
             <span
               className="source-evidence"
               key={citationEvidenceKey(item, evidenceIndex)}
@@ -101,6 +102,32 @@ export function CitationChip({
       ) : null}
     </span>
   );
+}
+
+export function deduplicatedCitationEvidence(
+  citations: Citation[],
+): Citation[] {
+  const selected = new Map<string, Citation>();
+  for (const citation of citations) {
+    const key = [
+      citation.section_path ?? "",
+      citation.supporting_span ?? "",
+    ].join("|");
+    const existing = selected.get(key);
+    if (!existing) {
+      selected.set(key, citation);
+      continue;
+    }
+    const summaries = [existing.claim_summary, citation.claim_summary]
+      .filter((value): value is string => Boolean(value?.trim()))
+      .flatMap((value) => value.split("；").map((item) => item.trim()))
+      .filter(Boolean);
+    selected.set(key, {
+      ...existing,
+      claim_summary: [...new Set(summaries)].join("；") || undefined,
+    });
+  }
+  return [...selected.values()];
 }
 
 function citationDocumentIdentity(citation: Citation): string {

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 from typing import Any, Literal
 
@@ -216,8 +216,22 @@ class BillingRecordResult(ToolResultBase):
     amount: Decimal
     currency: str
     status: str
+    charged_at: datetime
+    service_period_start: date
+    service_period_end: date
     duplicate_of: str | None
     version: int
+    original_billing_record_id: str | None
+    original_amount: Decimal | None
+    original_currency: str | None
+    original_status: str | None
+    original_charged_at: datetime | None
+    original_service_period_start: date | None
+    original_service_period_end: date | None
+    original_version: int | None
+    duplicate_pair_eligible: bool
+    refund_pair_hash: str | None = Field(default=None, pattern=r"^[0-9a-f]{64}$")
+    refund_pair_checks: dict[str, bool]
 
 
 class KnowledgeSearchInput(BaseModel):

@@ -864,7 +864,8 @@ async def _exercise_refunded_terminal_follow_up(
         )
         assert assistant is not None
         assert {item.get("source_id") for item in assistant.source_refs} == {
-            f"billing_record:{fixture['resource_id']}"
+            f"billing_record:{fixture['resource_id']}",
+            f"billing_record:{fixture['original_resource_id']}",
         }
     return {
         "ticket_id": accepted["ticket_id"],

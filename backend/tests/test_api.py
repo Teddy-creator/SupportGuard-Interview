@@ -108,6 +108,30 @@ def test_public_event_projection_is_a_strict_allowlist() -> None:
     assert "private" not in str(projected)
 
 
+def test_inspector_projection_does_not_classify_null_errors_as_failures() -> None:
+    projected = _public_event_projection(
+        {
+            "id": "event_success",
+            "event_type": "tool_observation",
+            "payload": {
+                "tool_name": "query_billing_record",
+                "error_code": None,
+                "failure_recorded": False,
+            },
+            "run_id": "run_success",
+            "ticket_sequence": 1,
+            "run_sequence": 1,
+            "step_index": 1,
+            "tool_round": 1,
+            "status": "succeeded",
+            "created_at": "2026-08-13T00:00:00Z",
+        },
+        inspector=True,
+    )
+
+    assert projected["payload"] == {"tool_name": "query_billing_record"}
+
+
 @pytest.mark.parametrize("event_id", [None, 1, "", "x" * 65])
 def test_public_event_projection_rejects_invalid_durable_identity(
     event_id: object,

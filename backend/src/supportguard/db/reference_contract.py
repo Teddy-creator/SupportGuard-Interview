@@ -83,38 +83,10 @@ V14_DATABASE_CODE_SURFACE = {
     ),
 }
 
-# Complete current-head catalog fingerprint. Historical v1.2.13 and v1.4
-# fingerprints above remain immutable evidence; current-head checks must not
-# compose those older table/column fingerprints with newer function metadata.
-CURRENT_DATABASE_SURFACE = {
-    "tables": ReferenceSurfaceFingerprint(
-        66, "d3c4df318d8863f3710dfed7d5c1142956695fac21ef228ff608f93c09cf99fd"
-    ),
-    "columns": ReferenceSurfaceFingerprint(
-        952, "b322ef28e2d68f32dfe86511fe2677f4ca7591e714eb23d90714d4fba5b3ff53"
-    ),
-    "foreign_keys": ReferenceSurfaceFingerprint(
-        327, "0ff5b7004e1399949aa0ddfe91c1a936f0aab8e651a961c392ceef366a6955cd"
-    ),
-    "checks": ReferenceSurfaceFingerprint(
-        65, "fdab2c0bcca55eadc0ece21d731563f1590e129fa4e69f107dfe9612c730c619"
-    ),
-    "uniques": ReferenceSurfaceFingerprint(
-        184, "2153cf586a8b3ad29472020e7981e41d19fd5e2d0611365c4f295745ef91e3cc"
-    ),
-    "indexes": ReferenceSurfaceFingerprint(
-        219, "4d6631b3a2358f6e175b0026c882fb913c89e960c00a16b7fba3d9cc18a5c574"
-    ),
-    "functions": ReferenceSurfaceFingerprint(
-        129, "07afb6b85b21d993ddf8da76d3536185620259bcb26a87c0d4fe33991a7b26f0"
-    ),
-    "triggers": ReferenceSurfaceFingerprint(
-        111, "4cf2701649684d396f52f58566ccba6883e434e33decf6102a79b5921e59f86f"
-    ),
-    "acl": ReferenceSurfaceFingerprint(
-        2513, "6bc78de5adc338b48c1d329873310378ed8583348b09d8e9045278ee4fb452ed"
-    ),
-}
+# Current Interview catalog identity has exactly one owner:
+# ``db.interview_baseline.CURRENT_BASELINE_MANIFEST_SHA256``. Do not duplicate
+# that moving contract here; this module retains only immutable historical
+# reference surfaces plus the current revision alias used by Runtime callers.
 
 
 @dataclass(frozen=True, slots=True)

@@ -212,7 +212,7 @@ class ProposalWithdrawalCoordinator:
                 )
                 if turn is not None:
                     turn.activity_state = "completed"
-                    turn.result_state = "refused"
+                    turn.result_state = "withdrawn"
                     turn.completed_at = now
         ticket.status = "open"
         ticket.version += 1

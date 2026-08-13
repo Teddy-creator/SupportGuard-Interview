@@ -38,7 +38,7 @@ def test_seed_contract_identity_and_knowledge_binding_are_frozen() -> None:
     assert SEED_VERSION == "interview-seed.v1"
     assert hashlib.sha256(canonical_seed_manifest()).hexdigest() == SEED_CONTRACT_SHA256
     assert SEED_CONTRACT_SHA256 == (
-        "1f989004708591baa6949362e904516dd378551f12fd01db1766cc546e10230a"
+        "c346ab6d909506d24c3300fb7730239290ddd71cabde5f1e853c0d8bba260dc9"
     )
     assert SEED_MANIFEST["clock_contract"] == {
         "capture": "once_per_seed_invocation",
@@ -48,6 +48,7 @@ def test_seed_contract_identity_and_knowledge_binding_are_frozen() -> None:
             "api_request_traces.observed_at",
             "api_usage_buckets.bucket_start",
             "api_usage_buckets.bucket_end",
+            "billing_records.charged_at",
         ],
         "semantic_hash_excludes_wall_clock": True,
         "ordinary_seed_allows_explicit_temporal_refresh_rows": True,

@@ -19,6 +19,7 @@ from supportguard.api.dependencies import (
 from supportguard.api.projections import (
     _apply_conversation_action_projection,
     _conversation_activity_label,
+    _merge_refund_action_display,
     _project_action_source,
     _public_run_projection,
     _sqlite_conversation_detail,
@@ -159,10 +160,17 @@ async def get_conversation(
 ) -> dict[str, Any]:
     async with request_session(request, identity) as session:
         if session.get_bind().dialect.name == "postgresql":
-            value = await session.scalar(
+            bundle = await session.scalar(
                 text(
-                    "SELECT supportguard_api_get_conversation_page("
-                    ":customer_id,:conversation_id,:before_turn,:turn_limit)"
+                    "WITH page AS (SELECT public.supportguard_api_get_conversation_page("
+                    ":customer_id,:conversation_id,:before_turn,:turn_limit) AS value) "
+                    "SELECT pg_catalog.jsonb_build_object("
+                    "'page',value,'refund_display',"
+                    "public.supportguard_api_get_refund_display("
+                    ":customer_id,ARRAY(SELECT action->>'id' "
+                    "FROM pg_catalog.jsonb_array_elements("
+                    "coalesce(value->'pending_actions','[]'::jsonb)) action "
+                    "WHERE action->>'action_type'='refund'))) FROM page"
                 ),
                 {
                     "customer_id": identity.customer_id,
@@ -171,6 +179,9 @@ async def get_conversation(
                     "turn_limit": turn_limit,
                 },
             )
+            if not isinstance(bundle, dict):
+                raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, "projection_invalid")
+            value = bundle.get("page")
             if value is None:
                 raise HTTPException(status.HTTP_404_NOT_FOUND, "Conversation not found")
             if not isinstance(value, dict):
@@ -203,6 +214,7 @@ async def get_conversation(
                     status.HTTP_500_INTERNAL_SERVER_ERROR,
                     "projection_invalid",
                 ) from exc
+            _merge_refund_action_display(value, bundle.get("refund_display"))
             projected = _apply_conversation_action_projection(value, action_states)
             return apply_conversation_detail_presentation(projected)
         ticket = await session.scalar(

@@ -29,6 +29,9 @@ function activitySummary(turn: ConversationTurn): string {
   )
     return "已给出有限结论 · 实时数据待刷新";
   if (turn.result_state === "refused") return "请求已安全拒绝 · 未执行任何操作";
+  if (turn.result_state === "rejected") return "审批者已拒绝 · 未执行任何操作";
+  if (turn.result_state === "withdrawn") return "申请已撤回 · 未执行任何操作";
+  if (turn.result_state === "stale") return "业务事实已变化 · 需重新核验";
   if (turn.result_state === "needs_clarification") return "需要补充信息后继续";
   if (turn.result_state === "human_queue") return LEGACY_TAKEOVER_NOTICE;
   return `已完成检查${attempts ? ` · ${attempts} 项` : ""}`;

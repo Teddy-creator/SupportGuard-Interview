@@ -120,6 +120,9 @@ async def bound_entitlement_approval(session: AsyncSession) -> ApprovalRequest:
     proposal.resource_version = 3
     proposal.action_payload = payload
     proposal.action_hash = payload_hash
+    proposal.refund_original_resource_id = None
+    proposal.refund_original_version = None
+    proposal.refund_pair_hash = None
     revision.action_payload = payload
     revision.action_hash = payload_hash
     revision.resource_version = 3
@@ -456,7 +459,7 @@ async def test_reject_converges_without_resume_job_and_activates_next_turn(
     assert original_run.agent_finish_reason == "rejected"
     assert original_turn is not None
     assert original_turn.activity_state == "completed"
-    assert original_turn.result_state == "refused"
+    assert original_turn.result_state == "rejected"
     assert stored_follow_up is not None
     assert stored_follow_up.activity_state == "queued"
     assert stored_follow_up.run_id is not None

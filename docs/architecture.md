@@ -6,7 +6,7 @@
 > `7527c0acca079f57549538e49135a91ef87b9389` 的一次性 IE-P16 为 `11/16`、`13/16`，Receipt
 > 保持不可改写。用户持续授权 clean Candidate 的必要真实 DeepSeek 验证；最终工程 Candidate
 > `4466290963993e0b7662d75b571e4b15e4e97627` 已通过全部机器证明、Hosted CI 与一次性 IE-P16
-> `16/16`。当前 Interview Head 为 `i202_refund_fence_authority`，Phase 7 工程验证已完成，最终
+> `16/16`。该机器证明绑定其冻结 Candidate；当前工作树已演进到 `i203_demo_truthful_refund`，新增退款账单对与演示可解释性仍需形成新的精确 Candidate 证据。Phase 7 工程验证已完成，最终
 > Definition of Done 仅等待用户 Human Acceptance。
 > 精简前基线固定为 `6255c8c0eb0dcedd877bfbf16a9695dad2a0c9eb`。下方
 > 2026-07-28 的“当前”表述是不可改写的精简前架构状态，不覆盖 v2.0。
@@ -50,7 +50,7 @@ Product List/Detail 使用 Pydantic Response Model，并为 Message、Timeline�
 
 浏览器异步收敛采用 `PostgreSQL AgentEvent truth + Tenant/Ticket Redis Pub/Sub wake-up + <=1s polling fallback`。Redis 只缩短等待，不承载游标或业务真相；丢失通知或短暂离线时，前端保留 SSE 生命周期并从最后 Ticket Sequence 重连补放。`awaiting_approval` 是 Interrupt 中间态而非 Ticket 终态，客户页继续收敛；独立审批后的 Action/Final Outcome 不要求 Reload。Nginx 使用 Docker DNS 动态解析 API，API 容器地址变化后不要求重建 Frontend。
 
-数据库当前 Head `b207c0a1d001` 继承 b202 的窄检索终态：上下文“旧版本”追问与
+旧兼容迁移链最终 Head `b207c0a1d001` 继承 b202 的窄检索终态：上下文“旧版本”追问与
 Compare 语义对齐；无锚点 Historical 只有在拒答原因、Temporal Selector 以及全部空候选
 字段严格一致时，才允许从 Trace 起始态安全结束。该修复不扩大 Read、Action 或 Runtime
 权限。b203 只让有界客户事件 Reader 返回稳定 Durable Event ID，使 API、SSE Cursor 与
@@ -156,7 +156,7 @@ Human Decision 是持久异步命令。Resume 后不重新调用 LLM。Productio
 
 PostgreSQL 16 + pgvector 承担业务事实、Checkpoint、RAG、Outbox 与 Audit。每个 API / MCP / Graph 业务事务使用 `SET LOCAL app.tenant_id / principal_id / principal_role`；RLS 是应用 Filter 之外的第二道防线。Production 只接受 Issuer / Audience / JWKS / exp 校验通过且具有本地 Membership 的 OIDC Bearer Token；Development Cookie 模式被显式标记。
 
-当前数据库头为 `b207c0a1d001`。Reader-first 的兼容升级主链与安全边界不变；b206 将 Conversation Page 的 Turn、Message、Run 与 Citation 限定在当前页面内并以一次 Capability 返回，b207 只追加审批来源的 Origin 有界 Keyset 分页与问候标题的同事务持久化。Reject/Edit 与全部事务安全条件不变，所有不一致继续 fail closed。Inspector 只返回当前客户可见的有界事件、精确消息绑定引用和已脱敏运行状态，不返回 Prompt、Secret、Raw Payload 或 Runtime 原始错误；审批来源只允许当前租户审批者读取与该审批绑定的最新有界窗口，并只能继续向 Origin 之前分页。业务事实引用携带稳定 Source ID 和业务版本，前端按稳定身份去重并在知识与实时事实同时存在时保留两类证据。ApprovalRequest 使用显式 Canonical Resource Identity，数据库只允许同租户、客户、动作和资源存在一个 Active Approval；RuntimeJob 持有 Ticket 与单调 Dispatch Sequence，并以 Ticket 级 Leased Lane 保证新消息与 Approval Resume 串行。Worker Readiness 是能力事实而非静态标签：Canonical Runtime Manifest、Provider/Limiter、两个 MCP Session/Schema/Generation、消费进度与 Migration Head 任一不满足都会发布 `degraded`，PostgreSQL 控制面再把有界组件事实聚合到内部依赖快照。Heartbeat Capability 的持久类型和受限角色 `__healthcheck__` 投影统一为 JSONB，避免数据库健康探针因 `json/jsonb` 隐式转换失败。Approval Queue 由 Pending-first 的有界轻量 Projection 提供，终态历史不会挤掉待审批项。`SupportTicket.last_message_at` 只由客户可见 Message 单调推进，Conversation List、Cursor 和产品 `updated_at` 使用同一活动时间；Reconciler、Job/Run、Legacy Ticket 状态与内部审计更新不能重新排序对话。`evidence_freshness_insufficient` 会形成独立的 `answered_limited` 客户结果，Activity、Turn 和 Inspector 保留同一限制语义。受限 Read MCP 的政策检索只要求当前租户/客户存在订阅记录，不把 `active` 状态误当成知识读取授权；因此失效订阅仍能获得可追溯的资格解释。固定 SQL Capability 会把 `KnowledgeDocument.document_type` 与 Chunk 一起投影，使 Obligation Ledger 能在受限 PostgreSQL 路径中校验权威文档类型；Policy、审批、Runtime-only Action 和写权限继续 fail closed。四张 Conversation 控制面表保持 RLS enabled、非 FORCE：生产 API/Worker/MCP 登录仍必须携带与写入行完全一致的 `app.tenant_id`，跨租户消息写先由 Trigger 返回稳定的 `tenant_scope_mismatch`，再由 RLS 保持独立的 fail-closed 防线；只有明确的非生产 bootstrap owner 能执行跨租户维护。Message、Turn、Run、Approval 与 Withdrawal 引用均使用真实同租户复合外键，不能靠字符串 ID 越过租户边界。
+在旧兼容迁移链的这一阶段，数据库头为 `b207c0a1d001`。Reader-first 的兼容升级主链与安全边界不变；b206 将 Conversation Page 的 Turn、Message、Run 与 Citation 限定在当前页面内并以一次 Capability 返回，b207 只追加审批来源的 Origin 有界 Keyset 分页与问候标题的同事务持久化。Reject/Edit 与全部事务安全条件不变，所有不一致继续 fail closed。Inspector 只返回当前客户可见的有界事件、精确消息绑定引用和已脱敏运行状态，不返回 Prompt、Secret、Raw Payload 或 Runtime 原始错误；审批来源只允许当前租户审批者读取与该审批绑定的最新有界窗口，并只能继续向 Origin 之前分页。业务事实引用携带稳定 Source ID 和业务版本，前端按稳定身份去重并在知识与实时事实同时存在时保留两类证据。ApprovalRequest 使用显式 Canonical Resource Identity，数据库只允许同租户、客户、动作和资源存在一个 Active Approval；RuntimeJob 持有 Ticket 与单调 Dispatch Sequence，并以 Ticket 级 Leased Lane 保证新消息与 Approval Resume 串行。Worker Readiness 是能力事实而非静态标签：Canonical Runtime Manifest、Provider/Limiter、两个 MCP Session/Schema/Generation、消费进度与 Migration Head 任一不满足都会发布 `degraded`，PostgreSQL 控制面再把有界组件事实聚合到内部依赖快照。Heartbeat Capability 的持久类型和受限角色 `__healthcheck__` 投影统一为 JSONB，避免数据库健康探针因 `json/jsonb` 隐式转换失败。Approval Queue 由 Pending-first 的有界轻量 Projection 提供，终态历史不会挤掉待审批项。`SupportTicket.last_message_at` 只由客户可见 Message 单调推进，Conversation List、Cursor 和产品 `updated_at` 使用同一活动时间；Reconciler、Job/Run、Legacy Ticket 状态与内部审计更新不能重新排序对话。`evidence_freshness_insufficient` 会形成独立的 `answered_limited` 客户结果，Activity、Turn 和 Inspector 保留同一限制语义。受限 Read MCP 的政策检索只要求当前租户/客户存在订阅记录，不把 `active` 状态误当成知识读取授权；因此失效订阅仍能获得可追溯的资格解释。固定 SQL Capability 会把 `KnowledgeDocument.document_type` 与 Chunk 一起投影，使 Obligation Ledger 能在受限 PostgreSQL 路径中校验权威文档类型；Policy、审批、Runtime-only Action 和写权限继续 fail closed。四张 Conversation 控制面表保持 RLS enabled、非 FORCE：生产 API/Worker/MCP 登录仍必须携带与写入行完全一致的 `app.tenant_id`，跨租户消息写先由 Trigger 返回稳定的 `tenant_scope_mismatch`，再由 RLS 保持独立的 fail-closed 防线；只有明确的非生产 bootstrap owner 能执行跨租户维护。Message、Turn、Run、Approval 与 Withdrawal 引用均使用真实同租户复合外键，不能靠字符串 ID 越过租户边界。
 
 b200 不改变上述状态机，只撤销 b199 重建内部实现函数时误恢复的 Reconciler 角色
 `EXECUTE`，使运行时继续只能通过冻结的外层 `supportguard_reconciler_prepare` 能力进入。

@@ -68,10 +68,6 @@
     grid-template-columns: 1fr;
   }
   .source-popover {
-    position: fixed;
-    left: 12px;
-    right: 12px;
-    bottom: 96px;
     width: auto;
     max-height: 50vh;
     overflow: auto;
@@ -89,7 +85,10 @@
     grid-template-columns: 1fr;
   }
   .starter-grid {
-    flex-direction: column;
+    grid-template-columns: 1fr;
+  }
+  .demo-fixture-context {
+    grid-template-columns: 1fr;
   }
   .approval-layout {
     display: block;

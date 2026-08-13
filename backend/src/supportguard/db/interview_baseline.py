@@ -20,6 +20,7 @@ from supportguard.db.security_contract import (
     DATABASE_PREFLIGHT,
     INTERVIEW_BASELINE_ROOT_REVISION,
     INTERVIEW_ESCALATION_RETIREMENT_REVISION,
+    INTERVIEW_REFUND_FENCE_REVISION,
     LEGACY_FINAL_DATABASE_HEAD,
 )
 
@@ -43,11 +44,17 @@ I201_BASELINE_MANIFEST_SHA256: Final = (
 I201_BASELINE_NON_DATABASE_MANIFEST_SHA256: Final = (
     "ab4c1eefc5d7d8adda68eabd6403839eca84028187a721642f79c2a59c497cfc"
 )
-CURRENT_BASELINE_MANIFEST_SHA256: Final = (
+I202_BASELINE_MANIFEST_SHA256: Final = (
     "17cf263a4899241399deed8acfd678b06531f40192372ebc52e6547e851464d7"
 )
-CURRENT_BASELINE_NON_DATABASE_MANIFEST_SHA256: Final = (
+I202_BASELINE_NON_DATABASE_MANIFEST_SHA256: Final = (
     "53d28dcdfbe0dad4f75f13ab5de21d57eefdecbcdad277b62f51d36943654027"
+)
+CURRENT_BASELINE_MANIFEST_SHA256: Final = (
+    "a5d31734a3d95fd05c9d5c68539300e72adc9bddeb2b6c483d73ed388f52e9b0"
+)
+CURRENT_BASELINE_NON_DATABASE_MANIFEST_SHA256: Final = (
+    "457d47939655b9189cb7afb1b6d71a47c2cf14969cffea162df459e7af08f618"
 )
 RUNTIME_TIMING_V1_CONFIG_HASH: Final = (
     "2c68017cce05fa144eb8aaaaccd9acc45bec3e6ca28d40f7f0269dc5bdee1672"
@@ -364,6 +371,8 @@ def _expected_manifest_for_revision(revision: str) -> str:
         return I200_BASELINE_MANIFEST_SHA256
     if revision == INTERVIEW_ESCALATION_RETIREMENT_REVISION:
         return I201_BASELINE_MANIFEST_SHA256
+    if revision == INTERVIEW_REFUND_FENCE_REVISION:
+        return I202_BASELINE_MANIFEST_SHA256
     if revision == CURRENT_INTERVIEW_DATABASE_REVISION:
         return CURRENT_BASELINE_MANIFEST_SHA256
     raise InterviewBaselinePreflightError("interview_baseline_unknown_revision_rejected")
@@ -652,6 +661,25 @@ def load_verified_baseline_sql(artifact_directory: Path) -> str:
     return sql
 
 
+def execute_interview_migration_sql(connection: Connection, sql: str) -> None:
+    """Execute one trusted multi-statement migration payload on asyncpg.
+
+    SQLAlchemy prepares ordinary ``execute`` calls, while asyncpg deliberately
+    rejects multiple commands in one prepared statement.  Interview migration
+    payloads are static source artifacts with no caller parameters, so they use
+    the same raw driver boundary as the independently generated baseline SQL.
+    """
+
+    adapted = connection.connection
+    run_async = getattr(adapted, "run_async", None)
+    if not callable(run_async):
+        raise RuntimeError("interview_baseline_requires_async_driver")
+    async_adapted = cast(
+        _AsyncAdaptedConnection, adapted
+    )  # SQLAlchemy's async DBAPI adapter owns this bridge.
+    async_adapted.run_async(lambda driver: driver.execute(sql))
+
+
 def install_interview_baseline(connection: Connection, *, artifact_directory: Path) -> None:
     sql = load_verified_baseline_sql(artifact_directory)
     available = connection.execute(
@@ -663,14 +691,7 @@ def install_interview_baseline(connection: Connection, *, artifact_directory: Pa
     connection.execute(text("SELECT public.supportguard_bootstrap_transfer_ownership()"))
     connection.execute(text("DROP FUNCTION public.supportguard_bootstrap_transfer_ownership()"))
     connection.execute(text("SET LOCAL ROLE supportguard_owner"))
-    adapted = connection.connection
-    run_async = getattr(adapted, "run_async", None)
-    if not callable(run_async):
-        raise RuntimeError("interview_baseline_requires_async_driver")
-    async_adapted = cast(
-        _AsyncAdaptedConnection, adapted
-    )  # SQLAlchemy's async DBAPI adapter owns this bridge.
-    async_adapted.run_async(lambda driver: driver.execute(sql))
+    execute_interview_migration_sql(connection, sql)
     connection.execute(
         text(
             "INSERT INTO supportguard_control.runtime_timing_snapshots("
@@ -748,6 +769,13 @@ def verify_interview_migration_postcondition(connection: Connection) -> None:
             connection,
             revision=INTERVIEW_ESCALATION_RETIREMENT_REVISION,
             manifest_sha256=I201_BASELINE_MANIFEST_SHA256,
+        )
+        return
+    if rows == (INTERVIEW_REFUND_FENCE_REVISION,):
+        _verify_interview_revision_postcondition(
+            connection,
+            revision=INTERVIEW_REFUND_FENCE_REVISION,
+            manifest_sha256=I202_BASELINE_MANIFEST_SHA256,
         )
         return
     if rows == (CURRENT_INTERVIEW_DATABASE_REVISION,):

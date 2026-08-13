@@ -36,6 +36,7 @@ const baseDetail: ApprovalDetail = {
     billing_record_id: "bill_1",
     amount: "49.00",
     currency: "USD",
+    original_billing_record_id: "bill_original",
   },
   review_context: {
     original_request: "请检查重复扣费并按政策处理。",
@@ -94,6 +95,30 @@ const baseDetail: ApprovalDetail = {
 };
 
 describe("approval product projection", () => {
+  it("shows the linked original bill instead of only a raw target id", () => {
+    render(
+      <ApprovalDetailPanel
+        detail={baseDetail}
+        busy={false}
+        decision="approve"
+        reason=""
+        refundReason=""
+        targetConcurrency=""
+        mutationError=""
+        mutationFieldError=""
+        onDecision={vi.fn()}
+        onReason={vi.fn()}
+        onRefundReason={vi.fn()}
+        onTargetConcurrency={vi.fn()}
+        onDecide={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText("原始账单").nextSibling).toHaveTextContent(
+      "bill_original",
+    );
+  });
+
   it("allows the frozen blank approve reason while keeping reject reason required", () => {
     const shared = {
       detail: baseDetail,

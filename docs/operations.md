@@ -188,7 +188,7 @@ Compose Network。Development Demo Auth 不能作为 Production Auth 使用，`.
 最终 Receipt 分别记录 Images、Volumes、Build Cache 与稀疏磁盘逻辑大小，不能把它们相加成
 “可回收空间”。
 
-当前 Alembic Head 为 `b207c0a1d001`。b193 令 SQL canonical JSON 的 key 排序显式使用
+旧兼容迁移链最终 Alembic Head 为 `b207c0a1d001`。b193 令 SQL canonical JSON 的 key 排序显式使用
 `COLLATE "C"`；b194 以 forward-only 方式把 Accepted Turn 运行身份、Dead Job 收敛和
 完成时间语义安装到既有数据库；b195 只在已提交动作绑定与实际效果完全一致时返回幂等重放；
 b196 按 RetrievalTrace 的冻结候选序号解析审批证据 Chunk；b197 令普通 Approve 的空理由

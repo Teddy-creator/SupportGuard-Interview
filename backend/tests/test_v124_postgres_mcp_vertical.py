@@ -59,6 +59,10 @@ from supportguard.rag.intent import resolve_retrieval_intent
 from supportguard.rag.query import normalize_query
 from supportguard.rag.repository import _keyword_terms
 from supportguard.rag.types import EligibilityEnvelope, RetrievalFilter, SourceLocatorV2
+from supportguard.services.refunds import (
+    evaluate_billing_refund_pair,
+    refund_pair_observation_fields,
+)
 
 pytestmark = pytest.mark.postgres
 
@@ -231,6 +235,13 @@ async def _runtime_fixture(
         subscription.version = 3
         billing.status = "charged"
         billing.version = 2
+        refund_pair = await evaluate_billing_refund_pair(session, billing, now=now)
+        assert refund_pair.eligible
+        assert refund_pair.original is not None
+        assert refund_pair.pair_hash is not None
+        refund_observation_data = json.loads(
+            json.dumps(refund_pair_observation_fields(refund_pair), default=str)
+        )
         session.add(
             SupportTicket(
                 id=ticket_id,
@@ -365,6 +376,18 @@ async def _runtime_fixture(
             )
             session.add(invocation)
             await session.flush()
+            observation_data: dict[str, object] = {field: resource_id, "version": version}
+            source_refs: list[dict[str, object]] = [
+                {"resource_type": field, "resource_id": resource_id}
+            ]
+            if tool_name == "query_billing_record":
+                observation_data.update(refund_observation_data)
+                source_refs.append(
+                    {
+                        "resource_type": field,
+                        "resource_id": refund_pair.original.billing_record_id,
+                    }
+                )
             payload = {
                 "schema_version": "observation.v1",
                 "tool_name": tool_name,
@@ -376,8 +399,8 @@ async def _runtime_fixture(
                 "retryable": False,
                 "observed_at": now.isoformat(),
                 "duration_ms": 1,
-                "source_refs": [{"resource_type": field, "resource_id": resource_id}],
-                "data": {field: resource_id, "version": version},
+                "source_refs": source_refs,
+                "data": observation_data,
             }
             content_hash = _hash(payload)
             observation = ToolObservation(

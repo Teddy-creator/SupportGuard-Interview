@@ -307,6 +307,15 @@ class ProposalRecord(TimestampMixin, Base):
     __table_args__ = (
         UniqueConstraint("tenant_id", "proposal_identity", name="uq_proposal_identity"),
         CheckConstraint("status IN ('draft','bound','stale')", name="proposal_status_valid"),
+        CheckConstraint(
+            "(action_type='refund' AND ((refund_original_resource_id IS NULL AND "
+            "refund_original_version IS NULL AND refund_pair_hash IS NULL) OR "
+            "(refund_original_resource_id IS NOT NULL AND refund_original_version IS NOT NULL "
+            "AND refund_pair_hash IS NOT NULL))) OR (action_type<>'refund' AND "
+            "refund_original_resource_id IS NULL AND refund_original_version IS NULL AND "
+            "refund_pair_hash IS NULL)",
+            name="refund_pair_binding_complete",
+        ),
         tenant_resource_fk("run_id", "agent_runs", name="fk_proposal_records_tenant_agent_runs"),
     )
 
@@ -324,6 +333,9 @@ class ProposalRecord(TimestampMixin, Base):
         JSON, nullable=False, default=list
     )
     action_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    refund_original_resource_id: Mapped[str | None] = mapped_column(String(128))
+    refund_original_version: Mapped[int | None] = mapped_column(Integer)
+    refund_pair_hash: Mapped[str | None] = mapped_column(String(64))
     status: Mapped[str] = mapped_column(String(32), nullable=False, default="draft")
     status_version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     # Proposal transitions are a frozen two-column CAS surface. The generic

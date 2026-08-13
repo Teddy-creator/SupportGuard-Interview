@@ -13,6 +13,7 @@ class ErrorCode(StrEnum):
     BILLING_SCOPE_VIOLATION = "billing_scope_violation"
     BILLING_NOT_CHARGED = "billing_not_charged"
     NOT_DUPLICATE_CHARGE = "not_duplicate_charge"
+    REFUND_PAIR_INELIGIBLE = "refund_pair_ineligible"
     REFUND_LIMIT_EXCEEDED = "refund_limit_exceeded"
     APPROVAL_NOT_FOUND = "approval_not_found"
     APPROVAL_STATE_CONFLICT = "approval_state_conflict"

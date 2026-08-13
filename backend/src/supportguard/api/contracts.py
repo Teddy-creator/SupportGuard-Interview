@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 from typing import Any, Literal
 
 from fastapi import status
@@ -397,6 +397,15 @@ class CustomerActionPayloadResponse(BaseModel):
     )
     amount: str | None = Field(default=None, pattern=r"^\d{1,12}(?:\.\d{1,2})?$")
     currency: str | None = Field(default=None, pattern=r"^[A-Z]{3}$")
+    original_billing_record_id: str | None = Field(
+        default=None,
+        min_length=1,
+        max_length=128,
+        pattern=r"^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+    )
+    duplicate_pair_verified: bool | None = None
+    service_period_start: date | None = None
+    service_period_end: date | None = None
     target: CustomerEntitlementTargetResponse | None = None
 
     @model_validator(mode="after")
@@ -409,9 +418,22 @@ class CustomerActionPayloadResponse(BaseModel):
         if sum(value is not None for value in identities) != 1:
             raise ValueError("customer action resource identity is invalid")
         if self.billing_record_id is None and (
-            self.amount is not None or self.currency is not None
+            self.amount is not None
+            or self.currency is not None
+            or self.original_billing_record_id is not None
+            or self.duplicate_pair_verified is not None
+            or self.service_period_start is not None
+            or self.service_period_end is not None
         ):
             raise ValueError("customer action billing fields require a billing resource")
+        if (self.service_period_start is None) != (self.service_period_end is None):
+            raise ValueError("customer action service period must be complete")
+        if (
+            self.service_period_start is not None
+            and self.service_period_end is not None
+            and self.service_period_start >= self.service_period_end
+        ):
+            raise ValueError("customer action service period is invalid")
         if self.subscription_id is None and self.target is not None:
             raise ValueError("customer action target requires a subscription resource")
         return self

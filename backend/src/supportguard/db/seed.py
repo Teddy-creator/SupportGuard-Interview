@@ -23,7 +23,12 @@ from supportguard.db.models import (
     User,
 )
 from supportguard.db.scope import set_local_scope
-from supportguard.db.seed_contract import SeedContractError, SeedReceipt
+from supportguard.db.seed_contract import (
+    DEMO_BILLING_SERVICE_PERIOD_END,
+    DEMO_BILLING_SERVICE_PERIOD_START,
+    SeedContractError,
+    SeedReceipt,
+)
 from supportguard.db.seed_validation import validate_seed_contract
 
 
@@ -56,6 +61,9 @@ async def seed_demo_data(
     """
 
     captured_at = _captured_seed_clock(clock)
+    billing_period_start = DEMO_BILLING_SERVICE_PERIOD_START
+    billing_period_end = DEMO_BILLING_SERVICE_PERIOD_END
+    billing_charged_at = captured_at - timedelta(days=1)
     for tenant in (
         Tenant(id="tenant_demo", name="Aster Labs", status="active"),
         Tenant(id="tenant_other", name="Northwind AI", status="active"),
@@ -219,6 +227,9 @@ async def seed_demo_data(
                     amount=Decimal("49.00"),
                     currency="USD",
                     status="charged",
+                    charged_at=billing_charged_at,
+                    service_period_start=billing_period_start,
+                    service_period_end=billing_period_end,
                     duplicate_of=None,
                     version=1,
                 ),
@@ -233,6 +244,9 @@ async def seed_demo_data(
                 amount=Decimal("49.00"),
                 currency="USD",
                 status="charged",
+                charged_at=billing_charged_at,
+                service_period_start=billing_period_start,
+                service_period_end=billing_period_end,
                 duplicate_of="bill_demo_original",
                 version=2,
             )
@@ -331,6 +345,9 @@ async def seed_demo_data(
                     amount=Decimal("19.00"),
                     currency="USD",
                     status="charged",
+                    charged_at=billing_charged_at,
+                    service_period_start=billing_period_start,
+                    service_period_end=billing_period_end,
                     duplicate_of=None,
                     version=1,
                 ),

@@ -127,6 +127,9 @@ export function ConversationPage({
           onToggleInspector={toggleInspector}
           onOpenSidebar={openSidebar}
           onOpenProfile={toggleProfile}
+          inspectorAvailable={Boolean(
+            conversation?.turns.some((turn) => turn.run_id)
+          )}
         />
         {conversation ? (
           <div className="conversation-lifecycle">
@@ -288,6 +291,7 @@ export function ConversationPage({
         open={inspectorOpen}
         loading={inspectorLoading}
         data={inspector}
+        session={session}
         onClose={closeInspector}
       />
     </div>

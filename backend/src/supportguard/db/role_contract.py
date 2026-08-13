@@ -393,6 +393,16 @@ INTERVIEW_RETIRED_FUNCTION_GRANTS = (
     ),
 )
 
+# Interview demo truthfulness adds one customer-scoped display projection.  It
+# is intentionally separate from the frozen v1.2.6 denominator above so the
+# historical grant inventory remains auditable.
+INTERVIEW_ADDED_FUNCTION_GRANTS = (
+    FunctionGrant(
+        "supportguard_api_get_refund_display(text,text[])",
+        frozenset({"supportguard_api"}),
+    ),
+)
+
 TRIGGER_ONLY_FUNCTIONS = frozenset(
     {
         "supportguard_runtime_writer_barrier_guard()",
@@ -405,6 +415,10 @@ TRIGGER_ONLY_FUNCTIONS = frozenset(
         "supportguard_approval_revision_binding_guard()",
         "supportguard_runtime_job_identity_guard()",
         "supportguard_approval_identity_compat_guard()",
+        "supportguard_billing_refund_identity_guard()",
+        "supportguard_refund_human_decision_guard_v203()",
+        "supportguard_refund_business_action_guard_v203()",
+        "supportguard_conversation_action_terminal_state_v203()",
     }
 )
 
@@ -544,6 +558,10 @@ def expected_function_grants() -> dict[str, frozenset[str]]:
     for item in FUNCTION_GRANTS:
         if item.signature in retired:
             continue
+        if item.signature in result:
+            raise ValueError(f"duplicate function signature: {item.signature}")
+        result[item.signature] = item.roles
+    for item in INTERVIEW_ADDED_FUNCTION_GRANTS:
         if item.signature in result:
             raise ValueError(f"duplicate function signature: {item.signature}")
         result[item.signature] = item.roles

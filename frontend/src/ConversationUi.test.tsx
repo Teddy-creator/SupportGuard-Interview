@@ -1,11 +1,12 @@
-import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   ConversationComposer,
   ConversationHeader,
   ConversationSidebar,
   groupedCitationsFor,
+  deduplicatedCitationEvidence,
   MessageStream,
   SafeMessage,
 } from "./ConversationUi";
@@ -16,6 +17,8 @@ import type {
 } from "./productTypes";
 
 const noop = () => undefined;
+
+afterEach(cleanup);
 
 const customerSession: SessionContext = {
   auth_mode: "development",
@@ -293,6 +296,35 @@ describe("customer-safe answer projection", () => {
     expect(groupedCitationsFor(citations, "message-a")).toHaveLength(2);
   });
 
+  it("deduplicates identical evidence spans while preserving claim summaries", () => {
+    const citations: Citation[] = [
+      {
+        source_type: "knowledge",
+        document_id: "billing-policy",
+        title: "退款政策",
+        version: "3.1",
+        section_path: "重复扣费资格",
+        supporting_span: "两笔扣款必须满足同一服务周期。",
+        claim_summary: "金额必须一致。",
+      },
+      {
+        source_type: "knowledge",
+        document_id: "billing-policy",
+        title: "退款政策",
+        version: "3.1",
+        section_path: "重复扣费资格",
+        supporting_span: "两笔扣款必须满足同一服务周期。",
+        claim_summary: "币种与服务周期必须一致。",
+      },
+    ];
+
+    expect(deduplicatedCitationEvidence(citations)).toEqual([
+      expect.objectContaining({
+        claim_summary: "金额必须一致。；币种与服务周期必须一致。",
+      }),
+    ]);
+  });
+
   it("opens one multi-claim citation without duplicate React keys", () => {
     const consoleError = vi
       .spyOn(console, "error")
@@ -526,6 +558,52 @@ describe("customer-safe answer projection", () => {
       screen.getByRole("region", { name: "退款申请 未完成" }),
     ).toHaveTextContent("动作没有完成");
     unmount();
+  });
+
+  it("distinguishes a current refund pair from an executed approval snapshot", () => {
+    const conversation = failedConversation("runtime");
+    const action = {
+      id: "approval-refund-pair",
+      turn_id: "turn-failed",
+      status: "pending",
+      action_type: "refund",
+      action_payload: {
+        billing_record_id: "bill_demo_duplicate",
+        original_billing_record_id: "bill_demo_original",
+        amount: "49.00",
+        currency: "USD",
+        service_period_start: "2026-08-01",
+        service_period_end: "2026-09-01",
+        duplicate_pair_verified: true,
+      },
+      allowed_actions: ["withdraw"],
+      created_at: "2026-07-28T01:00:00Z",
+    };
+    conversation.pending_actions = [action];
+
+    const { rerender } = render(messageStream(conversation));
+
+    expect(screen.getByText(/当前已核验：与原账单 bill_demo_original/)).toBeInTheDocument();
+
+    rerender(
+      messageStream({
+        ...conversation,
+        pending_actions: [
+          {
+            ...action,
+            status: "executed",
+            action_payload: {
+              ...action.action_payload,
+              duplicate_pair_verified: false,
+            },
+            allowed_actions: [],
+          },
+        ],
+      }),
+    );
+
+    expect(screen.getByText(/审批快照：执行依据关联原账单 bill_demo_original/)).toBeInTheDocument();
+    expect(screen.queryByText(/需要重新核验/)).not.toBeInTheDocument();
   });
 
   it("describes legacy takeover as record-only without inventing an operator queue", () => {

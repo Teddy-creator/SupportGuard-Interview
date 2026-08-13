@@ -14,7 +14,7 @@ def test_current_interview_documentation_matches_repository_facts() -> None:
         "result": "pass",
         "v20_activation": "phase7_human_acceptance",
         "current_authority_document_count": 8,
-        "current_database_head": "i202_refund_fence_authority",
+        "current_database_head": "i203_demo_truthful_refund",
         "v20_phase5_candidate_sha": "70717d8f19a9cbe3d8ead99db228c93f1577acc4",
         "v20_phase5_tree_sha": "853acfafd9782e2ce2d984cdd75da959718045a8",
         "v20_phase5_receipt_sha256": (

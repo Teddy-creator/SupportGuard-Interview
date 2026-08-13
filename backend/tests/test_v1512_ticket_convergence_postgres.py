@@ -575,9 +575,7 @@ async def test_worker_finalize_atomically_activates_oldest_accepted_turn() -> No
         )
         with worker_execution_context.bind(execution_context):
             async with worker_factory() as session, session.begin():
-                await session.execute(
-                    text("SELECT set_config('app.tenant_id','tenant_demo',true)")
-                )
+                await session.execute(text("SELECT set_config('app.tenant_id','tenant_demo',true)"))
                 await SegmentRepository(session).finalize(
                     lease,
                     marker_id=marker_id,
@@ -673,7 +671,7 @@ async def test_rejecting_one_active_approval_preserves_sibling_and_ticket_projec
             assert run.agent_finish_reason == "rejected"
             assert turn is not None
             assert turn.activity_state == "completed"
-            assert turn.result_state == "refused"
+            assert turn.result_state == "rejected"
             assert action_updates == 1
             assert action_count == 0
         assert (
@@ -744,7 +742,7 @@ async def test_withdrawing_one_active_approval_preserves_sibling_and_ticket_proj
             assert run.agent_finish_reason == "withdrawn"
             assert turn is not None
             assert turn.activity_state == "completed"
-            assert turn.result_state == "refused"
+            assert turn.result_state == "withdrawn"
             assert action_updates == 1
             assert action_count == 0
         assert (
@@ -854,8 +852,7 @@ async def test_reconciled_execute_success_preserves_sibling_and_stops_candidate_
                                 (
                                     await connection.execute(
                                         text(
-                                            "SELECT * FROM "
-                                            "supportguard_reconciler_candidates(500)"
+                                            "SELECT * FROM supportguard_reconciler_candidates(500)"
                                         )
                                     )
                                 )
@@ -1009,8 +1006,7 @@ async def test_dead_approval_resume_preserves_sibling_and_ticket_projection() ->
                 await session.scalar(
                     select(func.count(TicketMessage.id)).where(
                         TicketMessage.approval_id == pair.target_approval_id,
-                        TicketMessage.publication_key
-                        == f"runtime-failure:{accepted.job_id}",
+                        TicketMessage.publication_key == f"runtime-failure:{accepted.job_id}",
                     )
                 )
                 or 0

@@ -35,6 +35,11 @@ export function ProfileMenu({
           </dd>
         </div>
       </dl>
+      <p className="profile-scope-note">
+        {session.principal.role === "customer"
+          ? "客户会话的租户范围由服务端身份固定，不能在这里切换。对话中输入其他租户的编号也不会改变授权范围。"
+          : "审批者只能在审批工作台切换到已授权租户；切换后服务端会重新验证身份与数据范围。"}
+      </p>
       {session.auth_mode === "development" ? (
         <div className="demo-switch">
           <span>演示身份</span>
@@ -52,4 +57,3 @@ export function ProfileMenu({
     </div>
   );
 }
-

@@ -4,7 +4,7 @@ import asyncio
 import hashlib
 import os
 from dataclasses import replace
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 from uuid import uuid4
 
@@ -18,7 +18,11 @@ from supportguard.agent.persistence import AgentRunStore
 from supportguard.approvals.coordinator import ApprovalCoordinator
 from supportguard.approvals.service import RefundRuntime
 from supportguard.contracts.capability_decisions import ProposalCausalDecisionV2
-from supportguard.contracts.context import WorkerExecutionContext, worker_execution_context
+from supportguard.contracts.context import (
+    RequestContext,
+    WorkerExecutionContext,
+    worker_execution_context,
+)
 from supportguard.contracts.finalizer import canonical_hash
 from supportguard.contracts.tools import ObservationEnvelope, SourceRef
 from supportguard.db.models import (
@@ -52,6 +56,11 @@ from supportguard.services.approval_commands import ApprovalCommandCoordinator
 from supportguard.services.attempts import AttemptLedger
 from supportguard.services.business import action_hash
 from supportguard.services.capability_ledger import PolicyCapabilityLedger
+from supportguard.services.refunds import (
+    evaluate_billing_refund_pair,
+    refund_pair_action_fields,
+    refund_pair_observation_fields,
+)
 from supportguard.services.runtime_jobs import RuntimeConflict, RuntimeJobRepository
 from supportguard.services.segments import SegmentRepository
 from supportguard.services.tool_ledger import InvocationSpec, ToolLedger
@@ -127,8 +136,29 @@ async def _seed_production_shaped_pending_approval_fixture(
         }
 
     async with factory() as session, session.begin():
+        refund_pair = None
         if action_type == "refund":
             if resource_id_override is None:
+                charged_at = datetime.now(UTC) - timedelta(days=1)
+                period_start = date(2026, 8, 1)
+                period_end = date(2026, 9, 1)
+                original_id = f"{resource_id}_original"
+                session.add(
+                    BillingRecord(
+                        id=original_id,
+                        tenant_id="tenant_demo",
+                        customer_id=customer_id,
+                        amount=Decimal("49.00"),
+                        currency="USD",
+                        status="charged",
+                        charged_at=charged_at,
+                        service_period_start=period_start,
+                        service_period_end=period_end,
+                        duplicate_of=None,
+                        version=1,
+                    )
+                )
+                await session.flush()
                 session.add(
                     BillingRecord(
                         id=resource_id,
@@ -137,9 +167,31 @@ async def _seed_production_shaped_pending_approval_fixture(
                         amount=Decimal("49.00"),
                         currency="USD",
                         status="charged",
-                        duplicate_of=None,
+                        charged_at=charged_at,
+                        service_period_start=period_start,
+                        service_period_end=period_end,
+                        duplicate_of=original_id,
                         version=resource_version,
                     )
+                )
+                await session.flush()
+            billing = await session.get(BillingRecord, resource_id)
+            assert billing is not None
+            refund_pair = await evaluate_billing_refund_pair(
+                session,
+                billing,
+                now=datetime.now(UTC),
+            )
+            if refund_pair.eligible:
+                payload.update(refund_pair_action_fields(refund_pair))
+            else:
+                assert refund_pair.original is not None and refund_pair.pair_hash
+                payload.update(
+                    {
+                        "original_billing_record_id": refund_pair.original.billing_record_id,
+                        "original_business_version": refund_pair.original.version,
+                        "refund_pair_hash": refund_pair.pair_hash,
+                    }
                 )
         elif action_type == "api_key_revocation":
             if resource_id_override is None:
@@ -304,6 +356,12 @@ async def _seed_production_shaped_pending_approval_fixture(
         )
         business_invocation, knowledge_invocation = invocations
         await tool_ledger.mark_executing(lease, business_invocation.id)
+        business_data: dict[str, object] = {
+            resource_field: resource_id,
+            "version": resource_version,
+        }
+        if refund_pair is not None:
+            business_data.update(refund_pair_observation_fields(refund_pair))
         business_observation = await tool_ledger.terminalize(
             lease,
             business_invocation.id,
@@ -325,7 +383,7 @@ async def _seed_production_shaped_pending_approval_fixture(
                         observed_at=logical_time,
                     )
                 ],
-                data={resource_field: resource_id, "version": resource_version},
+                data=business_data,
             ),
         )
         await tool_ledger.mark_executing(lease, knowledge_invocation.id)
@@ -559,6 +617,13 @@ async def _seed_production_shaped_pending_approval_fixture(
             action_hash=action_hash(payload),
             status="draft",
         )
+        if refund_pair is not None:
+            assert refund_pair.eligible
+            assert refund_pair.original is not None
+            assert refund_pair.pair_hash is not None
+            proposal.refund_original_resource_id = refund_pair.original.billing_record_id
+            proposal.refund_original_version = refund_pair.original.version
+            proposal.refund_pair_hash = refund_pair.pair_hash
         session.add(proposal)
         await session.flush()
         capability_name = {
@@ -982,6 +1047,180 @@ async def test_runtime_action_old_fence_and_exact_replay_are_effect_once() -> No
         await admin.dispose()
 
 
+async def test_refund_pair_drift_after_approval_converges_stale_without_effect() -> None:
+    """The database-owned final gate turns a changed pair into a typed stale result."""
+
+    if _database_url() is None:
+        pytest.skip("TEST_FINALIZER_DATABASE_URL is required")
+    (
+        admin,
+        admin_factory,
+        approval_id,
+        resource_id,
+        _,
+        lease,
+        context,
+    ) = await _prepare("refund", "pair_drift")
+    worker = create_async_engine(
+        make_url(_database_url())
+        .set(username="supportguard_worker", password="supportguard_worker")  # noqa: S106
+        .render_as_string(hide_password=False)
+    )
+    worker_factory = create_scoped_session_factory(worker)
+    try:
+        async with admin_factory() as session, session.begin():
+            approval = await session.get(ApprovalRequest, approval_id)
+            assert approval is not None and approval.proposal_id is not None
+            proposal = await session.get(ProposalRecord, approval.proposal_id)
+            assert proposal is not None
+            assert proposal.refund_original_resource_id is not None
+            original = await session.get(
+                BillingRecord,
+                proposal.refund_original_resource_id,
+                with_for_update=True,
+            )
+            assert original is not None and original.status == "charged"
+            original.status = "refunded"
+            original.version += 1
+
+        async with worker_factory.worker(context) as session:
+            result = await RuntimeActionExecutor(session).execute(
+                lease,
+                approval_id=approval_id,
+            )
+            await session.commit()
+
+        assert result.status == "stale"
+        assert result.reason == "refund_pair_execution_stale"
+        assert result.business_action_id is None
+        async with admin_factory() as session:
+            approval = await session.get(ApprovalRequest, approval_id)
+            proposal = await session.get(
+                ProposalRecord,
+                approval.proposal_id if approval is not None else "",
+            )
+            target = await session.get(BillingRecord, resource_id)
+            assert approval is not None and approval.status == "stale"
+            assert proposal is not None and proposal.status == "stale"
+            assert target is not None and target.status == "charged"
+            assert (
+                await session.scalar(
+                    select(func.count(BusinessAction.id)).where(
+                        BusinessAction.approval_id == approval_id
+                    )
+                )
+                == 0
+            )
+    finally:
+        await worker.dispose()
+        await admin.dispose()
+
+
+async def test_refund_display_is_customer_scoped_and_internal_pair_read_is_closed() -> None:
+    """The UI pair projection is useful in-scope and non-enumerating out-of-scope."""
+
+    raw_url = _database_url()
+    if raw_url is None:
+        pytest.skip("TEST_FINALIZER_DATABASE_URL is required")
+    admin = create_async_engine(raw_url)
+    admin_factory = async_sessionmaker(admin, expire_on_commit=False)
+    api = create_async_engine(
+        make_url(raw_url)
+        .set(username="supportguard_api", password="supportguard_api")  # noqa: S106
+        .render_as_string(hide_password=False)
+    )
+    api_factory = create_scoped_session_factory(api)
+    prefix = f"v12_display_{uuid4().hex[:8]}"
+    try:
+        approval_id, _, _ = await _seed_production_shaped_pending_approval_fixture(
+            admin_factory,
+            prefix,
+            action_type="refund",
+        )
+        deadline = datetime.now(UTC) + timedelta(seconds=30)
+        customer_scope = RequestContext(
+            tenant_id="tenant_demo",
+            authenticated_actor_id="user_customer_demo",
+            authenticated_actor_role="customer_admin",
+            subject_customer_id="cust_demo",
+            request_id=f"request-{prefix}",
+            trace_id=f"trace-{prefix}",
+            deadline=deadline,
+        )
+        async with api_factory.request(customer_scope) as session:
+            display = await session.scalar(
+                text(
+                    "SELECT supportguard_api_get_refund_display("
+                    ":customer_id,CAST(:approval_ids AS text[]))"
+                ),
+                {
+                    "customer_id": "cust_demo",
+                    "approval_ids": [approval_id],
+                },
+            )
+            with pytest.raises(DBAPIError) as internal_denied:
+                await session.execute(
+                    text(
+                        "SELECT supportguard_refund_pair_snapshot("
+                        ":tenant_id,:customer_id,:billing_id,clock_timestamp())"
+                    ),
+                    {
+                        "tenant_id": "tenant_demo",
+                        "customer_id": "cust_demo",
+                        "billing_id": display[approval_id]["billing_record_id"],
+                    },
+                )
+        assert display[approval_id] == {
+            "amount": "49.00",
+            "billing_record_id": display[approval_id]["billing_record_id"],
+            "currency": "USD",
+            "duplicate_pair_verified": True,
+            "original_billing_record_id": (f"{display[approval_id]['billing_record_id']}_original"),
+            "service_period_end": "2026-09-01",
+            "service_period_start": "2026-08-01",
+        }
+        assert str(getattr(internal_denied.value.orig, "sqlstate", "")) == "42501"
+
+        other_scope = RequestContext(
+            tenant_id="tenant_other",
+            authenticated_actor_id="user_customer_other_demo",
+            authenticated_actor_role="customer_admin",
+            subject_customer_id="cust_other",
+            request_id=f"request-{prefix}-other",
+            trace_id=f"trace-{prefix}-other",
+            deadline=deadline,
+        )
+        async with api_factory.request(other_scope) as session:
+            cross_tenant = await session.scalar(
+                text(
+                    "SELECT supportguard_api_get_refund_display("
+                    ":customer_id,CAST(:approval_ids AS text[]))"
+                ),
+                {
+                    "customer_id": "cust_other",
+                    "approval_ids": [approval_id],
+                },
+            )
+        assert cross_tenant == {}
+
+        async with api_factory.request(_approver_scope(prefix)) as session:
+            with pytest.raises(DBAPIError) as approver_denied:
+                await session.execute(
+                    text(
+                        "SELECT supportguard_api_get_refund_display("
+                        ":customer_id,CAST(:approval_ids AS text[]))"
+                    ),
+                    {
+                        "customer_id": "cust_demo",
+                        "approval_ids": [approval_id],
+                    },
+                )
+        assert str(getattr(approver_denied.value.orig, "sqlstate", "")) == "42501"
+    finally:
+        await api.dispose()
+        await admin.dispose()
+
+
 async def _append_competing_ticket_event(
     factory: async_sessionmaker,
     *,
@@ -1088,7 +1327,7 @@ async def test_production_coordinator_cannot_bypass_database_owned_stale() -> No
         .render_as_string(hide_password=False)
     )
     worker_factory = create_scoped_session_factory(worker)
-    sibling_proposal_id = "proposal_db_stale_sibling"
+    sibling_proposal_id = f"proposal_db_stale_sibling_{uuid4().hex[:12]}"
     try:
         with worker_execution_context.bind(context):
             intent = await ApprovalCoordinator(worker_factory).handle(
@@ -1161,8 +1400,8 @@ async def test_production_coordinator_cannot_bypass_database_owned_stale() -> No
         await admin.dispose()
 
 
-async def test_same_resource_approvals_lock_full_proposal_set_without_deadlock() -> None:
-    """Executed replay and a later Approval cannot deadlock on sibling Proposals."""
+async def test_concurrent_exact_replays_lock_full_proposal_set_without_deadlock() -> None:
+    """Concurrent exact replays serialize with every sibling Proposal locked."""
 
     if _database_url() is None:
         pytest.skip("TEST_FINALIZER_DATABASE_URL is required")
@@ -1177,75 +1416,66 @@ async def test_same_resource_approvals_lock_full_proposal_set_without_deadlock()
         max_overflow=0,
     )
     worker_factory = create_scoped_session_factory(worker)
-    admin_b = None
+    sibling_proposal_id = f"proposal_sibling_{uuid4().hex[:12]}"
     try:
-        # Consume the first Approval so the unique-active-resource invariant
-        # permits a later request for the resource's new version.  Its leased
-        # Job remains a valid exact-replay contender.
-        async with worker_factory.worker(context_a) as session:
-            first_result = await RuntimeActionExecutor(session).execute(
-                lease_a,
-                approval_id=approval_a,
+        # A still-live sibling makes both transactions acquire the complete,
+        # stable Proposal lock set.  Two calls then race on one exact approved
+        # action: one performs the effect and the other must converge as its
+        # idempotent replay.  This preserves the lock-order proof without
+        # inventing a second refund for a bill that is already refunded.
+        async with factory_a() as session, session.begin():
+            approval = await session.get(ApprovalRequest, approval_a)
+            assert approval is not None and approval.proposal_id is not None
+            proposal = await session.get(ProposalRecord, approval.proposal_id)
+            assert proposal is not None
+            session.add(
+                ProposalRecord(
+                    id=sibling_proposal_id,
+                    tenant_id=proposal.tenant_id,
+                    run_id=proposal.run_id,
+                    proposal_identity=f"{proposal.proposal_identity}:sibling",
+                    action_type=proposal.action_type,
+                    resource_id=proposal.resource_id,
+                    resource_version=proposal.resource_version,
+                    action_payload=proposal.action_payload,
+                    observation_binding=proposal.observation_binding,
+                    action_hash=proposal.action_hash,
+                    refund_original_resource_id=proposal.refund_original_resource_id,
+                    refund_original_version=proposal.refund_original_version,
+                    refund_pair_hash=proposal.refund_pair_hash,
+                    status="draft",
+                    status_version=1,
+                )
             )
-            await session.commit()
-        assert first_result.status == "succeeded" and first_result.reused is False
-        second = await _prepare(
-            "refund",
-            "same_b",
-            resource_id_override=shared_resource_id,
-            resource_version_override=3,
-        )
-        admin_b, _, approval_b, _, _, lease_b, context_b = second
         barrier = asyncio.Barrier(2)
 
-        async def execute(
-            *,
-            approval_id: str,
-            lease,
-            context: WorkerExecutionContext,
-        ):
+        async def execute():
             await barrier.wait()
-            async with worker_factory.worker(context) as session:
+            async with worker_factory.worker(context_a) as session:
                 result = await RuntimeActionExecutor(session).execute(
-                    lease,
-                    approval_id=approval_id,
+                    lease_a,
+                    approval_id=approval_a,
                 )
                 await session.commit()
                 return result
 
         results = await asyncio.wait_for(
-            asyncio.gather(
-                execute(approval_id=approval_a, lease=lease_a, context=context_a),
-                execute(approval_id=approval_b, lease=lease_b, context=context_b),
-            ),
+            asyncio.gather(execute(), execute()),
             timeout=15,
         )
-        assert sorted(item.status for item in results) == ["stale", "succeeded"]
-        replay = next(item for item in results if item.status == "succeeded")
-        stale = next(item for item in results if item.status == "stale")
-        assert replay.reused is True
-        assert stale.reason == "resource_snapshot_stale"
+        assert [item.status for item in results] == ["succeeded", "succeeded"]
+        assert sorted(item.reused for item in results) == [False, True]
         async with factory_a() as session:
             billing = await session.get(BillingRecord, shared_resource_id)
-            approvals = list(
-                (
-                    await session.scalars(
-                        select(ApprovalRequest).where(
-                            ApprovalRequest.id.in_([approval_a, approval_b])
-                        )
-                    )
-                ).all()
-            )
+            approval = await session.get(ApprovalRequest, approval_a)
             proposals = list(
                 (
                     await session.scalars(
                         select(ProposalRecord).where(
                             ProposalRecord.id.in_(
-                                [
-                                    item.proposal_id
-                                    for item in approvals
-                                    if item.proposal_id is not None
-                                ]
+                                [approval.proposal_id, sibling_proposal_id]
+                                if approval is not None
+                                else [sibling_proposal_id]
                             )
                         )
                     )
@@ -1253,7 +1483,7 @@ async def test_same_resource_approvals_lock_full_proposal_set_without_deadlock()
             )
             assert billing is not None
             assert billing.status == "refunded" and billing.version == 3
-            assert sorted(item.status for item in approvals) == ["executed", "stale"]
+            assert approval is not None and approval.status == "executed"
             assert {item.status for item in proposals} == {"stale"}
             assert (
                 await session.scalar(
@@ -1266,5 +1496,3 @@ async def test_same_resource_approvals_lock_full_proposal_set_without_deadlock()
     finally:
         await worker.dispose()
         await admin_a.dispose()
-        if admin_b is not None:
-            await admin_b.dispose()

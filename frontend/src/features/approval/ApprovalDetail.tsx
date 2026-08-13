@@ -127,6 +127,12 @@ function ApprovalSummary({
           <dt>目标资源</dt>
           <dd>{displayFact(resource, "受保护资源")}</dd>
         </div>
+        {refundPayload?.original_billing_record_id ? (
+          <div>
+            <dt>原始账单</dt>
+            <dd>{displayFact(refundPayload.original_billing_record_id)}</dd>
+          </div>
+        ) : null}
         {refundPayload?.refund_reason ? (
           <div>
             <dt>操作理由</dt>

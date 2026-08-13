@@ -987,13 +987,36 @@ class FakeGateway:
                 observed_at=observed_at,
             )
         elif call.name == "query_billing_record":
+            charged_at = observed_at - timedelta(days=1)
             data = {
                 "billing_record_id": "bill_demo_duplicate",
                 "amount": "49.00",
                 "currency": "USD",
                 "status": "charged",
+                "charged_at": charged_at.isoformat(),
+                "service_period_start": "2026-08-01",
+                "service_period_end": "2026-09-01",
                 "duplicate_of": "bill_demo_original",
                 "version": 2,
+                "original_billing_record_id": "bill_demo_original",
+                "original_amount": "49.00",
+                "original_currency": "USD",
+                "original_status": "charged",
+                "original_charged_at": charged_at.isoformat(),
+                "original_service_period_start": "2026-08-01",
+                "original_service_period_end": "2026-09-01",
+                "original_version": 1,
+                "duplicate_pair_eligible": True,
+                "refund_pair_hash": "b" * 64,
+                "refund_pair_checks": {
+                    "same_scope": True,
+                    "explicit_relation": True,
+                    "both_charged": True,
+                    "same_amount": True,
+                    "same_currency": True,
+                    "same_service_period": True,
+                    "within_application_window": True,
+                },
             }
         elif call.name == "query_api_key_metadata":
             data = {

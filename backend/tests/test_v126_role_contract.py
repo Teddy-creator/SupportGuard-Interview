@@ -10,6 +10,7 @@ from supportguard.db.models import ApprovalRequest, CitationBinding, ProposalRec
 from supportguard.db.role_contract import (
     BOOTSTRAP_TABLES,
     FUNCTION_GRANTS,
+    INTERVIEW_ADDED_FUNCTION_GRANTS,
     INTERVIEW_RETIRED_FUNCTION_GRANTS,
     OWNER_ONLY_FUNCTIONS,
     RUNTIME_ROLES,
@@ -46,7 +47,7 @@ def test_v126_history_and_v1512_current_function_denominators_are_explicit() -> 
     }
     assert len(FUNCTION_GRANTS) == 62
     assert len(historical_signatures) == 62
-    assert len(grants) == 60
+    assert len(grants) == 61
     assert [item.signature for item in V126_RETIRED_FUNCTION_GRANTS] == [
         "supportguard_api_accept_message(text,jsonb)"
     ]
@@ -54,7 +55,9 @@ def test_v126_history_and_v1512_current_function_denominators_are_explicit() -> 
         "supportguard_action_mcp_create_support_escalation(jsonb,jsonb)"
     ]
     assert retired_signatures <= historical_signatures
-    assert set(grants) == historical_signatures - retired_signatures
+    assert set(grants) == (historical_signatures - retired_signatures) | {
+        item.signature for item in INTERVIEW_ADDED_FUNCTION_GRANTS
+    }
     assert "supportguard_api_accept_message(text,jsonb)" not in grants
     assert "supportguard_action_mcp_create_support_escalation(jsonb,jsonb)" not in grants
     assert set().union(*(item.roles for item in FUNCTION_GRANTS)) == (
@@ -96,6 +99,7 @@ def test_v126_history_and_v1512_current_function_denominators_are_explicit() -> 
         "supportguard_api_get_conversation(text,text)",
         "supportguard_api_get_run_citations(text,text)",
         "supportguard_api_get_conversation_page(text,text,integer,integer)",
+        "supportguard_api_get_refund_display(text,text[])",
     }
 
 

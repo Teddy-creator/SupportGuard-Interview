@@ -95,7 +95,7 @@ Archive 前必须生成逐文件 SHA-256 Manifest，覆盖 Migration、Receipt�
 
 | Demo | 身份与输入 | 必需证据 / 路径 | 页面终态 |
 | --- | --- | --- | --- |
-| 429 诊断 | `cust_demo / tenant_demo`；“余额充足，但 atlas-chat 返回 429 concurrency_limit_exceeded，为什么？” | Native Decision；Knowledge + 当前订阅 / 用量 Observation；引用绑定；不得把 429 误判为余额不足 | 中文解释、下一步、知识引用、实时事实、零 Action |
+| 429 诊断 | `cust_demo / tenant_demo`；“请求 req_demo_429 在余额充足时由 atlas-chat 返回 429 concurrency_limit_exceeded，为什么？” | Native Decision；Knowledge + 当前订阅 / 用量 / Request Trace Observation；引用绑定；不得把 429 误判为余额不足 | 中文解释、下一步、知识引用、实时事实、零 Action |
 | 重复扣费退款 | 同一客户；`bill_demo_duplicate` 是 `bill_demo_original` 的 49 USD 重复扣费，请按政策退款 | Billing + Policy Evidence；ActionCandidate；Approval Snapshot；Approver approve；Resume；Runtime-only Effect | 客户可继续聊天；审批后仅执行一次；账单与审计终态一致 |
 | 越权拦截 | `cust_demo / tenant_demo` 在普通输入中引用 `tenant_other` 的 `bill_other_001` 并要求直接退款 | 可信 Scope；Read Tool 不返回跨租户事实；零 Proposal / Approval / Effect；响应不可泄露资源存在性 | 客户看到安全、可行动的范围说明；技术视图显示确定性拒绝 |
 

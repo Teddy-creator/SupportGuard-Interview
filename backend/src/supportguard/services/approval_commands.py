@@ -45,6 +45,11 @@ from supportguard.services.approver_scope import assert_active_approver_scope
 from supportguard.services.business import action_hash
 from supportguard.services.commands import activate_next_turn
 from supportguard.services.conversation_activity import advance_conversation_activity
+from supportguard.services.refunds import (
+    bind_refund_pair_to_proposal,
+    lock_and_evaluate_billing_refund_pair,
+    refund_pair_matches_proposal,
+)
 from supportguard.services.runtime_jobs import (
     IdempotencyRepository,
     RuntimeConflict,
@@ -205,10 +210,7 @@ class ApprovalCommandCoordinator:
             ):
                 raise RuntimeConflict("approval_decision_conflict")
             accepted_at = existing_decision.created_at
-            if (
-                accepted_at.tzinfo is None
-                and self.session.get_bind().dialect.name == "sqlite"
-            ):
+            if accepted_at.tzinfo is None and self.session.get_bind().dialect.name == "sqlite":
                 # SQLite drops timezone metadata even for aware DateTime
                 # columns. Production PostgreSQL values remain authoritative.
                 accepted_at = accepted_at.replace(tzinfo=UTC)
@@ -268,6 +270,22 @@ class ApprovalCommandCoordinator:
             self.session.add(revision)
             approval.selected_revision_id = revision.id
             approval.selected_revision_number = revision.revision_number
+        if decision in {"approve", "edit_and_approve"} and approval.action_type == "refund":
+            billing, pair = await lock_and_evaluate_billing_refund_pair(
+                self.session,
+                tenant_id=approval.tenant_id,
+                customer_id=approval.customer_id,
+                billing_record_id=approval.resource_id,
+                now=datetime.now(UTC),
+            )
+            if (
+                billing is None
+                or pair is None
+                or not pair.eligible
+                or not refund_pair_matches_proposal(pair, proposal)
+            ):
+                raise RuntimeConflict("refund_pair_approval_stale")
+            bind_refund_pair_to_proposal(proposal, pair)
         persisted_status = {
             "approve": "approved",
             "edit_and_approve": "approved",
@@ -444,7 +462,7 @@ class ApprovalCommandCoordinator:
         )
         if turn is not None:
             turn.activity_state = "completed"
-            turn.result_state = "refused"
+            turn.result_state = "rejected"
             turn.completed_at = now
         ticket.status = "rejected"
         ticket.final_response = (
@@ -577,9 +595,7 @@ class ApprovalCommandCoordinator:
             raise RuntimeConflict("approval_expected_head_conflict")
         return run, ticket, proposal, marker
 
-    async def mark_binding_stale(
-        self, *, tenant_id: str, approval_id: str
-    ) -> dict[str, object]:
+    async def mark_binding_stale(self, *, tenant_id: str, approval_id: str) -> dict[str, object]:
         """Converge an invalid binding after the decision transaction rolls back.
 
         Production PostgreSQL must use the narrow owner capability because the
@@ -589,10 +605,7 @@ class ApprovalCommandCoordinator:
         """
         if self.session.get_bind().dialect.name == "postgresql":
             value = await self.session.scalar(
-                text(
-                    "SELECT supportguard_api_converge_checkpoint_binding_stale("
-                    ":approval_id)"
-                ),
+                text("SELECT supportguard_api_converge_checkpoint_binding_stale(:approval_id)"),
                 {"approval_id": approval_id},
             )
             if not isinstance(value, dict):

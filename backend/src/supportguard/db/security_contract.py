@@ -16,7 +16,8 @@ from supportguard.db.seed_contract import SEED_CONTRACT_SHA256, SEED_VERSION
 LEGACY_FINAL_DATABASE_HEAD: Final = "b207c0a1d001"
 INTERVIEW_BASELINE_ROOT_REVISION: Final = "i200_baseline_0001"
 INTERVIEW_ESCALATION_RETIREMENT_REVISION: Final = "i201_retire_escalation"
-CURRENT_INTERVIEW_DATABASE_REVISION: Final = "i202_refund_fence_authority"
+INTERVIEW_REFUND_FENCE_REVISION: Final = "i202_refund_fence_authority"
+CURRENT_INTERVIEW_DATABASE_REVISION: Final = "i203_demo_truthful_refund"
 
 
 @dataclass(frozen=True, slots=True)
@@ -107,6 +108,7 @@ DATABASE_PREFLIGHT: Final = EmptyDatabasePreflightContract(
     accepted_existing_revisions=(
         INTERVIEW_BASELINE_ROOT_REVISION,
         INTERVIEW_ESCALATION_RETIREMENT_REVISION,
+        INTERVIEW_REFUND_FENCE_REVISION,
         CURRENT_INTERVIEW_DATABASE_REVISION,
     ),
     application_schemas=("public", "supportguard_control"),

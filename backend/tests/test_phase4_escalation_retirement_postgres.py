@@ -161,21 +161,49 @@ async def test_three_current_action_proposals_complete_real_stdio_and_postgres(
 
     engine = create_async_engine(admin_url)
     try:
-        async with engine.connect() as connection:
+        async with engine.begin() as connection:
             rows = (
                 await connection.execute(
                     text(
-                        "SELECT action_type,status FROM proposal_records "
+                        "SELECT id,action_type,status,refund_original_resource_id,"
+                        "refund_original_version,refund_pair_hash FROM proposal_records "
                         "WHERE run_id=:run_id ORDER BY action_type"
                     ),
                     {"run_id": common["run_id"]},
                 )
             ).all()
-        assert {(str(row[0]), str(row[1])) for row in rows} == {
-            ("refund", "draft"),
-            ("api_key_revocation", "draft"),
-            ("entitlement_change", "draft"),
-        }
+            assert {(str(row[1]), str(row[2])) for row in rows} == {
+                ("refund", "draft"),
+                ("api_key_revocation", "draft"),
+                ("entitlement_change", "draft"),
+            }
+            refund = next(row for row in rows if str(row[1]) == "refund")
+            assert str(refund[3]) == "bill_demo_original"
+            assert int(refund[4]) == 1
+            assert len(str(refund[5])) == 64
+
+            await connection.execute(text("SET LOCAL ROLE supportguard_owner"))
+            await connection.execute(
+                text("SELECT set_config('app.tenant_id',:tenant_id,true)"),
+                {"tenant_id": common["tenant_id"]},
+            )
+            with pytest.raises(
+                exc.DBAPIError,
+                match="refund_proposal_pair_identity_immutable",
+            ):
+                async with connection.begin_nested():
+                    await connection.execute(
+                        text(
+                            "UPDATE proposal_records SET refund_pair_hash=:forged "
+                            "WHERE id=:proposal_id"
+                        ),
+                        {"forged": "f" * 64, "proposal_id": refund[0]},
+                    )
+            unchanged_hash = await connection.scalar(
+                text("SELECT refund_pair_hash FROM proposal_records WHERE id=:proposal_id"),
+                {"proposal_id": refund[0]},
+            )
+            assert str(unchanged_hash) == str(refund[5])
     finally:
         await engine.dispose()
 

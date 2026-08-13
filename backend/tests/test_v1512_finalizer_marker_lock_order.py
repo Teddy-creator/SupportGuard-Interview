@@ -4,6 +4,7 @@ import asyncio
 import importlib
 import inspect
 import os
+from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 from uuid import uuid4
 
@@ -170,6 +171,9 @@ async def test_interrupt_finalizer_locks_ticket_then_waits_on_proposal_before_ru
                     amount=Decimal("49.00"),
                     currency="USD",
                     status="charged",
+                    charged_at=datetime.now(UTC) - timedelta(days=1),
+                    service_period_start=date(2026, 8, 1),
+                    service_period_end=date(2026, 9, 1),
                     version=2,
                 )
             )
@@ -506,6 +510,9 @@ async def test_interrupt_finalizer_revalidates_lease_after_proposal_barrier() ->
                     amount=Decimal("49.00"),
                     currency="USD",
                     status="charged",
+                    charged_at=datetime.now(UTC) - timedelta(days=1),
+                    service_period_start=date(2026, 8, 1),
+                    service_period_end=date(2026, 9, 1),
                     version=2,
                 )
             )

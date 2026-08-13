@@ -458,7 +458,7 @@ test("SSE outage visibly retries and replays the durable result", async ({ page 
   });
   await page.goto("/");
   await page.getByRole("button", { name: "客户工作台" }).click();
-  await submitNewTicket(page, "余额充足，但 atlas-chat 返回 429 concurrency_limit_exceeded，为什么？");
+  await submitNewTicket(page, "请求 req_demo_429 在余额充足时由 atlas-chat 返回 429 concurrency_limit_exceeded，为什么？");
   await expect(page.getByText("事件通道正在重连", { exact: true })).toBeVisible();
   streamUnavailable = false;
   await expect(page.getByRole("heading", { name: "基于当前证据的处理结果" })).toBeVisible({ timeout: 30_000 });

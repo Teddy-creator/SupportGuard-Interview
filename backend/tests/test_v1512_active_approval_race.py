@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import os
 from dataclasses import dataclass
+from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 from uuid import uuid4
 
@@ -85,9 +86,7 @@ async def _prepare_interrupt(
     session.add_all([ticket, message])
     await session.flush()
     turn = await session.scalar(
-        select(ConversationTurn).where(
-            ConversationTurn.customer_message_id == message_id
-        )
+        select(ConversationTurn).where(ConversationTurn.customer_message_id == message_id)
     )
     if turn is None:
         turn = ConversationTurn(
@@ -205,6 +204,9 @@ async def test_two_transactions_atomically_reuse_one_active_approval() -> None:
                     amount=Decimal("49.00"),
                     currency="USD",
                     status="charged",
+                    charged_at=datetime.now(UTC) - timedelta(days=1),
+                    service_period_start=date(2026, 8, 1),
+                    service_period_end=date(2026, 9, 1),
                     version=2,
                 )
             )
@@ -290,9 +292,7 @@ async def test_two_transactions_atomically_reuse_one_active_approval() -> None:
             reused_messages = list(
                 await session.scalars(
                     select(TicketMessage).where(
-                        TicketMessage.ticket_id.in_(
-                            [fixture.ticket_id for fixture in fixtures]
-                        ),
+                        TicketMessage.ticket_id.in_([fixture.ticket_id for fixture in fixtures]),
                         TicketMessage.approval_id == returned_ids[0],
                     )
                 )

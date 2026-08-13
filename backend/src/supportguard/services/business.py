@@ -68,6 +68,11 @@ from supportguard.services.approval_lifecycle import (
 )
 from supportguard.services.capability_ledger import capability_payload_hash
 from supportguard.services.errors import DomainError, ErrorCode
+from supportguard.services.refunds import (
+    evaluate_billing_refund_pair,
+    refund_pair_action_fields,
+    refund_pair_observation_fields,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -735,6 +740,8 @@ class BusinessService:
                 ErrorCode.BILLING_SCOPE_VIOLATION,
                 "Billing record is not available in the current scope",
             )
+        pair = await evaluate_billing_refund_pair(self.session, billing, now=utc_now())
+        original = pair.original
         return BillingRecordResult(
             tool_call_id=context.tool_call_id,
             ticket_id=context.ticket_id,
@@ -742,9 +749,20 @@ class BusinessService:
             amount=billing.amount,
             currency=billing.currency,
             status=billing.status,
+            charged_at=billing.charged_at,
+            service_period_start=billing.service_period_start,
+            service_period_end=billing.service_period_end,
             duplicate_of=billing.duplicate_of,
             version=billing.version,
-            source_refs=[self._source_ref("billing_record", billing.id)],
+            **refund_pair_observation_fields(pair),
+            source_refs=[
+                self._source_ref("billing_record", billing.id),
+                *(
+                    [self._source_ref("billing_record", original.billing_record_id)]
+                    if original is not None
+                    else []
+                ),
+            ],
         )
 
     async def create_support_escalation(
@@ -828,6 +846,23 @@ class BusinessService:
             raise DomainError(ErrorCode.BILLING_SCOPE_VIOLATION, "Billing record is out of scope")
         if billing.status != "charged":
             raise DomainError(ErrorCode.BILLING_NOT_CHARGED, "Billing record is not refundable")
+        pair = await evaluate_billing_refund_pair(
+            self.session,
+            billing,
+            now=utc_now(),
+            lock_original=True,
+        )
+        if not pair.eligible:
+            raise DomainError(
+                ErrorCode.REFUND_PAIR_INELIGIBLE,
+                "The linked charges do not satisfy the duplicate-charge refund policy",
+                details={"failed_checks": list(pair.checks.failed)},
+            )
+        if pair.original is None or pair.pair_hash is None:
+            raise DomainError(
+                ErrorCode.REFUND_PAIR_INELIGIBLE,
+                "The duplicate-charge pair identity is incomplete",
+            )
         await self._require_observation_binding(
             context,
             tool_name="query_billing_record",
@@ -835,22 +870,15 @@ class BusinessService:
             resource_id=billing.id,
             resource_version=billing.version,
             require_policy_evidence=True,
+            required_data_values={
+                "duplicate_pair_eligible": True,
+                "refund_pair_hash": pair.pair_hash,
+                "original_billing_record_id": pair.original.billing_record_id,
+                "original_version": pair.original.version,
+            }
+            if pair.original is not None
+            else None,
         )
-
-        linked_duplicate = await self.session.scalar(
-            select(BillingRecord.id)
-            .where(
-                BillingRecord.tenant_id == context.tenant_id,
-                BillingRecord.customer_id == context.customer_id,
-                BillingRecord.duplicate_of == billing.id,
-            )
-            .limit(1)
-        )
-        if billing.duplicate_of is None and linked_duplicate is None:
-            raise DomainError(
-                ErrorCode.NOT_DUPLICATE_CHARGE,
-                "Billing record has no explicit duplicate relationship",
-            )
         if billing.currency != "USD" or billing.amount > REFUND_LIMIT_USD:
             raise DomainError(
                 ErrorCode.REFUND_LIMIT_EXCEEDED,
@@ -894,6 +922,7 @@ class BusinessService:
             "currency": billing.currency,
             "refund_reason": arguments.refund_reason,
             "business_version": billing.version,
+            **refund_pair_action_fields(pair),
         }
         candidate_hash = action_hash(payload)
         proposal_identity = action_hash(
@@ -923,6 +952,9 @@ class BusinessService:
                 action_payload=payload,
                 observation_binding=context.observation_binding,
                 action_hash=candidate_hash,
+                refund_original_resource_id=pair.original.billing_record_id,
+                refund_original_version=pair.original.version,
+                refund_pair_hash=pair.pair_hash,
                 status="bound",
             )
             self.session.add(proposal)
@@ -980,6 +1012,22 @@ class BusinessService:
             raise DomainError(ErrorCode.BILLING_SCOPE_VIOLATION, "Billing record is out of scope")
         if billing.status != "charged":
             raise DomainError(ErrorCode.BILLING_NOT_CHARGED, "Billing record is not refundable")
+        pair = await evaluate_billing_refund_pair(
+            self.session,
+            billing,
+            now=utc_now(),
+            lock_original=True,
+        )
+        if not pair.eligible:
+            raise DomainError(
+                ErrorCode.REFUND_PAIR_INELIGIBLE,
+                "The linked charges do not satisfy the duplicate-charge refund policy",
+            )
+        if pair.original is None or pair.pair_hash is None:
+            raise DomainError(
+                ErrorCode.REFUND_PAIR_INELIGIBLE,
+                "The duplicate-charge pair identity is incomplete",
+            )
         await self._require_observation_binding(
             context,
             tool_name="query_billing_record",
@@ -987,17 +1035,15 @@ class BusinessService:
             resource_id=billing.id,
             resource_version=billing.version,
             require_policy_evidence=True,
+            required_data_values={
+                "duplicate_pair_eligible": True,
+                "refund_pair_hash": pair.pair_hash,
+                "original_billing_record_id": pair.original.billing_record_id,
+                "original_version": pair.original.version,
+            }
+            if pair.original is not None
+            else None,
         )
-        duplicate = await self.session.scalar(
-            select(BillingRecord.id).where(
-                BillingRecord.tenant_id == context.tenant_id,
-                BillingRecord.customer_id == context.customer_id,
-                (BillingRecord.id == billing.duplicate_of)
-                | (BillingRecord.duplicate_of == billing.id),
-            )
-        )
-        if duplicate is None:
-            raise DomainError(ErrorCode.NOT_DUPLICATE_CHARGE, "No duplicate relation exists")
         if billing.currency != "USD" or billing.amount > REFUND_LIMIT_USD:
             raise DomainError(
                 ErrorCode.REFUND_LIMIT_EXCEEDED,
@@ -1010,6 +1056,7 @@ class BusinessService:
             "currency": billing.currency,
             "refund_reason": arguments.refund_reason,
             "business_version": billing.version,
+            **refund_pair_action_fields(pair),
         }
         candidate_hash = action_hash(payload)
         identity = action_hash(
@@ -1039,6 +1086,9 @@ class BusinessService:
                 action_payload=payload,
                 observation_binding=context.observation_binding,
                 action_hash=candidate_hash,
+                refund_original_resource_id=pair.original.billing_record_id,
+                refund_original_version=pair.original.version,
+                refund_pair_hash=pair.pair_hash,
                 status="draft",
             )
             self.session.add(existing)
@@ -1299,6 +1349,7 @@ class BusinessService:
         resource_id: str,
         resource_version: int,
         require_policy_evidence: bool,
+        required_data_values: dict[str, object] | None = None,
     ) -> None:
         if self.test_capability is not None:
             return
@@ -1371,6 +1422,10 @@ class BusinessService:
                 if (
                     str(data.get(resource_field, "")) != resource_id
                     or int(data.get("version", -1)) != resource_version
+                    or any(
+                        data.get(key) != value
+                        for key, value in (required_data_values or {}).items()
+                    )
                 ):
                     raise DomainError(
                         ErrorCode.TICKET_STATE_CONFLICT,

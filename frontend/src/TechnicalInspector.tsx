@@ -3,7 +3,7 @@ import { useState } from "react";
 import { citationEvidenceKey } from "./citationKeys";
 import { actionLabel } from "./productCopy";
 import { formatTime, statusLabel } from "./presentation";
-import type { TurnInspector } from "./productTypes";
+import type { SessionContext, TurnInspector } from "./productTypes";
 
 const eventNames: Record<string, string> = {
   run_started: "开始分析请求",
@@ -31,6 +31,39 @@ const eventNames: Record<string, string> = {
   semantic_no_progress: "停止无进展调用",
   legacy_action_admission_recovery: "恢复旧版操作状态",
 };
+
+function normalizedSignal(value: unknown): string | null {
+  return typeof value === "string"
+    ? value.trim().toLowerCase().replaceAll("-", "_")
+    : null;
+}
+
+function eventRecordsDenial(event: TurnInspector["timeline"][number]): boolean {
+  const payload = event.payload;
+  const signals = [
+    event.status,
+    payload?.route,
+    payload?.result_state,
+    payload?.outcome,
+    payload?.decision,
+    payload?.finish_reason,
+    payload?.reason,
+    payload?.reason_code,
+    payload?.outcome_code,
+    payload?.error_code,
+  ]
+    .map(normalizedSignal)
+    .filter((value): value is string => Boolean(value));
+  return signals.some(
+    (value) =>
+      ["out_of_scope", "refused", "reject", "rejected", "denied"].includes(
+        value,
+      ) ||
+      value.includes("scope_mismatch") ||
+      value.includes("tenant_scope") ||
+      value.includes("cross_tenant"),
+  );
+}
 
 function eventDetail(payload?: Record<string, unknown>): string | null {
   if (!payload) return null;
@@ -100,11 +133,13 @@ export function TechnicalInspector({
   open,
   loading,
   data,
+  session,
   onClose,
 }: {
   open: boolean;
   loading: boolean;
   data: TurnInspector | null;
+  session: SessionContext;
   onClose: () => void;
 }) {
   const [tab, setTab] = useState<"run" | "evidence">("run");
@@ -116,6 +151,32 @@ export function TechnicalInspector({
     tool_call_mode: run?.tool_call_mode,
   };
   const actual = run?.actual_runtime;
+  const timeline = (data?.timeline ?? []).filter(
+    (event) => event.run_id === data?.run_id,
+  );
+  const verifiedFactCount = timeline.filter(
+    (event) => event.event_type === "tool_observation",
+  ).length;
+  const toolInvocationCount = timeline.filter(
+    (event) => event.event_type === "tool_invocation",
+  ).length;
+  const proposalCount = timeline.filter(
+    (event) => event.event_type === "proposal_drafted",
+  ).length;
+  const denialRecorded = timeline.some(eventRecordsDenial);
+  const preToolDenial =
+    toolInvocationCount === 0 &&
+    verifiedFactCount === 0 &&
+    proposalCount === 0 &&
+    (denialRecorded ||
+      ["out_of_scope", "refused", "rejected"].includes(
+        run?.finish_reason ?? "",
+      ));
+  const boundarySummary = preToolDenial
+    ? "请求在工具调用前被拒绝"
+    : toolInvocationCount === 0
+      ? "本轮未调用业务工具"
+      : "按当前会话范围运行";
   return (
     <aside
       id="technical-inspector"
@@ -177,10 +238,46 @@ export function TechnicalInspector({
           </div>
           {tab === "run" ? (
             <>
+              <section className="inspector-security-proof" aria-label="本轮安全边界">
+                <header>
+                  <small>本轮安全边界</small>
+                  <strong>{boundarySummary}</strong>
+                </header>
+                <dl>
+                  <div>
+                    <dt>已认证身份</dt>
+                    <dd>{session.principal.display_name}</dd>
+                  </div>
+                  <div>
+                    <dt>活动租户</dt>
+                    <dd>{session.active_tenant.name}</dd>
+                  </div>
+                  <div>
+                    <dt>只读工具调用</dt>
+                    <dd>{toolInvocationCount}</dd>
+                  </div>
+                  <div>
+                    <dt>已核验业务事实</dt>
+                    <dd>{verifiedFactCount}</dd>
+                  </div>
+                  <div>
+                    <dt>高风险申请</dt>
+                    <dd>{proposalCount}</dd>
+                  </div>
+                </dl>
+                <p>
+                  {preToolDenial
+                    ? "本轮由确定性的身份与范围检查提前终止，因此没有访问业务工具，也没有创建或执行操作。"
+                    : toolInvocationCount === 0
+                      ? "本轮没有调用业务工具；这可能是无需取数的回答或安全停止，不能据此声称数据库 RLS 在本轮被触发。"
+                      : "本轮工具只能使用服务端会话注入的租户与客户范围；对话中的资源编号或权限声明不会改变该范围。"}
+                </p>
+                <small>
+                  数据库角色与 RLS 是后备边界；本视图不会把未发生的数据库访问冒充为“本轮命中 RLS”。
+                </small>
+              </section>
               <ol className="inspector-timeline">
-                {(data?.timeline ?? [])
-                  .filter((event) => event.run_id === data.run_id)
-                  .map((event) => {
+                {timeline.map((event) => {
                     const detail = eventDetail(event.payload);
                     return (
                       <li

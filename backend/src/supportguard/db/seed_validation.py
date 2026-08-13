@@ -26,6 +26,8 @@ from supportguard.db.models import (
 )
 from supportguard.db.scope import set_local_scope
 from supportguard.db.seed_contract import (
+    DEMO_BILLING_SERVICE_PERIOD_END,
+    DEMO_BILLING_SERVICE_PERIOD_START,
     KNOWLEDGE_MANIFEST_SHA256,
     KNOWLEDGE_SOURCE_BUNDLE_SHA256,
     SEED_CONTRACT_SHA256,
@@ -277,6 +279,8 @@ _TENANT_RESOURCES: dict[str, tuple[tuple[type[Any], object, str, dict[str, objec
                 "amount": Decimal("49.00"),
                 "currency": "USD",
                 "duplicate_of": None,
+                "service_period_start": DEMO_BILLING_SERVICE_PERIOD_START,
+                "service_period_end": DEMO_BILLING_SERVICE_PERIOD_END,
             },
         ),
         (
@@ -289,6 +293,8 @@ _TENANT_RESOURCES: dict[str, tuple[tuple[type[Any], object, str, dict[str, objec
                 "amount": Decimal("49.00"),
                 "currency": "USD",
                 "duplicate_of": "bill_demo_original",
+                "service_period_start": DEMO_BILLING_SERVICE_PERIOD_START,
+                "service_period_end": DEMO_BILLING_SERVICE_PERIOD_END,
             },
         ),
         (
@@ -339,6 +345,8 @@ _TENANT_RESOURCES: dict[str, tuple[tuple[type[Any], object, str, dict[str, objec
                 "amount": Decimal("19.00"),
                 "currency": "USD",
                 "duplicate_of": None,
+                "service_period_start": DEMO_BILLING_SERVICE_PERIOD_START,
+                "service_period_end": DEMO_BILLING_SERVICE_PERIOD_END,
             },
         ),
     ),

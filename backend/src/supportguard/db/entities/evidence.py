@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 from typing import Any
 
@@ -12,6 +12,7 @@ from sqlalchemy import (
     BigInteger,
     Boolean,
     CheckConstraint,
+    Date,
     DateTime,
     ForeignKey,
     ForeignKeyConstraint,
@@ -128,6 +129,14 @@ class BillingRecord(TimestampMixin, Base):
     __tablename__ = "billing_records"
     __table_args__ = (
         CheckConstraint("amount > 0", name="amount_positive"),
+        CheckConstraint(
+            "service_period_end > service_period_start",
+            name="service_period_valid",
+        ),
+        CheckConstraint(
+            "duplicate_of IS NULL OR duplicate_of <> id",
+            name="duplicate_not_self",
+        ),
         Index("ix_billing_customer_created", "customer_id", "created_at"),
         tenant_resource_fk("customer_id", "customers", name="fk_billing_records_tenant_customers"),
     )
@@ -138,6 +147,9 @@ class BillingRecord(TimestampMixin, Base):
     amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
     currency: Mapped[str] = mapped_column(String(3), nullable=False)
     status: Mapped[str] = mapped_column(String(32), nullable=False)
+    charged_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    service_period_start: Mapped[date] = mapped_column(Date, nullable=False)
+    service_period_end: Mapped[date] = mapped_column(Date, nullable=False)
     duplicate_of: Mapped[str | None] = mapped_column(String(64), ForeignKey("billing_records.id"))
     version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
 

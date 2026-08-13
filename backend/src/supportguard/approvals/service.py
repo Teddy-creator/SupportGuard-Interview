@@ -16,7 +16,6 @@ from supportguard.db.models import (
     ApprovalActionRevision,
     ApprovalRequest,
     AuditEvent,
-    BillingRecord,
     BusinessAction,
     ConversationTurn,
     HumanDecision,
@@ -32,6 +31,11 @@ from supportguard.services.approval_lifecycle import (
 )
 from supportguard.services.business import REFUND_LIMIT_USD, action_hash
 from supportguard.services.errors import DomainError, ErrorCode
+from supportguard.services.refunds import (
+    bind_refund_pair_to_proposal,
+    lock_and_evaluate_billing_refund_pair,
+    refund_pair_action_fields,
+)
 from supportguard.services.runtime_jobs import JobLease, RuntimeConflict
 
 
@@ -127,7 +131,7 @@ class ApprovalService:
                 )
                 if turn is not None:
                     turn.activity_state = "completed"
-                    turn.result_state = "refused"
+                    turn.result_state = "rejected"
                     turn.completed_at = now
             await activate_next_turn_and_converge_ticket(
                 self.session,
@@ -159,22 +163,31 @@ class ApprovalService:
         trace_id: str,
     ) -> ApprovalDecisionResult:
         approval, _, _ = await self._load_actionable(approval_id)
+        proposal = await self.session.get(ProposalRecord, approval.proposal_id or "")
+        if proposal is None:
+            raise DomainError(
+                ErrorCode.APPROVAL_BINDING_INVALID,
+                "Approval is not bound to a durable proposal",
+            )
         target_id = str(approval.action_payload["billing_record_id"])
-        billing = await self.session.get(BillingRecord, target_id)
+        billing, pair = await lock_and_evaluate_billing_refund_pair(
+            self.session,
+            tenant_id=approval.tenant_id,
+            customer_id=approval.customer_id,
+            billing_record_id=target_id,
+            now=datetime.now(UTC),
+        )
         if billing is None:
             raise DomainError(ErrorCode.BILLING_RECORD_NOT_FOUND, "Billing record was not found")
         if billing.customer_id != approval.customer_id:
             raise DomainError(ErrorCode.BILLING_SCOPE_VIOLATION, "Billing record is out of scope")
-        if billing.status != "charged" or billing.amount > REFUND_LIMIT_USD:
+        if (
+            billing.status != "charged"
+            or billing.amount > REFUND_LIMIT_USD
+            or pair is None
+            or not pair.eligible
+        ):
             raise DomainError(ErrorCode.BILLING_NOT_CHARGED, "Billing record is not eligible")
-        duplicate = await self.session.scalar(
-            select(BillingRecord.id).where(
-                (BillingRecord.id == billing.duplicate_of)
-                | (BillingRecord.duplicate_of == billing.id)
-            )
-        )
-        if duplicate is None:
-            raise DomainError(ErrorCode.NOT_DUPLICATE_CHARGE, "No duplicate relation exists")
         payload: dict[str, str | int] = {
             "billing_record_id": billing.id,
             "customer_id": approval.customer_id,
@@ -182,10 +195,12 @@ class ApprovalService:
             "currency": billing.currency,
             "refund_reason": refund_reason,
             "business_version": billing.version,
+            **refund_pair_action_fields(pair),
         }
         approval.action_payload = payload
         approval.action_hash = action_hash(payload)
         approval.business_version = billing.version
+        bind_refund_pair_to_proposal(proposal, pair)
         await ActionLifecycleService(self.session).transition(
             approval,
             to_status="approved",

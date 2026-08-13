@@ -128,7 +128,7 @@ class ConversationTurn(TimestampMixin, Base):
         CheckConstraint(
             "result_state IS NULL OR result_state IN ("
             "'answered','answered_limited','needs_clarification','refused',"
-            "'proposal_created','human_queue','failed','stale'"
+            "'proposal_created','human_queue','failed','stale','rejected','withdrawn'"
             ")",
             name="ck_conversation_turn_result_state",
         ),

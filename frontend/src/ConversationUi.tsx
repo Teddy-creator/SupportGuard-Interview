@@ -7,6 +7,7 @@ export {
   MessageStream,
 } from "./features/conversation/ConversationThread";
 export {
+  deduplicatedCitationEvidence,
   groupedCitationsFor,
   SafeMessage,
 } from "./features/conversation/Sources";

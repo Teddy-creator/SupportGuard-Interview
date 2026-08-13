@@ -33,13 +33,13 @@ SupportGuard 不是“LLM 套一个聊天框”，而是一个 AI SaaS 客服单
 
 ### 1. 429：证明它真的是 Agent（3～4 分钟）
 
-输入：`余额充足，但 atlas-chat 返回 429 concurrency_limit_exceeded，为什么？`
+输入：`请求 req_demo_429 在余额充足时由 atlas-chat 返回 429 concurrency_limit_exceeded，为什么？`
 
 先读自然语言答案，再展开不超过三个来源，最后打开技术检查器。按顺序指出 `AgentDecision → query_subscription/query_api_usage/search_knowledge → MCP Observation → Replan → grounded answer`。强调工具由真实 Provider 原生 `tool_calls` 或确定性 Fake Provider 驱动，Runtime 负责 Schema、Allowlist、Scope 和预算；只有客户明确询问账户状态、安全状态或区域时才开放 `query_account`。
 
 ### 2. 重复扣费：证明 HITL 不是按钮演示（5～6 分钟）
 
-输入：`bill_demo_duplicate 是重复扣费，请按政策退款`
+输入：`请检查 bill_demo_duplicate 是否为重复扣费，并按政策处理。`
 
 展示 `ActionAdmissionV2 → 未满足 Read Tool → Observation → tools=[] Evidence Synthesis → Runtime Evidence Binding → 通用 Assembler` 形成的不可执行 Refund Proposal 和 Inline Action Card；在等待审批时继续问“退款到账需要多久？”，说明 Conversation 未被锁死、旧审批 Snapshot 不变。切到审批工作台批准，观察原卡片无刷新收敛到已执行。解释模型只负责规划、自然语言解释和逐 Claim 证据选择；Locator / Chunk / 引用并集、Proposal Payload、审批和 effect-once 执行都由确定性代码负责。
 
@@ -210,7 +210,7 @@ b203 因而先补齐独立事件 Reader；随后 MCP 纵向切片证明工单详
 身份，b204 完成全部公共 Timeline 生产者闭包。这些是确定性阻塞项修复，不是
 Formal 或 Journey Acceptance
 通过证据。v2 最终采用独立 Interview Baseline 与 forward-only i201 / i202；当前 Head
-`i202_refund_fence_authority` 不继承或改写旧链历史。
+`i203_demo_truthful_refund` 是当前 Interview Head；它不继承或改写旧链历史，也不反向改变 i200–i202 的冻结证明。
 
 **Q15：当前 v2.0 证明到哪里？** 两个历史 Candidate
 `b132c395c2edf2d7d72477dc9051bffc3d7f4024`、`7527c0acca079f57549538e49135a91ef87b9389`

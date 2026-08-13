@@ -318,6 +318,10 @@ def test_customer_action_projection_discards_raw_action_and_internal_state() -> 
         "subscription_id": None,
         "amount": "49.00",
         "currency": "USD",
+        "original_billing_record_id": None,
+        "duplicate_pair_verified": None,
+        "service_period_start": None,
+        "service_period_end": None,
         "target": None,
     }
     assert action["turn_id"] == state.origin_turn_id
@@ -397,9 +401,7 @@ def test_projector_uses_canonical_identity_and_safe_fields_only() -> None:
 
 
 def test_legacy_checkpoint_projection_uses_updated_at_as_created_at_fallback() -> None:
-    payload = project_conversation_action_state(_sources("pending")).model_dump(
-        mode="json"
-    )
+    payload = project_conversation_action_state(_sources("pending")).model_dump(mode="json")
     expected_updated_at = payload["updated_at"]
     del payload["created_at"]
 
@@ -451,9 +453,7 @@ def test_terminal_transition_event_precedes_legacy_lineage_anchor() -> None:
         }
     )
 
-    state = project_conversation_action_state(
-        sources.model_copy(update={"approval": approval})
-    )
+    state = project_conversation_action_state(sources.model_copy(update={"approval": approval}))
 
     assert state.source_event_id == "event_withdrawn"
     assert state.source_event_hash == transition_hash
@@ -478,9 +478,7 @@ def test_transition_event_shape_and_terminal_status_mismatch_fail_closed() -> No
         ConversationActionStateProjectionError,
         match="transition event conflicts",
     ):
-        project_conversation_action_state(
-            sources.model_copy(update={"approval": mismatched})
-        )
+        project_conversation_action_state(sources.model_copy(update={"approval": mismatched}))
 
 
 def test_pure_kernel_does_not_require_worker_runtime_jobs_table_grant() -> None:
@@ -746,9 +744,7 @@ def test_unknown_effect_and_dead_job_fail_closed_to_customer_safe_states() -> No
             )
         }
     )
-    projected_failed = project_conversation_action_state(
-        failed_sources
-    )
+    projected_failed = project_conversation_action_state(failed_sources)
     assert projected_failed.projection_status == "failed"
     assert projected_failed.customer_safe_reason_code == ("action_failed_confirmed_no_effect")
 

@@ -199,7 +199,7 @@ async def test_fallback_reject_preserves_sibling_and_dispatches_followup(
     await db_session.refresh(followup)
     assert target.status == "rejected"
     assert target_run is not None and target_run.status == "completed"
-    assert target_turn is not None and target_turn.result_state == "refused"
+    assert target_turn is not None and target_turn.result_state == "rejected"
     assert sibling.status == "pending"
     assert followup.activity_state == "queued"
     assert followup.run_id is not None

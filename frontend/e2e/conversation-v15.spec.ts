@@ -327,7 +327,7 @@ test("390px keeps navigation, composer, and touch targets usable", async ({ page
 
 test("diagnostic answer restores with bounded citations and no technical leakage", async ({ page }) => {
   await page.goto("/conversations/new");
-  const accepted = await submit(page, "余额充足，但 atlas-chat 返回 429 concurrency_limit_exceeded，为什么？");
+  const accepted = await submit(page, "请求 req_demo_429 在余额充足时由 atlas-chat 返回 429 concurrency_limit_exceeded，为什么？");
   await expect(page).toHaveURL(new RegExp(`/conversations/${accepted.ticket_id}$`));
   await expect(page.getByRole("main").getByText("这不是余额不足：", { exact: false })).toBeVisible({ timeout: 30_000 });
   const citations = page.locator(".citation-chip");
@@ -373,7 +373,7 @@ test("two long conversations keep an independently scrollable stream and reachab
     "atlas-chat 当前是否支持 JSON Object，限制是什么？",
   );
   const second = await createLongConversation(
-    "余额充足，但 atlas-chat 返回 429 concurrency_limit_exceeded，为什么？",
+    "请求 req_demo_429 在余额充足时由 atlas-chat 返回 429 concurrency_limit_exceeded，为什么？",
   );
 
   await navigateWithoutReload(first);

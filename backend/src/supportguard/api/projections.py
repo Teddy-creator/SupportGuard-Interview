@@ -392,7 +392,10 @@ def _inspector_event_payload(payload: dict[str, Any]) -> dict[str, Any]:
             for key in ("llm_calls", "tool_rounds", "tool_attempts")
             if isinstance((value := remaining.get(key)), int) and not isinstance(value, bool)
         }
-    if "error_code" in payload or payload.get("failure_recorded") is True:
+    error_code = payload.get("error_code")
+    if (isinstance(error_code, str) and bool(error_code.strip())) or payload.get(
+        "failure_recorded"
+    ) is True:
         projected["failure_recorded"] = True
     if "agent_finish_reason" in payload or payload.get("stop_condition_recorded") is True:
         projected["stop_condition_recorded"] = True
@@ -1446,6 +1449,26 @@ def _customer_action_payload(
                 and currency == currency.upper()
                 else None
             ),
+            original_billing_record_id=(
+                raw.get("original_billing_record_id")
+                if isinstance(raw.get("original_billing_record_id"), str)
+                else None
+            ),
+            duplicate_pair_verified=(
+                raw.get("duplicate_pair_verified")
+                if isinstance(raw.get("duplicate_pair_verified"), bool)
+                else None
+            ),
+            service_period_start=(
+                raw.get("service_period_start")
+                if isinstance(raw.get("service_period_start"), str)
+                else None
+            ),
+            service_period_end=(
+                raw.get("service_period_end")
+                if isinstance(raw.get("service_period_end"), str)
+                else None
+            ),
         )
     if state.action_type == "api_key_revocation":
         return CustomerActionPayloadResponse(api_key_id=state.resource_id)
@@ -1567,7 +1590,48 @@ def _apply_conversation_action_projection(
         payload["activity_label"] = "正在执行已批准操作"
     elif "pending" in statuses:
         payload["activity_label"] = "等待审批"
+    elif "rejected" in statuses:
+        payload["activity_label"] = "审批者已拒绝"
+    elif "withdrawn" in statuses:
+        payload["activity_label"] = "申请已撤回"
+    elif "stale" in statuses:
+        payload["activity_label"] = "业务事实已变化"
+    elif "failed" in statuses:
+        payload["activity_label"] = "操作未完成"
+    elif "executed" in statuses:
+        payload["activity_label"] = "操作已完成"
     return payload
+
+
+def _merge_refund_action_display(
+    payload: dict[str, Any],
+    display_by_approval: object,
+) -> None:
+    """Merge one already-scoped DB projection without granting authority."""
+
+    if not isinstance(display_by_approval, dict):
+        return
+    actions = payload.get("pending_actions")
+    if not isinstance(actions, list):
+        return
+    for action in actions:
+        if not isinstance(action, dict) or action.get("action_type") != "refund":
+            continue
+        display = display_by_approval.get(str(action.get("id")))
+        raw = action.get("action_payload")
+        if not isinstance(display, dict) or not isinstance(raw, dict):
+            continue
+        for field in (
+            "billing_record_id",
+            "amount",
+            "currency",
+            "original_billing_record_id",
+            "duplicate_pair_verified",
+            "service_period_start",
+            "service_period_end",
+        ):
+            if field in display:
+                raw[field] = display[field]
 
 
 def _approval_list_item(payload: dict[str, Any]) -> dict[str, Any]:

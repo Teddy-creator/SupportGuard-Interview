@@ -10,6 +10,9 @@ TurnResult = Literal[
     "proposal_created",
     "human_queue",
     "failed",
+    "stale",
+    "rejected",
+    "withdrawn",
 ]
 
 SafeStopTerminalState = Literal["resolved", "failed"]
@@ -23,6 +26,9 @@ TURN_RESULTS: frozenset[str] = frozenset(
         "proposal_created",
         "human_queue",
         "failed",
+        "stale",
+        "rejected",
+        "withdrawn",
     }
 )
 
@@ -83,7 +89,13 @@ def turn_result_for(
         "explicit_current_fact_incomplete",
     }:
         return "answered_limited"
-    if finish_reason in {"rejected", "refused", "out_of_scope"} or terminal_state == "rejected":
+    if finish_reason == "rejected" or terminal_state == "rejected":
+        return "rejected"
+    if finish_reason == "withdrawn" or terminal_state == "withdrawn":
+        return "withdrawn"
+    if finish_reason == "stale" or terminal_state == "stale":
+        return "stale"
+    if finish_reason in {"refused", "out_of_scope"}:
         return "refused"
     if finish_reason in {"proposed", "proposal_created"} or terminal_state == "awaiting_approval":
         return "proposal_created"
@@ -129,6 +141,9 @@ def activity_label(
         "proposal_created": "等待审批",
         "human_queue": "自动处理已停止",
         "failed": "本轮未完成",
+        "stale": "业务事实已变化",
+        "rejected": "审批者已拒绝",
+        "withdrawn": "申请已撤回",
     }
     if latest_result in labels:
         return labels[latest_result]

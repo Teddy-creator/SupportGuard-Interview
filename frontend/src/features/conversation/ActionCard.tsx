@@ -19,6 +19,26 @@ function actionAmount(action: ProductAction): string | null {
     : null;
 }
 
+function refundPairContext(action: ProductAction): string | null {
+  if (action.action_type !== "refund") return null;
+  const original = action.action_payload.original_billing_record_id;
+  const verified = action.action_payload.duplicate_pair_verified;
+  const start = action.action_payload.service_period_start;
+  const end = action.action_payload.service_period_end;
+  if (typeof original !== "string") return null;
+  const period =
+    typeof start === "string" && typeof end === "string"
+      ? ` · 服务周期 ${start} 至 ${end}`
+      : "";
+  if (verified === true) {
+    return `当前已核验：与原账单 ${original} 金额、币种和服务周期一致${period}`;
+  }
+  if (action.status === "executed") {
+    return `审批快照：执行依据关联原账单 ${original}${period}`;
+  }
+  return `关联原账单 ${original}；当前事实已变化，需要重新核验${period}`;
+}
+
 function actionTarget(action: ProductAction): string | null {
   if (action.action_type !== "entitlement_change") return null;
   const target = action.action_payload.target;
@@ -51,6 +71,15 @@ function actionTarget(action: ProductAction): string | null {
   return null;
 }
 
+function actionIcon(actionType: string): string {
+  const icons: Record<string, string> = {
+    refund: "¥",
+    api_key_revocation: "钥",
+    entitlement_change: "配",
+  };
+  return icons[actionType] ?? "盾";
+}
+
 export function InlineActionCard({
   action,
   withdrawing,
@@ -66,6 +95,7 @@ export function InlineActionCard({
 }) {
   const withdrawButton = useRef<HTMLButtonElement | null>(null);
   const target = actionTarget(action);
+  const pairContext = refundPairContext(action);
   const statusHelp: Record<string, string> = {
     pending: "审批结果会自动同步到此对话",
     approved: "审批已通过，正在等待安全执行",
@@ -86,7 +116,9 @@ export function InlineActionCard({
       aria-label={`${actionLabel(action.action_type)} ${statusLabel(action.status)}`}
     >
       <div className="action-heading">
-        <span className="action-icon">＄</span>
+        <span className="action-icon" aria-hidden="true">
+          {actionIcon(action.action_type)}
+        </span>
         <h3>{actionLabel(action.action_type)}</h3>
       </div>
       <div className="action-facts">
@@ -116,6 +148,7 @@ export function InlineActionCard({
       <div className="action-progress" aria-hidden="true">
         <span />
       </div>
+      {pairContext ? <p className="action-pair-context">{pairContext}</p> : null}
       <div className="action-foot">
         <span>{statusHelp[action.status] ?? "该申请的历史状态已保留"}</span>
         {action.allowed_actions.includes("withdraw") ? (
@@ -150,4 +183,3 @@ export function InlineActionCard({
     </section>
   );
 }
-

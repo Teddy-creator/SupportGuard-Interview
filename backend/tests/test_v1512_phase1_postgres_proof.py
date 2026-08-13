@@ -1899,7 +1899,7 @@ async def test_reject_converges_original_aggregate_without_resume_and_activates_
             assert original_run.active_fencing_token is None
             assert original_turn is not None
             assert original_turn.activity_state == "completed"
-            assert original_turn.result_state == "refused"
+            assert original_turn.result_state == "rejected"
             assert followup_turn is not None
             assert followup_turn.activity_state == "queued"
             assert followup_turn.run_id is not None
@@ -2192,7 +2192,7 @@ async def test_withdrawal_converges_every_aggregate_and_replays_without_new_writ
             assert run.active_fencing_token is None
             assert turn is not None
             assert turn.activity_state == "completed"
-            assert turn.result_state == "refused"
+            assert turn.result_state == "withdrawn"
             assert ticket is not None and ticket.status == "open"
             assert action_update is not None
             assert action_update.conversation_sequence == message_sequence_before + 1

@@ -29,6 +29,10 @@ from supportguard.db.models import (
     TicketMessage,
     User,
 )
+from supportguard.services.refunds import (
+    evaluate_billing_refund_pair,
+    refund_pair_observation_fields,
+)
 from supportguard.services.runtime_jobs import JobLease
 from supportguard.services.tool_ledger import InvocationSpec, ToolLedger
 
@@ -77,6 +81,16 @@ async def db_session() -> AsyncIterator[AsyncSession]:
 
 async def seed_business_facts(session: AsyncSession) -> None:
     usage_window_end = datetime.now(UTC).replace(second=0, microsecond=0)
+    billing_charged_at = usage_window_end - timedelta(days=1)
+    billing_period_start = billing_charged_at.date().replace(day=1)
+    billing_period_end = (
+        billing_period_start.replace(
+            year=billing_period_start.year + 1,
+            month=1,
+        )
+        if billing_period_start.month == 12
+        else billing_period_start.replace(month=billing_period_start.month + 1)
+    )
     session.add_all(
         [
             Tenant(id="tenant_demo", name="Demo Tenant", status="active"),
@@ -220,6 +234,9 @@ async def seed_business_facts(session: AsyncSession) -> None:
                 amount=Decimal("49.00"),
                 currency="USD",
                 status="charged",
+                charged_at=billing_charged_at,
+                service_period_start=billing_period_start,
+                service_period_end=billing_period_end,
                 duplicate_of=None,
                 version=1,
             ),
@@ -230,6 +247,9 @@ async def seed_business_facts(session: AsyncSession) -> None:
                 amount=Decimal("49.00"),
                 currency="USD",
                 status="charged",
+                charged_at=billing_charged_at,
+                service_period_start=billing_period_start,
+                service_period_end=billing_period_end,
                 duplicate_of="bill_original",
                 version=2,
             ),
@@ -240,6 +260,9 @@ async def seed_business_facts(session: AsyncSession) -> None:
                 amount=Decimal("19.00"),
                 currency="USD",
                 status="charged",
+                charged_at=billing_charged_at,
+                service_period_start=billing_period_start,
+                service_period_end=billing_period_end,
                 duplicate_of=None,
                 version=1,
             ),
@@ -330,6 +353,16 @@ async def seed_closed_refund_observation_binding(
     """Build the same durable closed-ledger binding required by production proposals."""
 
     ledger = ToolLedger(session)
+    billing = await session.get(BillingRecord, billing_record_id)
+    pair = (
+        await evaluate_billing_refund_pair(
+            session,
+            billing,
+            now=datetime.now(UTC),
+        )
+        if billing is not None and business_tool == "query_billing_record"
+        else None
+    )
     turn, invocations = await ledger.open_turn(
         lease,
         segment_id=segment_id,
@@ -346,6 +379,8 @@ async def seed_closed_refund_observation_binding(
         await ledger.mark_executing(lease, invocation.id)
         if invocation.tool_name == business_tool:
             data = {resource_field: billing_record_id, "version": billing_version}
+            if pair is not None:
+                data.update(refund_pair_observation_fields(pair))
             source_id = f"business_record:{billing_record_id}"
         else:
             data = {"evidence": [{"evidence_id": policy_source_id}]}

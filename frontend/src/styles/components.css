@@ -92,7 +92,7 @@
   text-underline-offset: 2px;
 }
 .conversation-empty {
-  height: 100%;
+  min-height: 100%;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -119,16 +119,88 @@
   line-height: 1.65;
 }
 .starter-grid {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
   margin-top: 18px;
+  width: min(100%, 820px);
 }
-.starter-grid button {
+.starter-grid .starter-card {
   border: 1px solid var(--line);
   background: white;
-  padding: 11px 14px;
-  border-radius: 8px;
+  padding: 14px;
+  border-radius: 10px;
   color: #425247;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  text-align: left;
+  min-height: 158px;
+}
+.starter-card:hover,
+.starter-card:focus-visible {
+  border-color: #8aac99;
+  box-shadow: 0 5px 18px rgb(29 94 69 / 10%);
+}
+.starter-card small {
+  color: var(--green);
+  font-weight: 700;
+}
+.starter-card strong {
+  color: var(--ink);
+  font-size: 14px;
+}
+.starter-card span,
+.starter-card em {
+  font-size: 11px;
+  line-height: 1.5;
+}
+.starter-card em {
+  color: var(--muted);
+  font-style: normal;
+  margin-top: auto;
+}
+.demo-fixture-context {
+  width: min(100%, 820px);
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  margin-top: 16px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--line);
+  text-align: left;
+}
+.demo-fixture-context > div {
+  background: var(--surface);
+  padding: 11px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.demo-fixture-context small,
+.demo-fixture-context span,
+.demo-starter-note {
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.45;
+}
+.demo-fixture-context strong {
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+.profile-scope-note {
+  margin: 10px 0 0;
+  padding: 9px 10px;
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.55;
+}
+.conversation-empty .demo-starter-note {
+  margin: 9px 0 0;
 }
 .turn {
   margin-bottom: 34px;
@@ -243,7 +315,11 @@
   margin-top: 5px;
 }
 .citation-wrap {
-  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  vertical-align: top;
+  max-width: 100%;
 }
 .evidence-chip {
   border: 1px solid #cfdcd2;
@@ -254,20 +330,18 @@
   font-size: 11px;
 }
 .source-popover {
-  position: absolute;
-  left: 0;
-  bottom: 36px;
-  z-index: 10;
-  width: 310px;
+  width: min(100%, 560px);
   background: white;
   border: 1px solid var(--line);
-  box-shadow: var(--shadow);
   border-radius: 9px;
+  margin-top: 8px;
   padding: 13px;
   display: flex;
   flex-direction: column;
   gap: 7px;
   font-size: 12px;
+  max-height: min(360px, 52vh);
+  overflow-y: auto;
 }
 .source-popover small {
   color: var(--muted);
@@ -312,6 +386,13 @@
 .action-foot {
   font-size: 10px;
   color: var(--muted);
+}
+
+.action-pair-context {
+  margin: 0.65rem 0 0;
+  color: var(--muted);
+  font-size: 0.84rem;
+  line-height: 1.5;
 }
 .action-status {
   color: var(--amber);
@@ -547,6 +628,49 @@
   padding: 5px 7px;
   border-radius: 5px;
   font-size: 9px;
+}
+.inspector-security-proof {
+  border: 1px solid #cfe0d4;
+  background: #f3f8f4;
+  border-radius: 8px;
+  padding: 10px;
+  margin-bottom: 12px;
+}
+.inspector-security-proof header {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: baseline;
+}
+.inspector-security-proof header small,
+.inspector-security-proof dt,
+.inspector-security-proof > small {
+  color: var(--muted);
+  font-size: 9px;
+}
+.inspector-security-proof dl {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin: 10px 0;
+}
+.inspector-security-proof dl div {
+  background: white;
+  border-radius: 5px;
+  padding: 6px;
+}
+.inspector-security-proof dt,
+.inspector-security-proof dd {
+  margin: 0;
+}
+.inspector-security-proof dd {
+  font-size: 10px;
+  margin-top: 2px;
+}
+.inspector-security-proof p {
+  font-size: 10px;
+  line-height: 1.5;
+  margin: 0 0 5px;
 }
 .inspector-empty,
 .skeleton,

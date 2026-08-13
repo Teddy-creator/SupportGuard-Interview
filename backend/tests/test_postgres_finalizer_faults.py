@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import os
 from dataclasses import replace
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 from typing import Any, cast
 from uuid import uuid4
@@ -61,6 +61,10 @@ from supportguard.services.approval_commands import ApprovalCommandCoordinator
 from supportguard.services.approver_scope import assert_active_approver_scope
 from supportguard.services.business import action_hash
 from supportguard.services.commands import CommandCoordinator
+from supportguard.services.refunds import (
+    evaluate_billing_refund_pair,
+    refund_pair_action_fields,
+)
 from supportguard.services.runtime_jobs import JobLease, RuntimeConflict, RuntimeJobRepository
 from supportguard.services.segments import SegmentRepository
 from supportguard.tools.gateway import ToolGateway
@@ -232,6 +236,26 @@ async def _seed_pending_approval(
         }
     async with factory() as session, session.begin():
         if action_type == "refund":
+            charged_at = datetime.now(UTC) - timedelta(days=1)
+            period_start = date(2026, 8, 1)
+            period_end = date(2026, 9, 1)
+            original_id = f"{resource_id}_original"
+            session.add(
+                BillingRecord(
+                    id=original_id,
+                    tenant_id="tenant_demo",
+                    customer_id=customer_id,
+                    amount=Decimal("49.00"),
+                    currency="USD",
+                    status="charged",
+                    charged_at=charged_at,
+                    service_period_start=period_start,
+                    service_period_end=period_end,
+                    duplicate_of=None,
+                    version=1,
+                )
+            )
+            await session.flush()
             session.add(
                 BillingRecord(
                     id=resource_id,
@@ -240,10 +264,22 @@ async def _seed_pending_approval(
                     amount=Decimal("49.00"),
                     currency="USD",
                     status="charged",
-                    duplicate_of=None,
+                    charged_at=charged_at,
+                    service_period_start=period_start,
+                    service_period_end=period_end,
+                    duplicate_of=original_id,
                     version=resource_version,
                 )
             )
+            await session.flush()
+            billing = await session.get(BillingRecord, resource_id)
+            assert billing is not None
+            pair = await evaluate_billing_refund_pair(
+                session,
+                billing,
+                now=datetime.now(UTC),
+            )
+            payload.update(refund_pair_action_fields(pair))
         elif action_type == "api_key_revocation":
             session.add(
                 ApiKeyMetadata(

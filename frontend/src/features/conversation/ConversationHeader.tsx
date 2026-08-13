@@ -14,6 +14,7 @@ export function ConversationHeader({
   onToggleInspector,
   onOpenSidebar,
   onOpenProfile,
+  inspectorAvailable = true,
 }: {
   title: string;
   activity?: string;
@@ -25,6 +26,7 @@ export function ConversationHeader({
   onToggleInspector: () => void;
   onOpenSidebar: () => void;
   onOpenProfile: () => void;
+  inspectorAvailable?: boolean;
 }) {
   return (
     <header className="conversation-header">
@@ -48,8 +50,14 @@ export function ConversationHeader({
           inspectorOpen ? "inspector-toggle active" : "inspector-toggle"
         }
         onClick={onToggleInspector}
+        disabled={!inspectorAvailable}
         aria-controls="technical-inspector"
         aria-expanded={inspectorOpen}
+        title={
+          inspectorAvailable
+            ? "查看所选回答的持久化运行事实"
+            : "发送消息并选择一条回答后即可查看运行详情"
+        }
       >
         <span aria-hidden="true">&lt;/&gt;</span> 运行详情
       </button>

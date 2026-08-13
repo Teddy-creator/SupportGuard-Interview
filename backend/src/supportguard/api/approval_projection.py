@@ -100,6 +100,7 @@ class RefundActionPayload(_StrictProjection):
     amount: str | None = Field(default=None, pattern=r"^\d{1,12}(?:\.\d{1,2})?$")
     currency: str | None = Field(default=None, pattern=r"^[A-Z]{3}$")
     refund_reason: str | None = Field(default=None, min_length=1, max_length=500)
+    original_billing_record_id: SafeIdentifier | None = None
 
 
 class ApiKeyRevocationActionPayload(_StrictProjection):
@@ -394,9 +395,7 @@ def _action_payload(
     requested_change: Mapping[str, Any],
 ) -> SafeActionPayload:
     if action_type == "refund":
-        facts = (
-            resource_facts if isinstance(resource_facts, BillingResourceFacts) else None
-        )
+        facts = resource_facts if isinstance(resource_facts, BillingResourceFacts) else None
         refund_reason = requested_change.get("refund_reason")
         return RefundActionPayload(
             billing_record_id=resource_id,
@@ -407,6 +406,7 @@ def _action_payload(
                 if isinstance(refund_reason, str) and refund_reason.strip()
                 else None
             ),
+            original_billing_record_id=(facts.duplicate_of if facts is not None else None),
         )
     if action_type == "api_key_revocation":
         return ApiKeyRevocationActionPayload(api_key_id=resource_id)
@@ -454,12 +454,8 @@ def _proposed_diff(
     requested_change: Mapping[str, Any],
 ) -> list[ApprovalProposedDiff]:
     if action_type == "refund":
-        refund_payload = (
-            action_payload if isinstance(action_payload, RefundActionPayload) else None
-        )
-        billing_status = (
-            facts.status if isinstance(facts, BillingResourceFacts) else "unknown"
-        )
+        refund_payload = action_payload if isinstance(action_payload, RefundActionPayload) else None
+        billing_status = facts.status if isinstance(facts, BillingResourceFacts) else "unknown"
         proposed = "按执行前重校验的账单金额退款"
         if refund_payload is not None and refund_payload.amount is not None:
             proposed = f"退款 {refund_payload.amount}"
@@ -476,8 +472,7 @@ def _proposed_diff(
                 current="无",
                 proposed=(
                     refund_payload.refund_reason
-                    if refund_payload is not None
-                    and refund_payload.refund_reason is not None
+                    if refund_payload is not None and refund_payload.refund_reason is not None
                     else "按原始审批快照"
                 ),
             ),
@@ -670,8 +665,7 @@ def project_approval_detail(raw: Mapping[str, Any]) -> ApprovalDetailResponse:
                 status=_known(proposal_raw.get("status"), _PROPOSAL_STATUSES),
                 resource_id=resource_id,
                 resource_version=(
-                    _integer(proposal_raw.get("resource_version"), minimum=1)
-                    or business_version
+                    _integer(proposal_raw.get("resource_version"), minimum=1) or business_version
                 ),
             )
         except ValidationError as exc:

@@ -159,6 +159,13 @@ async def seed(action_type: str) -> dict[str, Any]:
     duplicate_billing_id = f"bill_duplicate_{suffix}"
     now = datetime.now(UTC)
     window_end = now.replace(second=0, microsecond=0)
+    billing_charged_at = now - timedelta(days=1)
+    billing_period_start = billing_charged_at.date().replace(day=1)
+    billing_period_end = (
+        billing_period_start.replace(year=billing_period_start.year + 1, month=1)
+        if billing_period_start.month == 12
+        else billing_period_start.replace(month=billing_period_start.month + 1)
+    )
 
     engine = create_async_engine(_database_url())
     factory = async_sessionmaker(engine, expire_on_commit=False)
@@ -270,6 +277,9 @@ async def seed(action_type: str) -> dict[str, Any]:
                         amount=Decimal("49.00"),
                         currency="USD",
                         status="charged",
+                        charged_at=billing_charged_at,
+                        service_period_start=billing_period_start,
+                        service_period_end=billing_period_end,
                         duplicate_of=None,
                         version=1,
                     ),
@@ -284,6 +294,9 @@ async def seed(action_type: str) -> dict[str, Any]:
                     amount=Decimal("49.00"),
                     currency="USD",
                     status="charged",
+                    charged_at=billing_charged_at,
+                    service_period_start=billing_period_start,
+                    service_period_end=billing_period_end,
                     duplicate_of=original_billing_id,
                     version=2,
                 )
@@ -301,6 +314,7 @@ async def seed(action_type: str) -> dict[str, Any]:
             "customer_subject": customer_subject,
             "approver_subject": approver_subject,
             "resource_id": resource["id"],
+            "original_resource_id": (original_billing_id if action_type == "refund" else None),
             "resource_version": resource["version"],
             "expected_effect": resource["expected"],
         }

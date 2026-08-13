@@ -264,6 +264,7 @@ def test_refunded_billing_record_is_terminal_before_nullable_duplicate_field() -
                 "currency": "USD",
                 "status": "charged",
                 "duplicate_of": None,
+                "duplicate_pair_eligible": False,
                 "version": 2,
             },
             "refund_duplicate_relation_unconfirmed",

@@ -10,6 +10,7 @@ from supportguard.db.interview_baseline import (
     CURRENT_BASELINE_MANIFEST_SHA256,
     I200_BASELINE_MANIFEST_SHA256,
     I201_BASELINE_MANIFEST_SHA256,
+    I202_BASELINE_MANIFEST_SHA256,
 )
 from supportguard.db.reference_contract import CURRENT_PRODUCT_DATABASE_HEAD
 from supportguard.db.role_contract import (
@@ -23,6 +24,7 @@ from supportguard.db.security_contract import (
     CURRENT_INTERVIEW_DATABASE_REVISION,
     INTERVIEW_BASELINE_ROOT_REVISION,
     INTERVIEW_ESCALATION_RETIREMENT_REVISION,
+    INTERVIEW_REFUND_FENCE_REVISION,
     PHASE4_ESCALATION_RETIREMENT_CATALOG_DELTA,
     PHASE7_REFUND_FENCE_CATALOG_DELTA,
 )
@@ -37,20 +39,24 @@ def _migration(filename: str) -> ModuleType:
     return module
 
 
-def test_i200_and_i201_artifacts_remain_immutable_while_i202_is_current() -> None:
+def test_historical_interview_artifacts_remain_immutable_while_i203_is_current() -> None:
     assert BASELINE_IDENTITY.revision == INTERVIEW_BASELINE_ROOT_REVISION
     assert INTERVIEW_BASELINE_ROOT_REVISION == "i200_baseline_0001"
     assert CURRENT_PRODUCT_DATABASE_HEAD == CURRENT_INTERVIEW_DATABASE_REVISION
     assert INTERVIEW_ESCALATION_RETIREMENT_REVISION == "i201_retire_escalation"
-    assert CURRENT_INTERVIEW_DATABASE_REVISION == "i202_refund_fence_authority"
+    assert INTERVIEW_REFUND_FENCE_REVISION == "i202_refund_fence_authority"
+    assert CURRENT_INTERVIEW_DATABASE_REVISION == "i203_demo_truthful_refund"
     assert I200_BASELINE_MANIFEST_SHA256 == (
         "9007f1da6c8e85dcfb03d2ebc7d2e6aa2397882160f1d7df8d148dd7648bfe80"
     )
     assert CURRENT_BASELINE_MANIFEST_SHA256 == (
-        "17cf263a4899241399deed8acfd678b06531f40192372ebc52e6547e851464d7"
+        "a5d31734a3d95fd05c9d5c68539300e72adc9bddeb2b6c483d73ed388f52e9b0"
     )
     assert I201_BASELINE_MANIFEST_SHA256 == (
         "9d4faabe4e2705803aea84316aabca8467f357a164560fa7123de23afae82e49"
+    )
+    assert I202_BASELINE_MANIFEST_SHA256 == (
+        "17cf263a4899241399deed8acfd678b06531f40192372ebc52e6547e851464d7"
     )
     assert CURRENT_BASELINE_MANIFEST_SHA256 != I200_BASELINE_MANIFEST_SHA256
 
@@ -70,7 +76,7 @@ def test_i201_is_forward_only_and_removes_both_escalation_entry_paths() -> None:
 
 def test_i202_uses_fenced_runtime_identity_not_ticket_projection_status() -> None:
     migration = _migration("i202_refund_fence_authority.py")
-    assert migration.revision == CURRENT_INTERVIEW_DATABASE_REVISION
+    assert migration.revision == INTERVIEW_REFUND_FENCE_REVISION
     assert migration.down_revision == INTERVIEW_ESCALATION_RETIREMENT_REVISION
     sql = migration._AUTHORIZE_REFUND_BY_FENCE_SQL
     assert "r.active_job_id=j.id" in sql
@@ -82,6 +88,34 @@ def test_i202_uses_fenced_runtime_identity_not_ticket_projection_status() -> Non
         migration.downgrade()
 
 
+def test_i203_is_forward_only_and_uses_one_truthful_refund_pair_contract() -> None:
+    migration = _migration("i203_demo_truthful_refund.py")
+    assert migration.revision == CURRENT_INTERVIEW_DATABASE_REVISION
+    assert migration.down_revision == INTERVIEW_REFUND_FENCE_REVISION
+    sql = "\n".join(
+        (
+            migration._BILLING_FACTS_SQL,
+            migration._READ_REFUND_PAIR_SQL,
+            migration._PROPOSE_REFUND_PAIR_SQL,
+            migration._REFUND_GUARDS_SQL,
+            migration._WORKER_REFUND_STALE_SQL,
+            migration._CUSTOMER_REFUND_DISPLAY_SQL,
+            migration._TERMINAL_STATE_SQL,
+        )
+    )
+    assert "supportguard_refund_pair_snapshot" in sql
+    assert "trg_refund_proposal_binding_guard_v203" in sql
+    assert "refund_proposal_pair_identity_immutable" in sql
+    assert "refund_original_resource_id" in sql
+    assert "refund_pair_hash" in sql
+    assert "supportguard_worker_execute_approved_action_i202" in sql
+    assert "refund_pair_execution_stale" in sql
+    assert "supportguard_api_get_refund_display" in sql
+    assert "'rejected','withdrawn'" in sql
+    with pytest.raises(RuntimeError, match="downgrade_forbidden"):
+        migration.downgrade()
+
+
 def test_current_grants_retire_escalation_without_rewriting_historical_denominator() -> None:
     historical = {item.signature for item in FUNCTION_GRANTS}
     v126_retired = {item.signature for item in V126_RETIRED_FUNCTION_GRANTS}
@@ -89,11 +123,13 @@ def test_current_grants_retire_escalation_without_rewriting_historical_denominat
     current = expected_function_grants()
     escalation = "supportguard_action_mcp_create_support_escalation(jsonb,jsonb)"
     assert len(historical) == 62
-    assert len(current) == 60
+    assert len(current) == 61
     assert phase4_retired == {escalation}
     assert escalation in historical
     assert escalation not in current
-    assert set(current) == historical - v126_retired - phase4_retired
+    assert set(current) == historical - v126_retired - phase4_retired | {
+        "supportguard_api_get_refund_display(text,text[])"
+    }
 
 
 def test_i201_catalog_delta_is_exactly_generic_definition_and_direct_acl() -> None:

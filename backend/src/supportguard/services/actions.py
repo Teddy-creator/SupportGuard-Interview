@@ -39,6 +39,11 @@ from supportguard.services.approver_scope import assert_execution_approver_scope
 from supportguard.services.business import action_hash
 from supportguard.services.errors import DomainError, ErrorCode
 from supportguard.services.kill_switches import assert_mutation_enabled
+from supportguard.services.refunds import (
+    lock_and_evaluate_billing_refund_pair,
+    refund_pair_matches_proposal,
+    refund_pair_payload_is_compatible,
+)
 from supportguard.services.runtime_jobs import JobLease, RuntimeConflict, RuntimeJobRepository
 
 
@@ -81,6 +86,7 @@ class RuntimeActionCapabilityResult(BaseModel):
             "approver_scope_stale",
             "resource_snapshot_stale",
             "policy_stale",
+            "refund_pair_execution_stale",
         ]
         | None
     )
@@ -521,15 +527,14 @@ class RuntimeActionExecutor:
     ) -> BillingRecord:
         approval = binding.approval
         payload = binding.payload
-        billing = await self.session.scalar(
-            select(BillingRecord)
-            .where(
-                BillingRecord.id == binding.resource_id,
-                BillingRecord.tenant_id == approval.tenant_id,
-                BillingRecord.customer_id == approval.customer_id,
-            )
-            .with_for_update()
+        billing, pair = await lock_and_evaluate_billing_refund_pair(
+            self.session,
+            tenant_id=approval.tenant_id,
+            customer_id=approval.customer_id,
+            billing_record_id=binding.resource_id,
+            now=datetime.now(UTC),
         )
+        proposal = await self.session.get(ProposalRecord, approval.proposal_id or "")
         if billing is None:
             raise DomainError(ErrorCode.BILLING_RECORD_NOT_FOUND, "Billing record was not found")
         if not (
@@ -538,6 +543,10 @@ class RuntimeActionExecutor:
             and billing.version == binding.resource_version == payload.get("business_version")
             and str(billing.amount) == str(payload.get("amount"))
             and billing.currency == payload.get("currency")
+            and pair is not None
+            and refund_pair_payload_is_compatible(pair, payload)
+            and proposal is not None
+            and refund_pair_matches_proposal(pair, proposal)
         ):
             raise DomainError(
                 ErrorCode.APPROVAL_SNAPSHOT_MISMATCH,
@@ -761,15 +770,14 @@ class RuntimeActionExecutor:
         *,
         trace_id: str,
     ) -> ActionResult:
-        billing = await self.session.scalar(
-            select(BillingRecord)
-            .where(
-                BillingRecord.id == resource_id,
-                BillingRecord.tenant_id == approval.tenant_id,
-                BillingRecord.customer_id == approval.customer_id,
-            )
-            .with_for_update()
+        billing, pair = await lock_and_evaluate_billing_refund_pair(
+            self.session,
+            tenant_id=approval.tenant_id,
+            customer_id=approval.customer_id,
+            billing_record_id=resource_id,
+            now=datetime.now(UTC),
         )
+        proposal = await self.session.get(ProposalRecord, approval.proposal_id or "")
         payload = revision.action_payload
         snapshot_valid = bool(
             billing is not None
@@ -778,6 +786,10 @@ class RuntimeActionExecutor:
             and billing.version == revision.resource_version == payload.get("business_version")
             and str(billing.amount) == str(payload.get("amount"))
             and billing.currency == payload.get("currency")
+            and pair is not None
+            and refund_pair_payload_is_compatible(pair, payload)
+            and proposal is not None
+            and refund_pair_matches_proposal(pair, proposal)
         )
         if billing is None or not snapshot_valid:
             return await self._mark_stale(

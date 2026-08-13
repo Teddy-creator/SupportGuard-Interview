@@ -137,6 +137,7 @@ def test_approval_projection_discards_legacy_json_and_preserves_safe_review_fact
         "amount": "49.00",
         "currency": "USD",
         "refund_reason": None,
+        "original_billing_record_id": "bill_demo_original",
     }
     assert payload["review_context"]["freshness"] == {
         "status": "current",

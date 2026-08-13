@@ -119,6 +119,9 @@ export type ConversationTurn = {
     | "proposal_created"
     | "human_queue"
     | "failed"
+    | "stale"
+    | "rejected"
+    | "withdrawn"
     | null;
   run_id?: string | null;
   messages: ConversationMessage[];
@@ -258,6 +261,7 @@ export type ApprovalActionPayload =
       amount?: string | null;
       currency?: string | null;
       refund_reason?: string | null;
+      original_billing_record_id?: string | null;
     }
   | {
       api_key_id: string;
