@@ -38,7 +38,7 @@ async def test_conversation_tables_preserve_control_capabilities_and_scope_messa
             ).all()
         assert rows == [
             ("agent_runs", True, False),
-            ("conversation_turns", True, False),
+            ("conversation_turns", True, True),
             ("support_tickets", True, False),
             ("ticket_messages", True, False),
         ]
