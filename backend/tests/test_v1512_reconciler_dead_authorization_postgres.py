@@ -42,6 +42,10 @@ async def _seed_runtime_job(
     outbox_id = f"outbox_v1512_deadline_{suffix}"
     delivery_id = f"delivery_v1512_deadline_{suffix}"
     await connection.execute(
+        text("SELECT set_config('app.tenant_id',CAST(:tenant_id AS text),true)"),
+        {"tenant_id": tenant_id},
+    )
+    await connection.execute(
         text(
             """
             INSERT INTO public.tenants(id,name,status,created_at,updated_at)
