@@ -257,6 +257,17 @@ def test_compose_bootstrap_refreshes_demo_time_after_seed_and_knowledge() -> Non
     )
 
 
+def test_compose_demo_maintainer_keeps_local_usage_fresh() -> None:
+    compose = (ROOT / "docker-compose.yml").read_text()
+    target = compose.split("  demo-temporal:", 1)[1].split("\n  api:", 1)[0]
+
+    assert '"temporal-maintain", "--tenant", "tenant_demo"' in target
+    assert "supportguard_bootstrap" in target
+    assert "bootstrap-demo:" in target
+    assert "service_completed_successfully" in target
+    assert "restart: unless-stopped" in target
+
+
 def test_demo_temporal_refresh_covers_an_imminent_minute_rollover() -> None:
     base = datetime(2026, 7, 24, 12, 30, tzinfo=UTC)
 
@@ -294,8 +305,16 @@ async def test_demo_temporal_refresh_is_scoped_non_destructive_and_fresh(
             session, settings=settings, tenant_id="tenant_demo"
         )
         await session.commit()
+        repeated = await refresh_demo_temporal_fixtures(
+            session, settings=settings, tenant_id="tenant_demo"
+        )
+        await session.commit()
         after = await demo_temporal_preflight(session, settings=settings, tenant_id="tenant_demo")
         assert report.mode == "refresh"
+        assert repeated.mode == "refresh"
+        assert repeated.usage_bucket_count == report.usage_bucket_count
+        assert repeated.latest_snapshot_age_seconds is not None
+        assert repeated.latest_snapshot_age_seconds <= 5
         assert after.latest_snapshot_age_seconds is not None
         assert after.latest_snapshot_age_seconds <= 5
         latest_bucket_end = await session.scalar(

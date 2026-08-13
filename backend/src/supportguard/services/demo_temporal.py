@@ -151,15 +151,17 @@ async def demo_resource_preflight(
     subscription = await session.get(Subscription, "sub_demo")
     conversation_count = int(
         await session.scalar(
-            select(func.count()).select_from(SupportTicket).where(
-                SupportTicket.tenant_id == tenant_id
-            )
+            select(func.count())
+            .select_from(SupportTicket)
+            .where(SupportTicket.tenant_id == tenant_id)
         )
         or 0
     )
     pending_approval_count = int(
         await session.scalar(
-            select(func.count()).select_from(ApprovalRequest).where(
+            select(func.count())
+            .select_from(ApprovalRequest)
+            .where(
                 ApprovalRequest.tenant_id == tenant_id,
                 ApprovalRequest.status.in_(("pending", "approved", "executing")),
             )
@@ -168,9 +170,9 @@ async def demo_resource_preflight(
     )
     business_action_count = int(
         await session.scalar(
-            select(func.count()).select_from(BusinessAction).where(
-                BusinessAction.tenant_id == tenant_id
-            )
+            select(func.count())
+            .select_from(BusinessAction)
+            .where(BusinessAction.tenant_id == tenant_id)
         )
         or 0
     )
@@ -179,9 +181,7 @@ async def demo_resource_preflight(
         "duplicate_billing_not_charged": billing is None or billing.status != "charged",
         "api_key_not_active": key is None or key.status != "active",
         "subscription_not_active": subscription is None or subscription.status != "active",
-        "concurrency_limit_not_40": (
-            subscription is None or subscription.concurrency_limit != 40
-        ),
+        "concurrency_limit_not_40": (subscription is None or subscription.concurrency_limit != 40),
         "demo_has_conversations": conversation_count != 0,
         "demo_has_pending_approvals": pending_approval_count != 0,
         "demo_has_business_actions": business_action_count != 0,
@@ -195,9 +195,7 @@ async def demo_resource_preflight(
         duplicate_billing_status=None if billing is None else billing.status,
         api_key_status=None if key is None else key.status,
         subscription_status=None if subscription is None else subscription.status,
-        concurrency_limit=(
-            None if subscription is None else subscription.concurrency_limit
-        ),
+        concurrency_limit=(None if subscription is None else subscription.concurrency_limit),
         conversation_count=conversation_count,
         pending_approval_count=pending_approval_count,
         business_action_count=business_action_count,
@@ -239,13 +237,17 @@ async def refresh_demo_temporal_fixtures(
     )
     now = datetime.now(UTC)
     window_end = demo_coverage_window_end(now)
-    original_end = max(item.bucket_end for item in buckets)
-    if original_end.tzinfo is None:
-        original_end = original_end.replace(tzinfo=UTC)
+    original_end = max(
+        item.bucket_end
+        if item.bucket_end.tzinfo is not None
+        else item.bucket_end.replace(tzinfo=UTC)
+        for item in buckets
+    )
     shift = window_end - original_end
-    missing_minutes = int(shift.total_seconds() // 60)
-    if missing_minutes < 0:
-        raise RuntimeError("demo_temporal_fixture_in_future")
+    # A long-lived local Demo maintainer intentionally keeps a five-minute
+    # buffer ahead of wall time. Re-entering inside that bounded buffer is an
+    # idempotent no-op for buckets; snapshots advance at most once per minute.
+    missing_minutes = max(0, int(shift.total_seconds() // 60))
     append_count = min(missing_minutes, 1440)
     append_start = window_end - timedelta(minutes=append_count)
     epoch = int(window_end.timestamp())
@@ -284,6 +286,14 @@ async def refresh_demo_temporal_fixtures(
                 remaining_balance=latest.remaining_balance,
             )
         )
+        latest_observed_at = now
+    else:
+        latest_observed_at = max(
+            item.observed_at
+            if item.observed_at.tzinfo is not None
+            else item.observed_at.replace(tzinfo=UTC)
+            for item in snapshots
+        )
     await session.flush()
     return DemoTemporalReport(
         schema="demo-temporal-report.v1",
@@ -292,5 +302,8 @@ async def refresh_demo_temporal_fixtures(
         refreshed_at=now.isoformat(),
         usage_snapshot_count=len(snapshots) + int(not snapshot_exists),
         usage_bucket_count=len(buckets) + append_count,
-        latest_snapshot_age_seconds=0,
+        latest_snapshot_age_seconds=max(
+            0,
+            int((now - latest_observed_at).total_seconds()),
+        ),
     )

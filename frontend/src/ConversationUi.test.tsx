@@ -337,6 +337,51 @@ describe("customer-safe answer projection", () => {
     expect(screen.queryByText("支持结论：重复账单已核验。")).not.toBeInTheDocument();
   });
 
+  it("derives one unambiguous billing identity for legacy safe projections", () => {
+    const conversation = failedConversation("tool");
+    conversation.activity_label = "已回答";
+    conversation.turns[0].activity_state = "completed";
+    conversation.turns[0].result_state = "answered";
+    conversation.turns[0].messages.push({
+      id: "message-assistant",
+      kind: "assistant",
+      role: "assistant",
+      content: "账单已经核验。",
+      sequence: 2,
+      created_at: "2026-07-28T01:01:00Z",
+    });
+    conversation.turns[0].citations = [
+      {
+        source_type: "business_fact",
+        title: "账单状态",
+        version: "2",
+        section_path: "当前业务事实",
+        supporting_span: "账单 bill_demo_duplicate 已核验。",
+        claim_summary: "账单 bill_demo_duplicate 已核验。",
+        message_id: "message-assistant",
+      },
+      {
+        source_type: "business_fact",
+        title: "账单状态",
+        version: "2",
+        section_path: "当前业务事实",
+        supporting_span: "bill_demo_duplicate 与 bill_demo_original 信息一致。",
+        claim_summary: "bill_demo_duplicate 与 bill_demo_original 信息一致。",
+        message_id: "message-assistant",
+      },
+    ];
+    render(messageStream(conversation));
+
+    expect(
+      screen.getByRole("button", {
+        name: "▤ 账单状态 v2 · bill_demo_duplicate",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "▤ 账单状态 v2" }),
+    ).toBeInTheDocument();
+  });
+
   it("deduplicates identical evidence spans while preserving claim summaries", () => {
     const citations: Citation[] = [
       {

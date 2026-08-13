@@ -93,6 +93,7 @@ def build_parser() -> argparse.ArgumentParser:
     demo_commands = demo.add_subparsers(dest="demo_command", required=True)
     for name, help_text in (
         ("temporal-refresh", "Refresh only demo usage timestamps and buckets"),
+        ("temporal-maintain", "Continuously maintain local demo usage freshness"),
         ("temporal-preflight", "Report demo temporal freshness without mutation"),
         ("resource-preflight", "Verify the clean interview-demo business resources"),
     ):
@@ -301,6 +302,33 @@ async def run_demo_temporal(*, tenant_id: str, refresh: bool) -> None:
         await engine.dispose()
 
 
+async def maintain_demo_temporal(*, tenant_id: str) -> None:
+    """Own the bounded, development-only demo freshness lifecycle."""
+
+    settings = get_settings()
+    if settings.app_env == "production" or settings.auth_mode == "production":
+        raise RuntimeError("demo_temporal_refresh_forbidden_in_production")
+    engine = create_engine(settings)
+    factory = create_session_factory(engine, settings=settings)
+
+    async def refresh_once() -> None:
+        async with factory() as session, session.begin():
+            await refresh_demo_temporal_fixtures(
+                session,
+                settings=settings,
+                tenant_id=tenant_id,
+            )
+
+    try:
+        await bounded_service_loop(
+            refresh_once,
+            interval_seconds=30,
+            operation_timeout_seconds=CONTROL_LOOP_TIMEOUT_SECONDS,
+        )
+    finally:
+        await engine.dispose()
+
+
 async def run_demo_resource_preflight(*, tenant_id: str) -> None:
     settings = get_settings()
     engine = create_engine(settings)
@@ -354,6 +382,8 @@ def main() -> None:
         asyncio.run(run_redis_trim(apply=bool(args.apply)))
     elif args.command == "demo" and args.demo_command == "resource-preflight":
         asyncio.run(run_demo_resource_preflight(tenant_id=str(args.tenant)))
+    elif args.command == "demo" and args.demo_command == "temporal-maintain":
+        asyncio.run(maintain_demo_temporal(tenant_id=str(args.tenant)))
     elif args.command == "demo":
         asyncio.run(
             run_demo_temporal(

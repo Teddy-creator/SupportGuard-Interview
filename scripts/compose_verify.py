@@ -41,9 +41,7 @@ def require(condition: bool, message: str) -> None:
         raise RuntimeError(message)
 
 
-def container_environment(
-    container_id: str, *, runner: Callable[..., str] = run
-) -> dict[str, str]:
+def container_environment(container_id: str, *, runner: Callable[..., str] = run) -> dict[str, str]:
     raw = json.loads(runner("docker", "inspect", container_id))
     if not isinstance(raw, list) or len(raw) != 1:
         raise RuntimeError("container inspect is invalid")
@@ -65,9 +63,7 @@ def verify_embedding_contract(
 ) -> None:
     bootstrap_ids = [
         item
-        for item in runner(
-            "docker", "compose", "ps", "-a", "-q", "bootstrap-demo"
-        ).splitlines()
+        for item in runner("docker", "compose", "ps", "-a", "-q", "bootstrap-demo").splitlines()
         if item
     ]
     require(len(bootstrap_ids) == 1, "expected one bootstrap-demo container")
@@ -121,9 +117,7 @@ def wait_for_worker_mcp_children(
         child_commands: list[str] = []
         for row in worker_rows:
             child_commands.extend(runner("docker", "top", row["ID"]).splitlines())
-        read_count = sum(
-            "supportguard.mcp.read_server" in command for command in child_commands
-        )
+        read_count = sum("supportguard.mcp.read_server" in command for command in child_commands)
         action_count = sum(
             "supportguard.mcp.action_server" in command for command in child_commands
         )
@@ -183,6 +177,7 @@ def main() -> int:
     expected = {
         "postgres": 1,
         "redis": 1,
+        "demo-temporal": 1,
         "api": 1,
         "dispatcher": 1,
         "reconciler": 1,
@@ -216,9 +211,7 @@ def main() -> int:
         "MCP_ACTION_DATABASE_URL": {"worker"},
     }
     for row in running:
-        environment = json.loads(run("docker", "inspect", row["ID"]))[0]["Config"][
-            "Env"
-        ]
+        environment = json.loads(run("docker", "inspect", row["ID"]))[0]["Config"]["Env"]
         names = {str(item).partition("=")[0] for item in environment}
         for variable, allowed in secret_allowlist.items():
             require(

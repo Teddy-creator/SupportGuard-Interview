@@ -112,6 +112,18 @@ services:
       migrate:
         condition: service_completed_successfully
 
+  demo-temporal:
+    <<: *backend
+    restart: unless-stopped
+    command:
+      ["supportguard", "demo", "temporal-maintain", "--tenant", "tenant_demo"]
+    environment:
+      <<: *backend-environment
+      DATABASE_URL: postgresql+asyncpg://supportguard_bootstrap:${BOOTSTRAP_DATABASE_PASSWORD:-supportguard_bootstrap}@postgres:5432/supportguard
+    depends_on:
+      bootstrap-demo:
+        condition: service_completed_successfully
+
   api:
     <<: *backend
     # The API owns the single shared Backend image build. Every one-shot and

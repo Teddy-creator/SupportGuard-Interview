@@ -111,10 +111,21 @@ export function CitationChip({
 function businessResourceLabel(citation: Citation): string | null {
   if (citation.source_type !== "business_fact") return null;
   const identity = citation.observation_source_id ?? citation.document_id;
-  if (!identity?.startsWith("billing_record:")) return null;
+  if (!identity?.startsWith("billing_record:")) {
+    return billingResourceFromClaim(citation);
+  }
   const separator = identity.indexOf(":");
   const resource = separator >= 0 ? identity.slice(separator + 1) : identity;
   return resource.trim() || null;
+}
+
+function billingResourceFromClaim(citation: Citation): string | null {
+  if (citation.title !== "账单状态") return null;
+  const matches = [citation.supporting_span, citation.claim_summary]
+    .filter((value): value is string => typeof value === "string")
+    .flatMap((value) => value.match(/\bbill_[A-Za-z0-9_-]+\b/g) ?? []);
+  const resources = [...new Set(matches)];
+  return resources.length === 1 ? resources[0] : null;
 }
 
 export function deduplicatedCitationEvidence(
@@ -147,6 +158,7 @@ function citationDocumentIdentity(citation: Citation): string {
   return (
     citation.observation_source_id ??
     citation.document_id ??
+    businessResourceLabel(citation) ??
     citation.source_locator?.document_internal_id ??
     citation.source_locator?.locator_hash ??
     citation.title ??
