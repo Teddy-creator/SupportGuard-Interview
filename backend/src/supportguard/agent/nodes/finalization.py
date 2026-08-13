@@ -122,8 +122,10 @@ class FinalizationNodes:
             state.get("execution_result", {}).get("execution_state") == "verification_pending"
         ):
             terminal = "verification_pending"
-        elif human_action == "reject" or route == PolicyRoute.REJECT:
+        elif human_action == "reject":
             terminal = "rejected"
+        elif route == PolicyRoute.REJECT:
+            terminal = "resolved"
         elif human_action == "manual_takeover":
             terminal = "manual_takeover"
         elif unsupported_legacy_route:

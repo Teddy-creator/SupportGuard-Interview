@@ -250,8 +250,8 @@ def test_demo_preflight_uses_the_role_that_owns_each_resource() -> None:
 def test_demo_temporal_refresh_covers_an_imminent_minute_rollover() -> None:
     base = datetime(2026, 7, 24, 12, 30, tzinfo=UTC)
 
-    assert demo_coverage_window_end(base + timedelta(seconds=54)) == base
-    assert demo_coverage_window_end(base + timedelta(seconds=55)) == (base + timedelta(minutes=1))
+    assert demo_coverage_window_end(base + timedelta(seconds=54)) == base + timedelta(minutes=5)
+    assert demo_coverage_window_end(base + timedelta(seconds=55)) == base + timedelta(minutes=5)
 
 
 @pytest.mark.asyncio
@@ -288,6 +288,21 @@ async def test_demo_temporal_refresh_is_scoped_non_destructive_and_fresh(
         assert report.mode == "refresh"
         assert after.latest_snapshot_age_seconds is not None
         assert after.latest_snapshot_age_seconds <= 5
+        latest_bucket_end = await session.scalar(
+            select(func.max(ApiUsageBucket.bucket_end)).where(
+                ApiUsageBucket.tenant_id == "tenant_demo",
+                ApiUsageBucket.customer_id == "cust_demo",
+            )
+        )
+        assert latest_bucket_end is not None
+        comparable_end = (
+            latest_bucket_end
+            if latest_bucket_end.tzinfo is not None
+            else latest_bucket_end.replace(tzinfo=UTC)
+        )
+        assert comparable_end >= datetime.now(UTC).replace(second=0, microsecond=0) + timedelta(
+            minutes=5
+        )
         remaining_tickets = await session.scalar(select(func.count()).select_from(SupportTicket))
         assert int(remaining_tickets) == ticket_count
     await engine.dispose()

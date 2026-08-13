@@ -23,6 +23,7 @@ def test_turn_results_are_orthogonal_to_activity_and_legacy_terminal() -> None:
     assert turn_result_for("explicit_current_fact_incomplete") == "answered_limited"
     assert turn_result_for("needs_clarification") == "needs_clarification"
     assert turn_result_for("rejected", terminal_state="rejected") == "rejected"
+    assert turn_result_for("rejected", terminal_state="resolved") == "refused"
     assert turn_result_for("withdrawn", terminal_state="withdrawn") == "withdrawn"
     assert turn_result_for("stale", terminal_state="stale") == "stale"
     assert turn_result_for("proposed", terminal_state="awaiting_approval") == "proposal_created"

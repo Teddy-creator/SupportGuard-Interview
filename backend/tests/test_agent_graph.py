@@ -6192,6 +6192,7 @@ async def test_prohibited_boundary_is_deterministically_refused() -> None:
     )
     assert output["agent_finish_reason"] == "rejected"
     assert output["final"]["policy_route"] == PolicyRoute.REJECT.value
+    assert output["final"]["terminal_state"] == "resolved"
     assert "其他客户" in output["final"]["answer"]
     assert "没有调用业务工具" in output["final"]["answer"]
     assert output["tool_rounds"] == 0
@@ -6227,6 +6228,7 @@ async def test_prohibited_action_request_reaches_policy_without_graph_cycle() ->
 
     assert output["agent_finish_reason"] == "rejected"
     assert output["final"]["policy_route"] == PolicyRoute.REJECT.value
+    assert output["final"]["terminal_state"] == "resolved"
     assert output["tool_rounds"] == 0
     assert output["tool_attempts"] == 0
 

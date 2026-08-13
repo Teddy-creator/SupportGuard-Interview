@@ -61,6 +61,7 @@ export function CitationChip({
   const [open, setOpen] = useState(false);
   const citation = citations[0];
   const label = citation.title || `来源 ${index + 1}`;
+  const resourceLabel = businessResourceLabel(citation);
   const evidence = deduplicatedCitationEvidence(citations);
   return (
     <span className="citation-wrap">
@@ -72,10 +73,12 @@ export function CitationChip({
       >
         ▤ {label}
         {citation.version ? ` v${citation.version}` : ""}
+        {resourceLabel ? ` · ${resourceLabel}` : ""}
       </button>
       {open ? (
         <span className="source-popover" role="note">
           <strong>{label}</strong>
+          {resourceLabel ? <small>资源：{resourceLabel}</small> : null}
           {evidence.map((item, evidenceIndex) => (
             <span
               className="source-evidence"
@@ -102,6 +105,15 @@ export function CitationChip({
       ) : null}
     </span>
   );
+}
+
+function businessResourceLabel(citation: Citation): string | null {
+  if (citation.source_type !== "business_fact") return null;
+  const identity = citation.observation_source_id ?? citation.document_id;
+  if (!identity) return null;
+  const separator = identity.indexOf(":");
+  const resource = separator >= 0 ? identity.slice(separator + 1) : identity;
+  return resource.trim() || null;
 }
 
 export function deduplicatedCitationEvidence(

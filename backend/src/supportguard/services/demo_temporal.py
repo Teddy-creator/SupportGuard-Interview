@@ -62,12 +62,18 @@ def _authorize(settings: Settings, tenant_id: str) -> None:
 
 
 def demo_coverage_window_end(now: datetime) -> datetime:
-    """Choose a Demo-only bucket horizon that survives an imminent minute rollover."""
+    """Keep Demo usage complete while the real Provider finishes a turn.
+
+    ``query_api_usage`` evaluates buckets against the invocation's logical
+    minute, not the instant when the preflight command ran.  A real Provider
+    turn can start several minutes later, so refreshing only through the
+    current minute makes an otherwise healthy Demo depend on typing and model
+    latency.  The bounded look-ahead is Demo-only, preserves the historical
+    rows, and remains well inside the 1,440-row append ceiling.
+    """
 
     boundary = now.replace(second=0, microsecond=0)
-    if now.second >= 55:
-        return boundary + timedelta(minutes=1)
-    return boundary
+    return boundary + timedelta(minutes=5)
 
 
 async def demo_temporal_preflight(

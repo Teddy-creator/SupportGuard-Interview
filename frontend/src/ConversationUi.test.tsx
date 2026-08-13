@@ -296,6 +296,39 @@ describe("customer-safe answer projection", () => {
     expect(groupedCitationsFor(citations, "message-a")).toHaveLength(2);
   });
 
+  it("labels same-title business sources with their safe resource identities", () => {
+    const conversation = failedConversation("tool");
+    conversation.activity_label = "已回答";
+    conversation.turns[0].activity_state = "completed";
+    conversation.turns[0].result_state = "answered";
+    conversation.turns[0].messages.push({
+      id: "message-assistant",
+      kind: "assistant",
+      role: "assistant",
+      content: "两笔账单已经核验。",
+      sequence: 2,
+      created_at: "2026-07-28T01:01:00Z",
+    });
+    conversation.turns[0].citations = [
+      {
+        source_type: "business_fact",
+        observation_source_id: "billing_record:bill_demo_duplicate",
+        title: "账单状态",
+        version: "2",
+        section_path: "当前业务事实",
+        supporting_span: "重复账单已核验。",
+        message_id: "message-assistant",
+      },
+    ];
+    render(messageStream(conversation));
+
+    expect(
+      screen.getByRole("button", {
+        name: "▤ 账单状态 v2 · bill_demo_duplicate",
+      }),
+    ).toBeInTheDocument();
+  });
+
   it("deduplicates identical evidence spans while preserving claim summaries", () => {
     const citations: Citation[] = [
       {

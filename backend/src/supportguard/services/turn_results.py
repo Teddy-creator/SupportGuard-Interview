@@ -89,8 +89,10 @@ def turn_result_for(
         "explicit_current_fact_incomplete",
     }:
         return "answered_limited"
-    if finish_reason == "rejected" or terminal_state == "rejected":
+    if finish_reason == "rejected" and terminal_state == "rejected":
         return "rejected"
+    if finish_reason == "rejected":
+        return "refused"
     if finish_reason == "withdrawn" or terminal_state == "withdrawn":
         return "withdrawn"
     if finish_reason == "stale" or terminal_state == "stale":
