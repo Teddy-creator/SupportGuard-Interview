@@ -58,7 +58,6 @@ from supportguard.services.business import action_hash
 from supportguard.services.capability_ledger import PolicyCapabilityLedger
 from supportguard.services.refunds import (
     evaluate_billing_refund_pair,
-    refund_pair_action_fields,
     refund_pair_observation_fields,
 )
 from supportguard.services.runtime_jobs import RuntimeConflict, RuntimeJobRepository
@@ -182,17 +181,7 @@ async def _seed_production_shaped_pending_approval_fixture(
                 billing,
                 now=datetime.now(UTC),
             )
-            if refund_pair.eligible:
-                payload.update(refund_pair_action_fields(refund_pair))
-            else:
-                assert refund_pair.original is not None and refund_pair.pair_hash
-                payload.update(
-                    {
-                        "original_billing_record_id": refund_pair.original.billing_record_id,
-                        "original_business_version": refund_pair.original.version,
-                        "refund_pair_hash": refund_pair.pair_hash,
-                    }
-                )
+            assert refund_pair.original is not None and refund_pair.pair_hash
         elif action_type == "api_key_revocation":
             if resource_id_override is None:
                 session.add(

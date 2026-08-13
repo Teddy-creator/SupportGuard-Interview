@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Mapping
 from datetime import datetime
-from typing import Any
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -104,18 +102,6 @@ async def lock_and_evaluate_billing_refund_pair(
     )
 
 
-def refund_pair_action_fields(evaluation: RefundPairEvaluation) -> dict[str, str | int]:
-    """Return the immutable pair identity bound into Proposal, Approval and Effect."""
-
-    if not evaluation.eligible or evaluation.original is None or not evaluation.pair_hash:
-        raise ValueError("refund_pair_is_not_eligible")
-    return {
-        "original_billing_record_id": evaluation.original.billing_record_id,
-        "original_business_version": evaluation.original.version,
-        "refund_pair_hash": evaluation.pair_hash,
-    }
-
-
 def refund_pair_observation_fields(evaluation: RefundPairEvaluation) -> dict[str, object]:
     return {
         "duplicate_pair_eligible": evaluation.eligible,
@@ -136,42 +122,6 @@ def refund_pair_observation_fields(evaluation: RefundPairEvaluation) -> dict[str
         ),
         "original_version": evaluation.original.version if evaluation.original else None,
     }
-
-
-def refund_pair_matches_action_payload(
-    evaluation: RefundPairEvaluation,
-    payload: Mapping[str, Any],
-) -> bool:
-    """Prove that the current eligible pair is the exact pair a human approved."""
-
-    if not evaluation.eligible or evaluation.original is None or not evaluation.pair_hash:
-        return False
-    return (
-        payload.get("original_billing_record_id") == evaluation.original.billing_record_id
-        and payload.get("original_business_version") == evaluation.original.version
-        and payload.get("refund_pair_hash") == evaluation.pair_hash
-    )
-
-
-def refund_pair_payload_is_compatible(
-    evaluation: RefundPairEvaluation,
-    payload: Mapping[str, Any],
-) -> bool:
-    """Accept legacy payloads only when the proposal sidecar is authoritative.
-
-    Current Python proposals bind the pair in both places.  PostgreSQL's generic
-    proposal payload predates the sidecar, so an all-absent trio is compatible;
-    a partial or conflicting trio is never accepted.
-    """
-
-    fields = (
-        payload.get("original_billing_record_id"),
-        payload.get("original_business_version"),
-        payload.get("refund_pair_hash"),
-    )
-    if fields == (None, None, None):
-        return True
-    return refund_pair_matches_action_payload(evaluation, payload)
 
 
 def bind_refund_pair_to_proposal(

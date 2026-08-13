@@ -70,7 +70,6 @@ from supportguard.services.capability_ledger import capability_payload_hash
 from supportguard.services.errors import DomainError, ErrorCode
 from supportguard.services.refunds import (
     evaluate_billing_refund_pair,
-    refund_pair_action_fields,
     refund_pair_observation_fields,
 )
 
@@ -922,7 +921,6 @@ class BusinessService:
             "currency": billing.currency,
             "refund_reason": arguments.refund_reason,
             "business_version": billing.version,
-            **refund_pair_action_fields(pair),
         }
         candidate_hash = action_hash(payload)
         proposal_identity = action_hash(
@@ -1056,7 +1054,6 @@ class BusinessService:
             "currency": billing.currency,
             "refund_reason": arguments.refund_reason,
             "business_version": billing.version,
-            **refund_pair_action_fields(pair),
         }
         candidate_hash = action_hash(payload)
         identity = action_hash(

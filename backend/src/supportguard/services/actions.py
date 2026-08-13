@@ -42,7 +42,6 @@ from supportguard.services.kill_switches import assert_mutation_enabled
 from supportguard.services.refunds import (
     lock_and_evaluate_billing_refund_pair,
     refund_pair_matches_proposal,
-    refund_pair_payload_is_compatible,
 )
 from supportguard.services.runtime_jobs import JobLease, RuntimeConflict, RuntimeJobRepository
 
@@ -544,7 +543,6 @@ class RuntimeActionExecutor:
             and str(billing.amount) == str(payload.get("amount"))
             and billing.currency == payload.get("currency")
             and pair is not None
-            and refund_pair_payload_is_compatible(pair, payload)
             and proposal is not None
             and refund_pair_matches_proposal(pair, proposal)
         ):
@@ -787,7 +785,6 @@ class RuntimeActionExecutor:
             and str(billing.amount) == str(payload.get("amount"))
             and billing.currency == payload.get("currency")
             and pair is not None
-            and refund_pair_payload_is_compatible(pair, payload)
             and proposal is not None
             and refund_pair_matches_proposal(pair, proposal)
         )

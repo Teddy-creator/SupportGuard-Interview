@@ -34,7 +34,6 @@ from supportguard.services.errors import DomainError, ErrorCode
 from supportguard.services.refunds import (
     bind_refund_pair_to_proposal,
     lock_and_evaluate_billing_refund_pair,
-    refund_pair_action_fields,
 )
 from supportguard.services.runtime_jobs import JobLease, RuntimeConflict
 
@@ -195,7 +194,6 @@ class ApprovalService:
             "currency": billing.currency,
             "refund_reason": refund_reason,
             "business_version": billing.version,
-            **refund_pair_action_fields(pair),
         }
         approval.action_payload = payload
         approval.action_hash = action_hash(payload)

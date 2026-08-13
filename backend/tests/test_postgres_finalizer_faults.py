@@ -63,7 +63,6 @@ from supportguard.services.business import action_hash
 from supportguard.services.commands import CommandCoordinator
 from supportguard.services.refunds import (
     evaluate_billing_refund_pair,
-    refund_pair_action_fields,
 )
 from supportguard.services.runtime_jobs import JobLease, RuntimeConflict, RuntimeJobRepository
 from supportguard.services.segments import SegmentRepository
@@ -279,7 +278,7 @@ async def _seed_pending_approval(
                 billing,
                 now=datetime.now(UTC),
             )
-            payload.update(refund_pair_action_fields(pair))
+            assert pair.eligible and pair.original is not None and pair.pair_hash
         elif action_type == "api_key_revocation":
             session.add(
                 ApiKeyMetadata(
