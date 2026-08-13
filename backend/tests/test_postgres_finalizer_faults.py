@@ -1825,6 +1825,8 @@ async def test_v156_graph_accepts_only_scoped_durable_proposal_records(
     action_payload = {
         "refund": {
             "billing_record_id": resource_id,
+            "business_version": 2,
+            "customer_id": "cust_demo",
             "refund_reason": "Verified duplicate charge fixture.",
         },
         "api_key_revocation": {
@@ -1840,6 +1842,39 @@ async def test_v156_graph_accepts_only_scoped_durable_proposal_records(
     }[action_type]
     async with factory() as session, session.begin():
         await session.execute(text("SELECT set_config('app.tenant_id','tenant_demo',true)"))
+        if action_type == "refund":
+            charged_at = datetime.now(UTC) - timedelta(days=1)
+            session.add_all(
+                [
+                    BillingRecord(
+                        id=f"{resource_id}_original",
+                        tenant_id="tenant_demo",
+                        customer_id="cust_demo",
+                        amount=Decimal("49.00"),
+                        currency="USD",
+                        status="charged",
+                        charged_at=charged_at,
+                        service_period_start=date(2026, 8, 1),
+                        service_period_end=date(2026, 9, 1),
+                        duplicate_of=None,
+                        version=1,
+                    ),
+                    BillingRecord(
+                        id=resource_id,
+                        tenant_id="tenant_demo",
+                        customer_id="cust_demo",
+                        amount=Decimal("49.00"),
+                        currency="USD",
+                        status="charged",
+                        charged_at=charged_at,
+                        service_period_start=date(2026, 8, 1),
+                        service_period_end=date(2026, 9, 1),
+                        duplicate_of=f"{resource_id}_original",
+                        version=2,
+                    ),
+                ]
+            )
+            await session.flush()
         session.add(
             ProposalRecord(
                 id=proposal_id,
