@@ -3451,6 +3451,7 @@ async def _seed_reconciler_lane(
     available_at: datetime,
 ) -> tuple[str, str]:
     """Persist a real trigger-bound ticket/run lane and its bounded backlog."""
+    await connection.execute(text("SELECT set_config('app.tenant_id','tenant_demo',true)"))
     ticket_id = f"ticket_{prefix}"
     message_id = f"message_{prefix}"
     run_id = f"run_{prefix}"
