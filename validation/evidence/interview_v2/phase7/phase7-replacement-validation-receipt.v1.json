@@ -1,0 +1,244 @@
+{
+  "artifacts": [
+    {
+      "path": "validation/evidence/interview_v2/phase7/attempts/ie-p16-7527c0acca079f57549538e49135a91ef87b9389.json",
+      "persistence": "git",
+      "sha256": "450a121f1bd77b8dd0beb9cb09a116ad0ba1993aee48f31917ce79f5f7f68e58"
+    },
+    {
+      "path": "validation/evidence/interview_v2/phase7/hosted-ci-7527c0acca079f57549538e49135a91ef87b9389.json",
+      "persistence": "git",
+      "sha256": "090e253cc4e2eb86167e240dc07a50bd18ad00d5aa6ce66562cfd95d72357eb0"
+    },
+    {
+      "path": "dist/phase7/replacement/candidate-identity-7527c0acca079f57549538e49135a91ef87b9389.json",
+      "persistence": "local_dist",
+      "sha256": "05e9c907b62ca8a9ea2b027eb778d093f1b09981ac7831c7d6519fa1822a65a3"
+    },
+    {
+      "path": "dist/phase7/replacement/package-boundary-7527c0acca079f57549538e49135a91ef87b9389.json",
+      "persistence": "local_dist",
+      "sha256": "8a3e65620ecf58282d0c99ba0ea901ab930b95897430d8914d0d429bca08f99a"
+    },
+    {
+      "path": "dist/phase7/replacement/backend-full-7527c0acca079f57549538e49135a91ef87b9389.json",
+      "persistence": "local_dist",
+      "sha256": "00c1ce08e14984ccd09bad5eddee5e59bc98d2046cf8c3958e3acda2a3998d6d"
+    },
+    {
+      "path": "dist/phase7/replacement/frontend-unit-7527c0acca079f57549538e49135a91ef87b9389.json",
+      "persistence": "local_dist",
+      "sha256": "3d13d433f3eb440dfb2751174fbf2fd6747ff65d7d87730e00fcafd2da43ec52"
+    },
+    {
+      "path": "dist/phase7/replacement/integration-current-7527c0acca079f57549538e49135a91ef87b9389.json",
+      "persistence": "local_dist",
+      "sha256": "edb7746edd214ef7ebdc01a81e75007c12fb31d8f6b89f9e94d1e70734d0edd4"
+    },
+    {
+      "path": "dist/phase7/replacement/mcp-current-7527c0acca079f57549538e49135a91ef87b9389.json",
+      "persistence": "local_dist",
+      "sha256": "02515b1d31dbb4628ee6234b40c6e3499b7b865feea43f04922c6782624ba17a"
+    },
+    {
+      "path": "dist/phase7/replacement/runtime-image-inventory-7527c0acca079f57549538e49135a91ef87b9389.json",
+      "persistence": "local_dist",
+      "sha256": "bef8c18a3a68f37d28dd5045d187a2cbe24f0222898eea8cae9cf39dd1dd9619"
+    },
+    {
+      "path": "dist/phase7/replacement/runtime-image-smoke-7527c0acca079f57549538e49135a91ef87b9389.json",
+      "persistence": "local_dist",
+      "sha256": "6deda6f50792566fb81b1d6135482f17822b1566bc9699e9819af37bc31d112b"
+    },
+    {
+      "path": "dist/phase7/replacement/clean-compose-7527c0acca079f57549538e49135a91ef87b9389.json",
+      "persistence": "local_dist",
+      "sha256": "620f5e8e0b765091616d87f486130712fd3c793bb0f048131bace0b0de5901a3"
+    },
+    {
+      "path": "dist/phase7/replacement/browser-current-19-7527c0acca079f57549538e49135a91ef87b9389.json",
+      "persistence": "local_dist",
+      "sha256": "67dbf3adbf0ffbc9eaa31b4689a7466dc802378c28cc4218053d2e5fcca50148"
+    },
+    {
+      "path": "dist/phase7/replacement/rag-dev30-7527c0acca079f57549538e49135a91ef87b9389.json",
+      "persistence": "local_dist",
+      "sha256": "5746b3765decba2205759cdd372d15d444dbd1b61761a5e92ae672f1b5bc63ae"
+    },
+    {
+      "path": "dist/phase7/replacement/ie-f06-7527c0acca079f57549538e49135a91ef87b9389.json",
+      "persistence": "local_dist",
+      "sha256": "2a359febbc5f7e60240d8831ed9477589e53fff6112b2c5e32753c5e7bd5f380"
+    },
+    {
+      "path": "dist/phase7/replacement/ie-j12-7527c0acca079f57549538e49135a91ef87b9389.json",
+      "persistence": "local_dist",
+      "sha256": "11734838da0eb37faae242bfa9f3d860a72f03e8f0a8b87dd91a418280e6d1d5"
+    }
+  ],
+  "candidate_sha": "7527c0acca079f57549538e49135a91ef87b9389",
+  "candidate_tree_sha": "b9d96a0dd984cf8874a00f8f00172ac6f34db4be",
+  "claims": {
+    "cross_encoder_executed": false,
+    "evaluation_v6_holdout_accessed": false,
+    "final_definition_of_done_complete": false,
+    "historical_gate_or_parity_executed": false,
+    "hosted_ci_green": true,
+    "human_acceptance_complete": false,
+    "ie_f06_passed": true,
+    "ie_j12_passed": true,
+    "ie_p16_complete_matrix_pass": false,
+    "ie_p16_consumed": true,
+    "ie_p16_estimated_cost_observed_complete": false,
+    "ie_p16_failed_scenario_provider_usage_observed": false,
+    "phase7_complete": false,
+    "rag_dev30_passed": true,
+    "real_external_effect_executed": false,
+    "real_provider_executed": true,
+    "replacement_authorization_consumed": true,
+    "replacement_confirmation_gate_active": false,
+    "subsequent_clean_candidate_deepseek_authorized": true
+  },
+  "contract_version": "supportguard-interview-v2-phase7-replacement-validation.v1",
+  "hosted_ci": {
+    "classification": "completed_success",
+    "hosted_execution_started": true,
+    "job_count": 5,
+    "local_execution_used_as_substitute": false,
+    "release_blocker": false,
+    "run_id": 31664415941,
+    "run_url": "https://github.com/Teddy-creator/SupportGuard-Interview/actions/runs/31664415941",
+    "total_step_count": 76
+  },
+  "origin_main_sha": "7527c0acca079f57549538e49135a91ef87b9389",
+  "recorded_at": "2026-08-13T05:35:15+00:00",
+  "results": {
+    "cleanup": {
+      "builder_residual_count": 0,
+      "image_residual_count": 0,
+      "mcp_child_residual_count": 0,
+      "scenario_container_residual_count": 0,
+      "scenario_network_residual_count": 0,
+      "scenario_volume_residual_count": 0,
+      "status": "passed"
+    },
+    "clean_compose": {
+      "embedding_contract": "cohesive",
+      "mcp_child_count": 4,
+      "services": {
+        "api": 1,
+        "dispatcher": 1,
+        "frontend": 1,
+        "postgres": 1,
+        "reconciler": 1,
+        "redis": 1,
+        "worker": 2
+      },
+      "status": "passed"
+    },
+    "deterministic_and_current": {
+      "backend_errors": 0,
+      "backend_expected_skips": 224,
+      "backend_failures": 0,
+      "backend_tests": 1576,
+      "browser_flaky": 0,
+      "browser_skipped": 0,
+      "browser_tests": 19,
+      "frontend_tests": 81,
+      "integration_database_disposition": "dropped",
+      "integration_tests": 225,
+      "mcp_hermetic_tests": 6,
+      "mcp_orphans": 0,
+      "mcp_postgres_tests": 11,
+      "status": "passed"
+    },
+    "ie_f06": {
+      "denominator": 6,
+      "failed": 0,
+      "passed": 6,
+      "status": "passed"
+    },
+    "ie_j12": {
+      "denominator": 12,
+      "failed": 0,
+      "passed": 12,
+      "status": "passed",
+      "three_primary_web_demos_included": true
+    },
+    "ie_p16": {
+      "completion_tokens": 14710,
+      "denominator": 16,
+      "executed": 16,
+      "failed": 3,
+      "diagnostic_limitations": [
+        "The generic exception fallback recorded zero provider usage because no database usage snapshot was available; actual provider usage for IE-P14, IE-P15, and IE-P16 is unknown.",
+        "The receipt did not record which HTTP phase or endpoint raised ReadTimeout.",
+        "The receipt total tokens and estimated cost exclude any unobserved usage from the failed scenarios."
+      ],
+      "failed_scenarios": [
+        {
+          "failure": "scenario_execution_failed:ReadTimeout",
+          "id": "IE-P14",
+          "provider_usage_observed": false,
+          "receipt_provider_usage": {
+            "completion_tokens": 0,
+            "prompt_tokens": 0
+          }
+        },
+        {
+          "failure": "scenario_execution_failed:ReadTimeout",
+          "id": "IE-P15",
+          "provider_usage_observed": false,
+          "receipt_provider_usage": {
+            "completion_tokens": 0,
+            "prompt_tokens": 0
+          }
+        },
+        {
+          "failure": "scenario_execution_failed:ReadTimeout",
+          "id": "IE-P16",
+          "provider_usage_observed": false,
+          "receipt_provider_usage": {
+            "completion_tokens": 0,
+            "prompt_tokens": 0
+          }
+        }
+      ],
+      "passed": 13,
+      "preflight_upper_bound_cny": "2.880",
+      "prompt_tokens": 248121,
+      "receipt_estimated_max_actual_cny": "0.277541",
+      "safety_pass": false,
+      "semantic_pass": false,
+      "status": "failed_at_confirmation_gate"
+    },
+    "package_and_runtime_image": {
+      "forbidden_runtime_reachability_count": 0,
+      "runtime_distribution_file_count": 224,
+      "runtime_graph_edge_count": 2755,
+      "runtime_graph_module_count": 205,
+      "runtime_graph_scc_count": 0,
+      "runtime_image_inventory": "passed",
+      "runtime_image_smoke": "passed",
+      "runtime_wheel_record_count": 220,
+      "validation_wheel_record_count": 19,
+      "wheel_record_overlap_count": 0
+    },
+    "rag_dev30": {
+      "citation_binding": "115/115",
+      "conflict_and_unanswerable_safe": "10/10",
+      "eligible_mrr_at_10": 0.7537037037037037,
+      "eligible_recall_at_5": "26/30",
+      "status": "passed",
+      "unsupported_material_claims": "0/115"
+    }
+  },
+  "scope": "phase7-single-authorized-replacement-candidate",
+  "source_identity": {
+    "head_equals_origin_main": true,
+    "source_file_count": 573,
+    "source_state_sha256": "d30d4316ec798985afd4958e61e311376dbe700df4f3004fe04e552f135f29c1",
+    "worktree_state": "clean"
+  },
+  "status": "failed_at_confirmation_gate"
+}

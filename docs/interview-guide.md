@@ -163,12 +163,16 @@ b203 因而先补齐独立事件 Reader；随后 MCP 纵向切片证明工单详
 Formal 或 Journey Acceptance
 通过证据。
 
-**当前 v2.0 证明到哪里？** Phase 0～6 已完成且 Archive 可恢复。Phase 7 Candidate
-`b132c395c2edf2d7d72477dc9051bffc3d7f4024` 已通过 RAG Dev30、IE-F06、IE-J12、完整确定性 / 集成 /
-MCP / Browser / Clean Compose 证明和 Hosted CI Run `31633888433`；但它的一次性真实 DeepSeek
-IE-P16 仅为 `11/16`。安全合同与零残留通过，语义合同失败，最高实际估算费用为 `¥0.349337`。
-该 Receipt 不可改写、旧 SHA 不重跑；用户只授权一个新 Candidate 的通用修复。因此不能宣称
-Phase 7、Human Acceptance、Holdout、Cross-Encoder 或最终 Definition of Done 已完成。
+**当前 v2.0 证明到哪里？** Phase 0～6 已完成且 Archive 可恢复。首个 Phase 7 Candidate
+`b132c395c2edf2d7d72477dc9051bffc3d7f4024` 的一次性 IE-P16 为 `11/16`。唯一获批 replacement
+`7527c0acca079f57549538e49135a91ef87b9389` 已通过 RAG Dev30、IE-F06、IE-J12、完整确定性 / 集成 /
+MCP / Browser / Clean Compose、包与镜像边界及 Hosted CI Run `31664415941`；但它的一次性真实
+DeepSeek IE-P16 为 `13/16`。IE-P14/P15/P16 均为 `ReadTimeout`；异常兜底因未取得数据库用量
+快照而写入 `0` token，所以三项实际 Provider 用量与超时 HTTP 阶段未知。已观测总量为
+`248121 / 14710` token、对应 Receipt 估算费用为 `¥0.277541`，实际总用量和费用可能更高；零残留
+通过。两份 Receipt 均不可改写、
+两个 SHA 均不得重跑；用户已持续授权后续 clean Candidate 的必要真实 DeepSeek 验证。因此不能
+宣称 Phase 7、Human Acceptance、Holdout、Cross-Encoder 或最终 Definition of Done 已完成。
 
 **正式 37 项之前如何避免“手写我都测过了”？** 仓库固定八条 Preflight Lane，并要求
 clean `HEAD == origin/main`、固定 Matrix/Manifest Hash、真实 PostgreSQL/RLS 与 MCP

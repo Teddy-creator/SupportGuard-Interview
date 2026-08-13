@@ -26,8 +26,13 @@ production-shaped versus actually production-integrated.
    `docs/release-verification.md`. Phase 7 Candidate `b132c395c2edf2d7d72477dc9051bffc3d7f4024`
    passed its zero-cost proof set and Hosted CI, then its one allowed complete IE-P16 finished `11/16` and
    entered the Confirmation Gate. On 2026-08-13 the user authorized exactly one replacement Candidate;
-   the failed Receipt, cost and clean teardown remain immutable, and no second IE-P16 is allowed until the
-   replacement is a new clean SHA with all prerequisite proofs green. This constitution never upgrades
+   replacement `7527c0acca079f57549538e49135a91ef87b9389` passed all prerequisite proofs and Hosted CI,
+   then its one complete IE-P16 finished `13/16` with three `ReadTimeout` execution failures and again
+   stopped at the Confirmation Gate. Both failed Receipts, costs and clean teardowns are immutable. The
+   replacement authorization is consumed and neither consumed SHA may be rerun. On 2026-08-13 the user then
+   granted standing authorization for subsequent clean Candidates and necessary real DeepSeek validation,
+   without another per-run confirmation. This does not authorize selective reruns, Holdout, Cross-Encoder,
+   historical Gate / Parity, or spend above the existing CNY 30 gate. This constitution never upgrades
    historical or partial evidence into a final Definition of Done claim.
 8. On 2026-08-12 the user explicitly authorized the history-free, MIT-licensed public mirror
    `Teddy-creator/SupportGuard-Interview`. This authorization does not publish or modify the private canonical
@@ -106,8 +111,9 @@ Phase item may be silently deferred.
 - Freeze IE-P16, IE-F06, IE-J12 and RAG Dev30 before executing them.
 - IE-P16 and IE-F06 have separate denominators and claims. Fault injection is not Provider-quality evidence.
 - One complete IE-P16 is allowed per Candidate. Preserve all attempts, usage, failures and cleanup.
-- Any IE-P16 failure stops at a Confirmation Gate. A replacement Candidate requires explicit user approval
-  and again stops if it fails.
+- Any IE-P16 failure consumes that Candidate and must be preserved without selective reruns. The user's
+  standing authorization permits a subsequent clean, generally fixed Candidate and its one complete IE-P16
+  after all prerequisite proofs pass; it does not permit rerunning a consumed SHA.
 - Do not tune against Evaluation v6 Holdout. Public Dev regression is not independent generalization proof.
 - Pause before external API spend is expected to exceed CNY 30.
 
@@ -143,7 +149,7 @@ Pause and ask the user when:
 - a required Secret, account, permission, or external service is unavailable;
 - Hosted CI is zero-step or blocked by Billing, Spending Limit, Actions permission, or Runner quota;
 - expected external API spend exceeds CNY 30;
-- any complete IE-P16 fails or a replacement Candidate would be needed;
+- rerunning a consumed Candidate or selectively rerunning failed IE-P16 scenarios would be required;
 - Evaluation v6 Holdout, Cross-Encoder, historical Gate / Parity, or invocation eight would be accessed;
 - existing user work cannot be preserved safely;
 - an irreversible external action is required;

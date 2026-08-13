@@ -5,14 +5,17 @@
 
 ## 当前状态
 
-- 当前阶段：Phase 7 验证与作者移交；首个真实 Provider Candidate 已失败，用户已批准恰好一个 replacement Candidate，尚未完成；
+- 当前阶段：Phase 7 通用超时诊断与修复；两个已消费 Candidate 均已完整执行并失败，尚未完成；
 - 最近已完成阶段：Phase 6 受控 Pruning 与 Authority Transition；
-- 最近完整执行 Candidate：`b132c395c2edf2d7d72477dc9051bffc3d7f4024`，Tree
-  `78ed357459173ebb5354f24396fb42e96a22a98d`，执行时 `HEAD == origin/main` 且 Worktree clean；
-- Replacement：用户于 2026-08-13 授权一个新 Candidate；当前通用修复尚未完成 clean Candidate-bound 前置证明，因此未声明 replacement 结果；
+- 最近完整执行 Candidate：`7527c0acca079f57549538e49135a91ef87b9389`，Tree
+  `b9d96a0dd984cf8874a00f8f00172ac6f34db4be`，执行时 `HEAD == origin/main` 且 Worktree clean；
+- Replacement：`7527c0ac...` 已消费且不得重跑；其全部前置证明与 Hosted CI 通过，但一次性
+  IE-P16 为 `13/16`。用户于 2026-08-13 随后持续授权后续 clean Candidate 的必要真实 DeepSeek
+  验证，不再要求逐次确认；每个新 Candidate 仍只允许一次完整矩阵；
 - Archive：annotated Tag `archive/interview-v2.0-baseline` 已远端验证并恢复演练通过；
-- Hosted CI：Candidate `b132c395...` 的 Run `31633888433` 已完成并通过；
-- IE-P16：Candidate `b132c395...` 的唯一完整执行为 `11/16`，安全通过、语义失败、清理通过；
+- Hosted CI：replacement Candidate `7527c0ac...` 的 Run `31664415941` 已完成并通过；
+- IE-P16：首个 Candidate `b132c395...` 为 `11/16`；replacement `7527c0ac...` 为 `13/16`，
+  IE-P14/P15/P16 均为 `ReadTimeout`，正式 Safety/Semantic Claim 均失败，清理通过；
 - Phase 7、最终工程 Definition of Done 与 Human Acceptance：未完成。
 
 ## 历史证据（只读，不可继承）
@@ -189,7 +192,41 @@ Phase 7 Candidate `b132c395c2edf2d7d72477dc9051bffc3d7f4024`（Tree
 `validation/evidence/interview_v2/phase7/attempts/ie-p16-b132c395c2edf2d7d72477dc9051bffc3d7f4024.json`，
 SHA-256 `68cf3f1d4c9bb8ade2fdca5b7b5d404cef3dc5822d751e34fbc416d245ec6bfa`。该 Receipt 不可改写，
 旧 SHA 不得重跑。用户只授权一个 replacement Candidate；只有新 SHA 的零成本前置证明和 Hosted
-CI 全绿后，才允许该新 SHA 消费一次完整 IE-P16。
+CI 全绿后，才允许该新 SHA 消费一次完整 IE-P16。该历史授权随后已消费；用户之后另行授予后续
+clean Candidate 与必要真实 DeepSeek 验证的持续授权。
+
+唯一获批 replacement Candidate `7527c0acca079f57549538e49135a91ef87b9389`（Tree
+`b9d96a0dd984cf8874a00f8f00172ac6f34db4be`）已执行以下证据：
+
+- Package Boundary 为 `candidate_eligible=true`；Runtime / Validation wheel RECORD 为 `220 / 19`、
+  零重叠，Runtime Import Graph 为 `205` Modules / `2755` Edges / `0` SCC / `0` Forbidden Reachability；
+- Backend `1576`、失败/错误 `0`、预期 Skip `224`；Frontend Lint、`81/81` 与 Build 通过；
+- Current Integration `225/225`，隔离数据库删除；MCP Hermetic `6/6` + PostgreSQL `11/11`，
+  orphan `0`；Browser `19/19`，Flaky/Skip/Unexpected 均为 `0`；
+- Runtime-only 镜像 Inventory / Smoke 通过，Runtime Distribution `224` files、零 Validation / Test
+  泄漏，Revision 精确绑定 Candidate；Clean Compose 为 8 个实例、2 Workers、4 MCP Children，
+  Embedding / Index Contract cohesive；
+- RAG Dev30：eligible Recall@5 `26/30`、MRR@10 `0.753703...`、Citation Binding `115/115`、
+  Conflict / Unanswerable Safety `10/10`、Unsupported Material Claim `0/115`；
+- IE-F06 `6/6`；IE-J12 `12/12` 且包含三条主 Web Demo；
+- Hosted CI Run `31664415941` 为 `completed_success`，5 个冻结 Job 共 `76` 步，全部成功；
+- 同一 SHA 唯一一次真实 DeepSeek Native Tool Calling IE-P16 完整执行 `16` 条：通过 `13`、失败
+  `3`。IE-P14、IE-P15、IE-P16 均记录 `scenario_execution_failed:ReadTimeout`。异常兜底因没有
+  数据库用量快照而在原始 Receipt 写入 `0 / 0`，这不是三项实际 Provider 零调用证明；三项实际
+  用量与超时 HTTP 阶段均未知。因此正式 Safety Pass 与 Semantic Pass 均为 `false`。真实 external
+  effect 为 `0`，已观测 Prompt / Completion Token 总量为 `248121 / 14710`、对应 Receipt 估算费用
+  `¥0.277541`，实际总用量和费用可能更高；所有场景 Project / Container / Network / Volume、具名
+  Builder、镜像与 MCP 子进程残留均为 `0`。
+
+replacement IE-P16 Receipt：
+`validation/evidence/interview_v2/phase7/attempts/ie-p16-7527c0acca079f57549538e49135a91ef87b9389.json`，
+SHA-256 `450a121f1bd77b8dd0beb9cb09a116ad0ba1993aee48f31917ce79f5f7f68e58`。Hosted Receipt：
+`validation/evidence/interview_v2/phase7/hosted-ci-7527c0acca079f57549538e49135a91ef87b9389.json`，
+SHA-256 `090e253cc4e2eb86167e240dc07a50bd18ad00d5aa6ce66562cfd95d72357eb0`。聚合 Receipt：
+`validation/evidence/interview_v2/phase7/phase7-replacement-validation-receipt.v1.json`，SHA-256
+`f470c557f61d17b6abf3866f2d56111b9a2c33e5d26978f8b03fbc9c144c6150`。三份 Receipt 均绑定精确
+Candidate / Tree；两个已消费 SHA 均不得重跑或选择性重跑失败项。用户已持续授权后续 clean
+Candidate 的通用修复与必要真实 DeepSeek 验证。
 
 ## Hosted CI 历史处置与当前执行
 
@@ -197,6 +234,13 @@ Phase 7 Candidate `b132c395c2edf2d7d72477dc9051bffc3d7f4024` 的 Hosted CI Run
 <https://github.com/Teddy-creator/SupportGuard-Interview/actions/runs/31633888433> 已完成且结论为
 `success`；`hosted_execution_started=true`、`local_execution_used_as_substitute=false`、
 `release_blocker=false`。这关闭了该 Candidate 的 Hosted 前置条件，但不覆盖其 IE-P16 语义失败。
+
+Phase 7 replacement Candidate `7527c0acca079f57549538e49135a91ef87b9389` 的 Hosted CI Run
+<https://github.com/Teddy-creator/SupportGuard-Interview/actions/runs/31664415941> 已完成且结论为
+`success`；冻结 5 个 Job（backend / integration / frontend / product-e2e / image）共执行 `76` 步，
+全部成功。分类为 `completed_success`，并明确 `hosted_execution_started=true`、
+`local_execution_used_as_substitute=false`、`release_blocker=false`。这关闭了 replacement 的 Hosted
+前置条件，但不覆盖其 IE-P16 `13/16` 失败。
 
 - Run URL：<https://github.com/Teddy-creator/SupportGuard/actions/runs/31512749202>；
 - Candidate：`72ea297e466d77b68a75f007f12bc0cdeabca41b`；
@@ -254,9 +298,8 @@ Phase 6 Hosted CI Run
 
 ## 当前尚未执行或尚未完成
 
-- replacement Candidate 的完整零成本证明、Clean Compose、Wheel / clean-environment、MCP 零孤儿进程与最终安全复验；
-- replacement Candidate 的 Hosted CI；
-- 仅当前两项都通过后，replacement Candidate 唯一一次完整 IE-P16；
+- Phase 7 正在诊断 replacement IE-P16 `13/16` 的三个 `ReadTimeout` 并形成通用修复；已消费 SHA
+  不会重跑，后续 clean Candidate 的必要真实 DeepSeek 验证已有持续授权；
 - 三条 Trace Walkthrough、30 个高频问答与用户 Human Acceptance；
 - Evaluation v6 Holdout、Cross-Encoder A/B、真实外部 Effect 与生产 SLA：不在 v2.0 范围内，
   未执行且不会宣称完成。
@@ -267,6 +310,7 @@ Phase 6 Hosted CI Run
 2. Hosted CI 必须保存 Run URL、Candidate SHA、Job 名称、步骤数与结论；本地运行不能替代；
 3. 零步骤的 Billing / Spending Limit / Actions 权限 / Runner 配额问题登记为外部 Release
    Blocker，不写成测试失败或测试通过；
-4. 完整 IE-P16 对每个 Candidate 恰好运行一次；失败即进入 Confirmation Gate；
+4. 完整 IE-P16 对每个 Candidate 恰好运行一次；失败即消费该 Candidate，后续只能由通用修复形成
+   新 clean SHA 后再运行完整矩阵；
 5. 最终 Candidate 必须绑定 Prompt、Provider Schema、Tool Schema、ActionSpec、Corpus / Index、
    Embedding、Seed、Migration Head 与 Git Tree Hash。

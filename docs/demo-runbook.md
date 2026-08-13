@@ -24,11 +24,12 @@ b207 只追加审批来源的 Origin 有界 Keyset 分页与问候标题的同�
 2,197 个历史文件的受控 Pruning、Archive 恢复、Test Disposition、8 份当前权威文档、双 wheel、
 Runtime-only 镜像、Hermetic Backend `1315/1315`、Current Integration `225/225`、MCP
 `6/6 + 10/10` 与 Frontend `81/81` 均通过，零残留清理完成。Phase 7 Candidate
-`b132c395c2edf2d7d72477dc9051bffc3d7f4024`
-随后通过 RAG Dev30、IE-F06、IE-J12、Clean Compose 与 Hosted CI Run `31633888433`，但其一次性
-真实 IE-P16 为 `11/16`。失败 Receipt、费用与清理均已保存；用户只授权一个 replacement
-Candidate，旧 SHA 不得重跑。这不代表 Phase 7、Human Acceptance、Holdout、Cross-Encoder 或
-最终 Definition of Done 已通过。
+`b132c395c2edf2d7d72477dc9051bffc3d7f4024` 的一次性真实 IE-P16 为 `11/16`。唯一获批 replacement
+`7527c0acca079f57549538e49135a91ef87b9389` 随后通过 RAG Dev30、IE-F06、IE-J12、Clean Compose、
+完整前置证明与 Hosted CI Run `31664415941`，但其一次性真实 IE-P16 为 `13/16`；IE-P14/P15/P16
+均为 `ReadTimeout`。两份失败 Receipt、费用与零残留清理均已保存，两个 SHA 都不得重跑。
+用户已持续授权后续 clean Candidate 的必要真实 DeepSeek 验证，但不授权选择性重跑已消费场景。
+这不代表 Phase 7、Human Acceptance、Holdout、Cross-Encoder 或最终 Definition of Done 已通过。
 升级到该 Head 仍不等于执行过
 下述 Journey。
 
@@ -199,8 +200,8 @@ Compose Project、Volume、临时镜像、Builder、Cache 和 MCP 子进程，�
 
 历史 Evaluation v6 的公开 Dev、Scorer、Materializer 与旧 Provider Receipt 已在 Phase 6 归档，
 不得从当前工作区继承其结论。Phase 7 的冻结 RAG Dev30、IE-F06 与 IE-J12 已由 Candidate
-`b132c395...` 消费并通过；同一 SHA 的 IE-P16 已消费且失败，不能重跑。replacement Candidate
-只能在新 SHA 上重新生成自己的完整证据。历史材料可通过 annotated Tag
+`b132c395...` 和 replacement `7527c0ac...` 分别消费并通过；两者各自唯一一次 IE-P16 均已消费
+且失败，不能重跑。后续 clean Candidate 与必要真实 DeepSeek 验证已有持续授权。历史材料可通过 annotated Tag
 `archive/interview-v2.0-baseline` 恢复，但不属于当前 Demo 验收命令。
 
 PostgreSQL MCP 分区使用 CI 同款 deterministic index fixture：先执行 `supportguard knowledge ingest --fixture`，再提供 `TEST_DATABASE_URL`、`MCP_READ_DATABASE_URL` 与 `MCP_ACTION_DATABASE_URL`。真实 Compose Demo 则使用默认 E5 index；两种 embedding contract 不得混用。

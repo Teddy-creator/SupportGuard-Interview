@@ -86,7 +86,7 @@ flowchart LR
 - Evaluation v6 已完成 Contract、公开 Dev 60、Scorer、Materializer、Lineage/Non-leak Preflight 与 Custodian Allowed-input Packet；独立私有 Holdout Receipt 尚未取得，因此 `active_dataset=null`，`eval dev` / `eval real` 必须 fail closed。
 - Cross-Encoder 目前未实现、默认关闭。只有独立 Custodian 冻结 v6 后，才允许在同一冻结 Dev 上做真实查询时 A/B；RRF 不被称为 Reranker。
 - v2.0 Phase 6 Candidate `30254587585fa2169cab071a926c501e06dac9a6` 已完成受控 Pruning：2,197 个历史文档、Migration、评测载体、报告、测试 Carrier 与 Validation Owner 已从当前工作区迁出，仍由 Archive Tag、Source Commit 和 SHA-256 Manifest 可恢复；当前只保留 8 份权威文档。Hermetic Backend `1315/1315`、Current Integration `225/225`、MCP `6/6 + 10/10`、Frontend `81/81`、双 wheel 边界与 Runtime-only 镜像均通过，具名资源清理残留为 `0`。当前进入 Phase 7，但 Hosted CI Run `31573174199` 仍因 Payment / Spending Limit 为 5 个 Job、0 步骤的外部阻塞，Phase 7 与最终 DoD 未完成。
-- Phase 7 Candidate `b132c395c2edf2d7d72477dc9051bffc3d7f4024` 的 RAG Dev30、IE-F06、IE-J12、完整确定性/集成/MCP/浏览器/Clean Compose 证明与 Hosted CI Run `31633888433` 均通过；随后该 SHA 唯一一次真实 DeepSeek IE-P16 为 `11/16`，安全断言通过但语义断言失败。完整失败 Receipt、最高实际估算费用 `¥0.349337` 与零残留清理已保存。用户已授权恰好一个新 Candidate 的通用修复；旧 SHA 不会重跑，Phase 7 与最终 DoD 仍未完成。
+- Phase 7 首个 Candidate `b132c395c2edf2d7d72477dc9051bffc3d7f4024` 的一次性真实 DeepSeek IE-P16 为 `11/16`。replacement Candidate `7527c0acca079f57549538e49135a91ef87b9389`（Tree `b9d96a0dd984cf8874a00f8f00172ac6f34db4be`）随后通过 RAG Dev30、IE-F06 `6/6`、IE-J12 `12/12`、完整确定性/集成/MCP/浏览器/Clean Compose、双 wheel、Runtime-only 镜像和 Hosted CI Run `31664415941`；但它唯一一次 IE-P16 为 `13/16`，IE-P14/P15/P16 均以 `ReadTimeout` 执行失败，正式 Safety/Semantic Claim 均为 false。异常兜底虽然在 Receipt 中写入 `0` token，但没有取得数据库用量快照，因此三项实际 Provider 用量未知；Receipt 已观测总量为 `248121 / 14710` token、对应估算费用 `¥0.277541`，实际总用量和费用可能更高。真实外部 Effect 和零残留清理均为 `0`。两个 SHA 均已消费且不得重跑；用户已持续授权后续 clean Candidate 的必要 DeepSeek 验证，Phase 7 与最终 DoD 仍未完成。
 
 </details>
 
@@ -113,12 +113,13 @@ uv run python scripts/validate_interview_docs.py
 ```
 
 Phase 7 Runner 只接受 clean `HEAD == origin/main` 的精确 Candidate，并为同一 SHA 的完整 IE-P16
-执行资格 fail closed。`b132c395...` 已消费且不得重跑；当前通用修复只有形成新 SHA、完成全部
-零成本前置证明并取得 Hosted green 后，才可消费用户授权的唯一一次 replacement IE-P16。
+执行资格 fail closed。`b132c395...` 与 replacement `7527c0ac...` 均已消费且不得重跑；后者已在
+前置证明和 Hosted green 后完整执行为 `13/16`。用户已持续授权后续 clean Candidate 的必要真实
+DeepSeek 验证；每个新 Candidate 仍只能执行一次完整矩阵，且不得选择性重跑失败项。
 
 ## 阅读入口
 
-- [Interview Edition Simplification v2.0](docs/interview-edition-simplification-v2.0.md)：已批准并冻结的当前范围、权威迁移、Phase 0～7、复杂度预算与作者验收标准；Phase 0～6 已完成，Phase 7 首个真实 Provider Candidate 已如实失败并进入获批的一次 replacement 流程，最终 DoD 未完成。
+- [Interview Edition Simplification v2.0](docs/interview-edition-simplification-v2.0.md)：已批准并冻结的当前范围、权威迁移、Phase 0～7、复杂度预算与作者验收标准；Phase 0～6 已完成，Phase 7 的两个已消费 Candidate 均已如实失败，当前继续通用超时诊断与修复，最终 DoD 未完成。
 - [面试讲解与 Code Map](docs/interview-guide.md)：15 分钟演示顺序、源码纵向入口、常见追问与取舍。
 - [架构](docs/architecture.md)：状态、权限、Agent/MCP、RAG、HITL、Queue 和多租户边界。
 - [Demo Runbook](docs/demo-runbook.md)：三条主 Demo、页面与数据库终态检查。
@@ -129,4 +130,4 @@ Phase 6 已把历史文档、旧 Migration、旧评测载体和旧测试 Carrier
 annotated Tag `archive/interview-v2.0-baseline` 或 Phase 6 Manifest 记录的 source commit 恢复，
 不会被当前导航重新当作权威。
 
-当前唯一的新工作权威是已批准并冻结的 [Interview Edition Simplification v2.0](docs/interview-edition-simplification-v2.0.md)，操作与安全边界由 [`AGENTS.md`](AGENTS.md) 约束。用户已授权 Phase 0～7；Phase 7 Candidate `b132c395c2edf2d7d72477dc9051bffc3d7f4024` 的零成本证明与 Hosted CI 已通过，但其唯一一次 IE-P16 为 `11/16`，因此完整 Receipt 被保留并停在 Confirmation Gate。用户随后只授权一个 replacement Candidate，当前尚未对替代 SHA 声明任何结果；最终 Definition of Done、Human Acceptance、Holdout 与 Cross-Encoder 均未完成。精简前基线固定为 `6255c8c0eb0dcedd877bfbf16a9695dad2a0c9eb`，历史 `e68715f...` 的 `37/37` 仍只绑定 b205。
+当前唯一的新工作权威是已批准并冻结的 [Interview Edition Simplification v2.0](docs/interview-edition-simplification-v2.0.md)，操作与安全边界由 [`AGENTS.md`](AGENTS.md) 约束。用户已授权 Phase 0～7；首个 Candidate `b132c395c2edf2d7d72477dc9051bffc3d7f4024` 的 IE-P16 为 `11/16`，replacement `7527c0acca079f57549538e49135a91ef87b9389` 的零成本证明与 Hosted CI 全绿但一次性 IE-P16 为 `13/16`。两份 Receipt 均被保留、两个 SHA 均不得重跑；后续 clean Candidate 与必要真实 DeepSeek 验证已有持续授权。最终 Definition of Done、Human Acceptance、Holdout 与 Cross-Encoder 均未完成。精简前基线固定为 `6255c8c0eb0dcedd877bfbf16a9695dad2a0c9eb`，历史 `e68715f...` 的 `37/37` 仍只绑定 b205。

@@ -57,6 +57,40 @@ PHASE7_FAILED_P16_RECEIPT = Path(
 PHASE7_FAILED_P16_RECEIPT_SHA256: Final = (
     "68cf3f1d4c9bb8ade2fdca5b7b5d404cef3dc5822d751e34fbc416d245ec6bfa"
 )
+PHASE7_REPLACEMENT_CANDIDATE: Final = "7527c0acca079f57549538e49135a91ef87b9389"
+PHASE7_REPLACEMENT_TREE: Final = "b9d96a0dd984cf8874a00f8f00172ac6f34db4be"
+PHASE7_REPLACEMENT_P16_RECEIPT = Path(
+    "validation/evidence/interview_v2/phase7/attempts/"
+    "ie-p16-7527c0acca079f57549538e49135a91ef87b9389.json"
+)
+PHASE7_REPLACEMENT_P16_RECEIPT_SHA256: Final = (
+    "450a121f1bd77b8dd0beb9cb09a116ad0ba1993aee48f31917ce79f5f7f68e58"
+)
+PHASE7_REPLACEMENT_HOSTED_RECEIPT = Path(
+    "validation/evidence/interview_v2/phase7/"
+    "hosted-ci-7527c0acca079f57549538e49135a91ef87b9389.json"
+)
+PHASE7_REPLACEMENT_HOSTED_RECEIPT_SHA256: Final = (
+    "090e253cc4e2eb86167e240dc07a50bd18ad00d5aa6ce66562cfd95d72357eb0"
+)
+PHASE7_REPLACEMENT_VALIDATION_RECEIPT = Path(
+    "validation/evidence/interview_v2/phase7/phase7-replacement-validation-receipt.v1.json"
+)
+PHASE7_REPLACEMENT_VALIDATION_RECEIPT_SHA256: Final = (
+    "f470c557f61d17b6abf3866f2d56111b9a2c33e5d26978f8b03fbc9c144c6150"
+)
+PHASE7_REPLACEMENT_USAGE_LIMITATION: Final = (
+    "The generic exception fallback recorded zero provider usage because no database "
+    "usage snapshot was available; actual provider usage for IE-P14, IE-P15, and "
+    "IE-P16 is unknown."
+)
+PHASE7_REPLACEMENT_TIMEOUT_LIMITATION: Final = (
+    "The receipt did not record which HTTP phase or endpoint raised ReadTimeout."
+)
+PHASE7_REPLACEMENT_COST_LIMITATION: Final = (
+    "The receipt total tokens and estimated cost exclude any unobserved usage from "
+    "the failed scenarios."
+)
 TEST_DISPOSITION = Path("validation/contracts/interview_v2/test-disposition.v1.json")
 _MARKDOWN_LINK = re.compile(r"\[[^\]]+\]\(([^)]+)\)")
 
@@ -111,8 +145,15 @@ def validate() -> dict[str, object]:
     _validate_markdown_links(tracked_docs)
     for raw_path in CURRENT_DOCS:
         content = (ROOT / raw_path).read_text(encoding="utf-8")
-        if "Phase 7" not in content or PHASE7_FAILED_CANDIDATE not in content:
+        if (
+            "Phase 7" not in content
+            or PHASE7_FAILED_CANDIDATE not in content
+            or PHASE7_REPLACEMENT_CANDIDATE not in content
+        ):
             raise RuntimeError(f"current_documentation_phase_identity_missing:{raw_path}")
+        authorization_marker = "standing authorization" if raw_path == "AGENTS.md" else "持续授权"
+        if authorization_marker not in content:
+            raise RuntimeError(f"current_documentation_provider_authorization_missing:{raw_path}")
 
     failed_p16_path = ROOT / PHASE7_FAILED_P16_RECEIPT
     if _sha256(failed_p16_path) != PHASE7_FAILED_P16_RECEIPT_SHA256:
@@ -131,6 +172,111 @@ def validate() -> dict[str, object]:
         or failed_p16.get("claims", {}).get("cleanup_pass") is not True
     ):
         raise RuntimeError("phase7_failed_p16_receipt_semantics_mismatch")
+
+    replacement_p16_path = ROOT / PHASE7_REPLACEMENT_P16_RECEIPT
+    replacement_hosted_path = ROOT / PHASE7_REPLACEMENT_HOSTED_RECEIPT
+    replacement_validation_path = ROOT / PHASE7_REPLACEMENT_VALIDATION_RECEIPT
+    if _sha256(replacement_p16_path) != PHASE7_REPLACEMENT_P16_RECEIPT_SHA256:
+        raise RuntimeError("phase7_replacement_p16_receipt_hash_mismatch")
+    if _sha256(replacement_hosted_path) != PHASE7_REPLACEMENT_HOSTED_RECEIPT_SHA256:
+        raise RuntimeError("phase7_replacement_hosted_receipt_hash_mismatch")
+    if _sha256(replacement_validation_path) != PHASE7_REPLACEMENT_VALIDATION_RECEIPT_SHA256:
+        raise RuntimeError("phase7_replacement_validation_receipt_hash_mismatch")
+
+    replacement_p16 = _load_json(replacement_p16_path)
+    failed_results = [
+        result for result in replacement_p16.get("results", []) if result.get("passed") is not True
+    ]
+    if (
+        replacement_p16.get("schema") != "supportguard.interview_v2.ie_p16_receipt.v1"
+        or replacement_p16.get("candidate", {}).get("candidate_sha") != PHASE7_REPLACEMENT_CANDIDATE
+        or replacement_p16.get("candidate", {}).get("git_tree_sha") != PHASE7_REPLACEMENT_TREE
+        or replacement_p16.get("denominator") != 16
+        or replacement_p16.get("executed") != 16
+        or replacement_p16.get("passed") != 13
+        or replacement_p16.get("failed") != 3
+        or replacement_p16.get("claims", {}).get("safety_pass") is not False
+        or replacement_p16.get("claims", {}).get("semantic_pass") is not False
+        or replacement_p16.get("claims", {}).get("cleanup_pass") is not True
+        or [result.get("id") for result in failed_results] != ["IE-P14", "IE-P15", "IE-P16"]
+        or any(
+            result.get("failures") != ["scenario_execution_failed:ReadTimeout"]
+            or result.get("provider_usage") != {"completion_tokens": 0, "prompt_tokens": 0}
+            or result.get("cleanup", {}).get("clean") is not True
+            for result in failed_results
+        )
+    ):
+        raise RuntimeError("phase7_replacement_p16_receipt_semantics_mismatch")
+
+    replacement_hosted = _load_json(replacement_hosted_path)
+    if (
+        replacement_hosted.get("candidate_sha") != PHASE7_REPLACEMENT_CANDIDATE
+        or replacement_hosted.get("run_id") != 31664415941
+        or replacement_hosted.get("classification") != "completed_success"
+        or replacement_hosted.get("conclusion") != "success"
+        or replacement_hosted.get("claims", {}).get("hosted_execution_started") is not True
+        or replacement_hosted.get("claims", {}).get("local_execution_used_as_substitute")
+        is not False
+        or replacement_hosted.get("claims", {}).get("release_blocker") is not False
+        or len(replacement_hosted.get("jobs", [])) != 5
+        or sum(job.get("step_count", -1) for job in replacement_hosted.get("jobs", [])) != 76
+        or any(job.get("conclusion") != "success" for job in replacement_hosted.get("jobs", []))
+    ):
+        raise RuntimeError("phase7_replacement_hosted_receipt_semantics_mismatch")
+
+    replacement_validation = _load_json(replacement_validation_path)
+    if (
+        replacement_validation.get("contract_version")
+        != "supportguard-interview-v2-phase7-replacement-validation.v1"
+        or replacement_validation.get("candidate_sha") != PHASE7_REPLACEMENT_CANDIDATE
+        or replacement_validation.get("candidate_tree_sha") != PHASE7_REPLACEMENT_TREE
+        or replacement_validation.get("status") != "failed_at_confirmation_gate"
+        or replacement_validation.get("claims", {}).get("phase7_complete") is not False
+        or replacement_validation.get("claims", {}).get("hosted_ci_green") is not True
+        or replacement_validation.get("claims", {}).get("ie_p16_consumed") is not True
+        or replacement_validation.get("claims", {}).get("ie_p16_complete_matrix_pass") is not False
+        or replacement_validation.get("claims", {}).get(
+            "ie_p16_failed_scenario_provider_usage_observed"
+        )
+        is not False
+        or replacement_validation.get("claims", {}).get("ie_p16_estimated_cost_observed_complete")
+        is not False
+        or replacement_validation.get("claims", {}).get("replacement_authorization_consumed")
+        is not True
+        or replacement_validation.get("claims", {}).get("replacement_confirmation_gate_active")
+        is not False
+        or replacement_validation.get("claims", {}).get(
+            "subsequent_clean_candidate_deepseek_authorized"
+        )
+        is not True
+        or replacement_validation.get("results", {}).get("ie_p16", {}).get("diagnostic_limitations")
+        != [
+            PHASE7_REPLACEMENT_USAGE_LIMITATION,
+            PHASE7_REPLACEMENT_TIMEOUT_LIMITATION,
+            PHASE7_REPLACEMENT_COST_LIMITATION,
+        ]
+        or replacement_validation.get("results", {})
+        .get("ie_p16", {})
+        .get("receipt_estimated_max_actual_cny")
+        != "0.277541"
+        or [
+            scenario.get("id")
+            for scenario in replacement_validation.get("results", {})
+            .get("ie_p16", {})
+            .get("failed_scenarios", [])
+        ]
+        != ["IE-P14", "IE-P15", "IE-P16"]
+        or any(
+            scenario.get("provider_usage_observed") is not False
+            or scenario.get("receipt_provider_usage")
+            != {"completion_tokens": 0, "prompt_tokens": 0}
+            for scenario in replacement_validation.get("results", {})
+            .get("ie_p16", {})
+            .get("failed_scenarios", [])
+        )
+        or replacement_validation.get("results", {}).get("cleanup", {}).get("status") != "passed"
+    ):
+        raise RuntimeError("phase7_replacement_validation_receipt_semantics_mismatch")
 
     phase5_path = ROOT / PHASE5_RECEIPT
     phase5_hosted_path = ROOT / PHASE5_HOSTED_RECEIPT
@@ -229,7 +375,17 @@ def validate() -> dict[str, object]:
         "phase7_failed_tree_sha": PHASE7_FAILED_TREE,
         "phase7_failed_p16_receipt_sha256": PHASE7_FAILED_P16_RECEIPT_SHA256,
         "phase7_failed_p16_result": "11/16",
-        "phase7_replacement_authorized": True,
+        "phase7_replacement_candidate_sha": PHASE7_REPLACEMENT_CANDIDATE,
+        "phase7_replacement_tree_sha": PHASE7_REPLACEMENT_TREE,
+        "phase7_replacement_p16_receipt_sha256": PHASE7_REPLACEMENT_P16_RECEIPT_SHA256,
+        "phase7_replacement_p16_result": "13/16",
+        "phase7_replacement_hosted_receipt_sha256": (PHASE7_REPLACEMENT_HOSTED_RECEIPT_SHA256),
+        "phase7_replacement_validation_receipt_sha256": (
+            PHASE7_REPLACEMENT_VALIDATION_RECEIPT_SHA256
+        ),
+        "phase7_replacement_authorization_consumed": True,
+        "phase7_confirmation_gate": False,
+        "phase7_subsequent_clean_candidate_deepseek_authorized": True,
         "active_dataset": evaluation["active_dataset"],
         "protected_holdout": evaluation["protected_holdout"],
         "cross_encoder": evaluation["cross_encoder"],

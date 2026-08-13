@@ -3,7 +3,7 @@
 - 文档类型：重大范围收敛、权威迁移与结构简化提案
 - 基线仓库：私有 canonical repository（公开镜像已对本机绝对路径做最小脱敏）
 - 基线提交：`6255c8c0eb0dcedd877bfbf16a9695dad2a0c9eb`
-- 状态：已批准并冻结；用户已于 2026-08-11 明确授权执行 Phase 0～7；Phase 0～6 已完成；Phase 7 Candidate `b132c395c2edf2d7d72477dc9051bffc3d7f4024` 的前置证明和 Hosted CI 已通过，但一次性 IE-P16 为 `11/16`；用户于 2026-08-13 只授权一个 replacement Candidate，最终 Definition of Done 未完成
+- 状态：已批准并冻结；用户已于 2026-08-11 明确授权执行 Phase 0～7；Phase 0～6 已完成；Phase 7 首个 Candidate `b132c395c2edf2d7d72477dc9051bffc3d7f4024` 的一次性 IE-P16 为 `11/16`；replacement `7527c0acca079f57549538e49135a91ef87b9389` 通过全部前置证明和 Hosted CI，但一次性 IE-P16 为 `13/16`；两个 SHA 均已消费且不得重跑，用户已于 2026-08-13 持续授权后续 clean Candidate 的必要真实 DeepSeek 验证，当前继续通用超时诊断与修复；最终 Definition of Done 未完成
 - 目标读者：项目作者、AI 应用 / Agent 开发岗位面试官、后续开发 Agent
 
 ## 1. 决策摘要
@@ -330,6 +330,11 @@ Phase 0 冻结 `IE-P01...IE-P16`：8 类真实 Production / Native 语义，每�
 Confirmation Gate。未经用户批准，不得创建 replacement Candidate 或再次运行完整 IE-P16；
 用户若批准 replacement，只授权一个新 Candidate，再次失败则再次停 Gate。
 
+后续执行授权：用户于 2026-08-13 在两份失败 Receipt 均保存后，明确授予后续 clean Candidate 与
+必要真实 DeepSeek 验证的持续授权，不再要求逐次确认。该授权只覆盖通用诊断、修复、完整前置证明
+及每个新 Candidate 的一次完整 IE-P16；已消费 SHA、失败单题、Holdout、Cross-Encoder、历史 Gate /
+Parity 与预计超过 CNY 30 的调用仍受原边界约束。
+
 ### 9.4 确定性故障矩阵
 
 冻结独立的 `IE-F01...IE-F06`，使用显式 `fault-injected` 标记，分母与 IE-P16 分离：Provider
@@ -459,6 +464,19 @@ SHA-256 为 `68cf3f1d4c9bb8ade2fdca5b7b5d404cef3dc5822d751e34fbc416d245ec6bfa`�
 Confirmation Gate；用户只批准一个新 Candidate 的通用修复，旧 SHA 不得重跑。Phase 7、Human
 Acceptance 与最终 DoD 继续保持未完成。
 
+Phase 7 replacement 执行记录：唯一获批 Candidate
+`7527c0acca079f57549538e49135a91ef87b9389`（Tree
+`b9d96a0dd984cf8874a00f8f00172ac6f34db4be`）通过 RAG Dev30、IE-F06 `6/6`、IE-J12 `12/12`、
+Backend `1576`、Current Integration `225`、MCP `6 + 11`、Frontend `81`、Browser `19`、Clean
+Compose、双 wheel、Runtime-only 镜像以及 Hosted CI Run `31664415941`。该 SHA 唯一一次完整
+IE-P16 执行 `16/16` 场景、通过 `13`、失败 `3`；IE-P14/P15/P16 均记录
+`scenario_execution_failed:ReadTimeout`。异常兜底在没有数据库用量快照时记录了 `0` token，因此
+三项实际 Provider 用量和超时所在 HTTP 阶段均未知；已观测总量为 `248121 / 14710` token，
+对应 Receipt 估算费用为 `¥0.277541`，实际总用量和费用可能更高。正式 Safety 与 Semantic Claim
+均未通过，真实 external effect 为 `0`，
+全部具名资源清理为零。replacement SHA 已消费且不得重跑；用户随后持续授权后续 clean Candidate
+的必要真实 DeepSeek 验证。Phase 7、Human Acceptance 与最终 DoD 继续保持未完成。
+
 ### Phase 7：验证与作者移交
 
 - 运行确定性、RAG Dev30、IE-F06、IE-P16、IE-J12、Hosted CI 和 Clean Compose；
@@ -536,7 +554,8 @@ Acceptance 与最终 DoD 继续保持未完成。
 - 改变三条 Demo、三类 Action 或核心安全规则；
 - Hosted CI 因 Billing、Spending Limit、Actions 权限或 Runner 配额未启动；
 - 真实 Provider 预计成本超过 CNY 30；
-- 任一完整 IE-P16 失败，等待用户决定是否授权恰好一个 replacement Candidate；
+- 任一完整 IE-P16 失败时消费该 Candidate 并保存证据；后续 clean Candidate 已有持续授权，但不得
+  重跑同一 SHA 或选择性重跑失败场景；
 - 访问 Evaluation v6 Holdout、运行 Cross-Encoder 或历史 Gate / Parity；
 - 将 Interview Edition 设置为默认展示版本；
 - 全部工程 DoD 完成，等待用户本人做作者掌握验收。

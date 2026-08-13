@@ -9,12 +9,13 @@
 Phase 1 本地正确性、Phase 2 Runtime / Validation 包边界、Phase 3 Schema / 应用边界、Phase 4 Agent /
 MCP / Action、Phase 5 前端状态与 Phase 6 Authority Transition 均已完成。Phase 6 Candidate
 `30254587585fa2169cab071a926c501e06dac9a6` 的 Receipt 位于
-`validation/evidence/interview_v2/phase6/phase6-validation-receipt.v1.json`。Phase 7 Candidate
-`b132c395c2edf2d7d72477dc9051bffc3d7f4024` 的零成本证明与 Hosted CI Run `31633888433` 已通过；
-其唯一一次真实 IE-P16 为 `11/16`，完整失败 Receipt 位于
-`validation/evidence/interview_v2/phase7/attempts/`，费用与零残留清理均保留。用户已授权恰好一个
-replacement Candidate；旧 SHA 不得重跑，替代 SHA 必须先重新通过全部零成本和 Hosted 前置证明。
-Phase 7 与最终 Definition of Done 仍未完成。
+`validation/evidence/interview_v2/phase6/phase6-validation-receipt.v1.json`。Phase 7 首个 Candidate
+`b132c395c2edf2d7d72477dc9051bffc3d7f4024` 的一次性 IE-P16 为 `11/16`。唯一获批 replacement
+`7527c0acca079f57549538e49135a91ef87b9389` 已通过全部零成本证明与 Hosted CI Run `31664415941`，
+但其一次性 IE-P16 为 `13/16`；IE-P14/P15/P16 均记录 `ReadTimeout`。完整失败 Receipt 位于
+`validation/evidence/interview_v2/phase7/attempts/`，费用与零残留清理均保留。两个 SHA 不得重跑，
+用户已持续授权后续 clean Candidate 的必要真实 DeepSeek 验证；每个新 Candidate 仍只允许一次完整
+IE-P16，且不得选择性重跑。Phase 7 与最终 Definition of Done 仍未完成。
 
 ## Interview Edition Archive 恢复
 

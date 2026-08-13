@@ -45,7 +45,21 @@ def test_current_interview_documentation_matches_repository_facts() -> None:
             "68cf3f1d4c9bb8ade2fdca5b7b5d404cef3dc5822d751e34fbc416d245ec6bfa"
         ),
         "phase7_failed_p16_result": "11/16",
-        "phase7_replacement_authorized": True,
+        "phase7_replacement_candidate_sha": ("7527c0acca079f57549538e49135a91ef87b9389"),
+        "phase7_replacement_tree_sha": "b9d96a0dd984cf8874a00f8f00172ac6f34db4be",
+        "phase7_replacement_p16_receipt_sha256": (
+            "450a121f1bd77b8dd0beb9cb09a116ad0ba1993aee48f31917ce79f5f7f68e58"
+        ),
+        "phase7_replacement_p16_result": "13/16",
+        "phase7_replacement_hosted_receipt_sha256": (
+            "090e253cc4e2eb86167e240dc07a50bd18ad00d5aa6ce66562cfd95d72357eb0"
+        ),
+        "phase7_replacement_validation_receipt_sha256": (
+            "f470c557f61d17b6abf3866f2d56111b9a2c33e5d26978f8b03fbc9c144c6150"
+        ),
+        "phase7_replacement_authorization_consumed": True,
+        "phase7_confirmation_gate": False,
+        "phase7_subsequent_clean_candidate_deepseek_authorized": True,
         "active_dataset": None,
         "protected_holdout": "not_accessed",
         "cross_encoder": "not_executed",
