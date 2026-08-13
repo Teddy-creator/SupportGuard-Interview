@@ -25,7 +25,7 @@ from supportguard.services.schema_rollout import (
 
 
 def test_interview_baseline_is_the_only_current_runtime_identity() -> None:
-    assert CURRENT_PRODUCT_DATABASE_HEAD == "i203_demo_truthful_refund"
+    assert CURRENT_PRODUCT_DATABASE_HEAD == "i204_action_terminal_order"
     assert LEGACY_PRODUCT_DATABASE_HEAD == POST_CONTRACT_HEADS[-1] == "b207c0a1d001"
 
     current = schema_rollout_for_head(CURRENT_PRODUCT_DATABASE_HEAD)

@@ -5,7 +5,7 @@ v1.5.12 Matrix/Manifest 仍以 `candidate_sha=null`、`execution_state=unexecute
 输入，不回写执行状态；重构后 Candidate `e68715f...` 的仓库外 Receipt 已独立验证为 `37/37`，
 对应 v1.6 Verification 已提交。现场 Demo、公开 Journey Acceptance 与独立质量评测必须分开。
 
-当前 Interview Database Head 是 `i203_demo_truthful_refund`；`b207c0a1d001` 只作为 Legacy Final，`i200_baseline_0001` 是不可改写的 Baseline Root，`i201_retire_escalation` 是已执行的退役修订。i202 只移除退款 Proposal 对异步 Ticket 展示状态的额外依赖；i203 进一步要求真实的两笔已结算账单、显式 `duplicate_of`、相同金额 / 币种 / 服务周期与 30 天窗口，并把这一账单对绑定到 Proposal、Approval 和执行前重校验。b193 以 `COLLATE "C"` 固定 SQL canonical JSON
+当前 Interview Database Head 是 `i204_action_terminal_order`；`b207c0a1d001` 只作为 Legacy Final，`i200_baseline_0001` 是不可改写的 Baseline Root，`i201_retire_escalation` 是已执行的退役修订。i202 只移除退款 Proposal 对异步 Ticket 展示状态的额外依赖；i203 进一步要求真实的两笔已结算账单、显式 `duplicate_of`、相同金额 / 币种 / 服务周期与 30 天窗口，并把这一账单对绑定到 Proposal、Approval 和执行前重校验；i204 在事务末尾收敛审批拒绝与客户撤回的类型化终态。b193 以 `COLLATE "C"` 固定 SQL canonical JSON
 的 key 排序；b194 以 forward-only 方式为既有数据库补装运行身份和 Dead Job 收敛语义；
 b195 收紧终态动作重放为“完全绑定且效果可见”时的幂等返回；b196 令审批证据按冻结的
 RetrievalTrace 候选身份解析，而不是把支持片段 Locator 当作 Chunk Locator；b197 允许

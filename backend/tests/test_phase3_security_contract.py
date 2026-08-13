@@ -8,6 +8,7 @@ from supportguard.db.security_contract import (
     CURRENT_INTERVIEW_DATABASE_REVISION,
     DATABASE_PREFLIGHT,
     INTERVIEW_BASELINE_ROOT_REVISION,
+    INTERVIEW_TRUTHFUL_REFUND_REVISION,
     LEGACY_FINAL_DATABASE_HEAD,
     MANIFEST_ENTRYPOINTS,
     SCHEMA_EQUIVALENCE_ALLOWED_DIFFERENCES,
@@ -20,7 +21,7 @@ def test_baseline_identity_is_independent_and_empty_only() -> None:
     assert LEGACY_FINAL_DATABASE_HEAD == "b207c0a1d001"
     assert BASELINE_IDENTITY.revision == INTERVIEW_BASELINE_ROOT_REVISION
     assert CURRENT_PRODUCT_DATABASE_HEAD == CURRENT_INTERVIEW_DATABASE_REVISION
-    assert CURRENT_PRODUCT_DATABASE_HEAD == "i203_demo_truthful_refund"
+    assert CURRENT_PRODUCT_DATABASE_HEAD == "i204_action_terminal_order"
     assert BASELINE_IDENTITY.source_legacy_head == LEGACY_FINAL_DATABASE_HEAD
     assert BASELINE_IDENTITY.script_location == "backend/alembic_baseline"
     assert BASELINE_IDENTITY.version_table == "alembic_version"
@@ -30,6 +31,7 @@ def test_baseline_identity_is_independent_and_empty_only() -> None:
         INTERVIEW_BASELINE_ROOT_REVISION,
         "i201_retire_escalation",
         "i202_refund_fence_authority",
+        INTERVIEW_TRUTHFUL_REFUND_REVISION,
         CURRENT_INTERVIEW_DATABASE_REVISION,
     )
     assert DATABASE_PREFLIGHT.reject_legacy_history is True

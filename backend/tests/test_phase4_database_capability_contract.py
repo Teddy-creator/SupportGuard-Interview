@@ -8,9 +8,12 @@ import pytest
 
 from supportguard.db.interview_baseline import (
     CURRENT_BASELINE_MANIFEST_SHA256,
+    CURRENT_BASELINE_NON_DATABASE_MANIFEST_SHA256,
     I200_BASELINE_MANIFEST_SHA256,
     I201_BASELINE_MANIFEST_SHA256,
     I202_BASELINE_MANIFEST_SHA256,
+    I203_BASELINE_MANIFEST_SHA256,
+    I203_BASELINE_NON_DATABASE_MANIFEST_SHA256,
 )
 from supportguard.db.reference_contract import CURRENT_PRODUCT_DATABASE_HEAD
 from supportguard.db.role_contract import (
@@ -29,6 +32,7 @@ from supportguard.db.security_contract import (
     INTERVIEW_BASELINE_ROOT_REVISION,
     INTERVIEW_ESCALATION_RETIREMENT_REVISION,
     INTERVIEW_REFUND_FENCE_REVISION,
+    INTERVIEW_TRUTHFUL_REFUND_REVISION,
     PHASE4_ESCALATION_RETIREMENT_CATALOG_DELTA,
     PHASE7_REFUND_FENCE_CATALOG_DELTA,
 )
@@ -43,24 +47,34 @@ def _migration(filename: str) -> ModuleType:
     return module
 
 
-def test_historical_interview_artifacts_remain_immutable_while_i203_is_current() -> None:
+def test_historical_interview_artifacts_remain_immutable_while_i204_is_current() -> None:
     assert BASELINE_IDENTITY.revision == INTERVIEW_BASELINE_ROOT_REVISION
     assert INTERVIEW_BASELINE_ROOT_REVISION == "i200_baseline_0001"
     assert CURRENT_PRODUCT_DATABASE_HEAD == CURRENT_INTERVIEW_DATABASE_REVISION
     assert INTERVIEW_ESCALATION_RETIREMENT_REVISION == "i201_retire_escalation"
     assert INTERVIEW_REFUND_FENCE_REVISION == "i202_refund_fence_authority"
-    assert CURRENT_INTERVIEW_DATABASE_REVISION == "i203_demo_truthful_refund"
+    assert INTERVIEW_TRUTHFUL_REFUND_REVISION == "i203_demo_truthful_refund"
+    assert CURRENT_INTERVIEW_DATABASE_REVISION == "i204_action_terminal_order"
     assert I200_BASELINE_MANIFEST_SHA256 == (
         "9007f1da6c8e85dcfb03d2ebc7d2e6aa2397882160f1d7df8d148dd7648bfe80"
     )
     assert CURRENT_BASELINE_MANIFEST_SHA256 == (
-        "a5d31734a3d95fd05c9d5c68539300e72adc9bddeb2b6c483d73ed388f52e9b0"
+        "6d8904a6364781ce248a3fec07f378fb82b2b3303fde66129ffc2a69afe53474"
     )
     assert I201_BASELINE_MANIFEST_SHA256 == (
         "9d4faabe4e2705803aea84316aabca8467f357a164560fa7123de23afae82e49"
     )
     assert I202_BASELINE_MANIFEST_SHA256 == (
         "17cf263a4899241399deed8acfd678b06531f40192372ebc52e6547e851464d7"
+    )
+    assert I203_BASELINE_MANIFEST_SHA256 == (
+        "a5d31734a3d95fd05c9d5c68539300e72adc9bddeb2b6c483d73ed388f52e9b0"
+    )
+    assert I203_BASELINE_NON_DATABASE_MANIFEST_SHA256 == (
+        "457d47939655b9189cb7afb1b6d71a47c2cf14969cffea162df459e7af08f618"
+    )
+    assert CURRENT_BASELINE_NON_DATABASE_MANIFEST_SHA256 == (
+        "9d9dfeb6378328970c27ed674a7df946713f189c08ef3aefac38160eaef8cc89"
     )
     assert CURRENT_BASELINE_MANIFEST_SHA256 != I200_BASELINE_MANIFEST_SHA256
 
@@ -94,7 +108,7 @@ def test_i202_uses_fenced_runtime_identity_not_ticket_projection_status() -> Non
 
 def test_i203_is_forward_only_and_uses_one_truthful_refund_pair_contract() -> None:
     migration = _migration("i203_demo_truthful_refund.py")
-    assert migration.revision == CURRENT_INTERVIEW_DATABASE_REVISION
+    assert migration.revision == INTERVIEW_TRUTHFUL_REFUND_REVISION
     assert migration.down_revision == INTERVIEW_REFUND_FENCE_REVISION
     sql = "\n".join(
         (
@@ -116,6 +130,19 @@ def test_i203_is_forward_only_and_uses_one_truthful_refund_pair_contract() -> No
     assert "refund_pair_execution_stale" in sql
     assert "supportguard_api_get_refund_display" in sql
     assert "'rejected','withdrawn'" in sql
+    with pytest.raises(RuntimeError, match="downgrade_forbidden"):
+        migration.downgrade()
+
+
+def test_i204_defers_typed_action_terminal_projection_until_transaction_end() -> None:
+    migration = _migration("i204_action_terminal_order.py")
+    assert migration.revision == CURRENT_INTERVIEW_DATABASE_REVISION
+    assert migration.down_revision == INTERVIEW_TRUTHFUL_REFUND_REVISION
+    sql = migration._DEFER_ACTION_TERMINAL_STATE_SQL
+    assert "CREATE CONSTRAINT TRIGGER trg_conversation_rejected_state_v204" in sql
+    assert "CREATE CONSTRAINT TRIGGER trg_conversation_withdrawn_state_v204" in sql
+    assert sql.count("DEFERRABLE INITIALLY DEFERRED") == 2
+    assert sql.count("supportguard_conversation_action_terminal_state_v203") == 2
     with pytest.raises(RuntimeError, match="downgrade_forbidden"):
         migration.downgrade()
 

@@ -6,7 +6,7 @@
 > `7527c0acca079f57549538e49135a91ef87b9389` 的一次性 IE-P16 为 `11/16`、`13/16`，Receipt
 > 保持不可改写。用户持续授权 clean Candidate 的必要真实 DeepSeek 验证；最终工程 Candidate
 > `4466290963993e0b7662d75b571e4b15e4e97627` 已通过全部机器证明、Hosted CI 与一次性 IE-P16
-> `16/16`。该机器证明绑定其冻结 Candidate；当前工作树已演进到 `i203_demo_truthful_refund`，新增退款账单对与演示可解释性仍需形成新的精确 Candidate 证据。Phase 7 工程验证已完成，最终
+> `16/16`。该机器证明绑定其冻结 Candidate；当前工作树已演进到 `i204_action_terminal_order`，新增退款账单对、类型化终态事务收敛与演示可解释性仍需形成新的精确 Candidate 证据。Phase 7 工程验证已完成，最终
 > Definition of Done 仅等待用户 Human Acceptance。
 > 精简前基线固定为 `6255c8c0eb0dcedd877bfbf16a9695dad2a0c9eb`。下方
 > 2026-07-28 的“当前”表述是不可改写的精简前架构状态，不覆盖 v2.0。

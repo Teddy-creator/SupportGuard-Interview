@@ -210,7 +210,7 @@ b203 因而先补齐独立事件 Reader；随后 MCP 纵向切片证明工单详
 身份，b204 完成全部公共 Timeline 生产者闭包。这些是确定性阻塞项修复，不是
 Formal 或 Journey Acceptance
 通过证据。v2 最终采用独立 Interview Baseline 与 forward-only i201 / i202；当前 Head
-`i203_demo_truthful_refund` 是当前 Interview Head；它不继承或改写旧链历史，也不反向改变 i200–i202 的冻结证明。
+`i204_action_terminal_order` 是当前 Interview Head；i203 继续冻结两笔账单的退款合同，i204 只让 `rejected` / `withdrawn` 在事务末尾按事实收敛。它不继承或改写旧链历史，也不反向改变 i200–i203 的冻结证明。
 
 **Q15：当前 v2.0 证明到哪里？** 两个历史 Candidate
 `b132c395c2edf2d7d72477dc9051bffc3d7f4024`、`7527c0acca079f57549538e49135a91ef87b9389`
