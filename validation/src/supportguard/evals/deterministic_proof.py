@@ -275,6 +275,97 @@ def _frontend(root: Path, environment: Mapping[str, str], directory: Path) -> di
 
 
 def _browser(root: Path, environment: Mapping[str, str]) -> dict[str, Any]:
+    project = environment.get("COMPOSE_PROJECT_NAME", "").strip()
+    if re.fullmatch(r"supportguard[a-z0-9_-]{2,52}", project) is None or project in {
+        "supportguard",
+        "supportguard_default",
+    }:
+        raise Phase7ContractError("phase7_browser_requires_explicit_compose_project")
+    if not environment.get("PLAYWRIGHT_BASE_URL", "").strip():
+        raise Phase7ContractError("phase7_browser_requires_explicit_base_url")
+
+    docker = _executable("docker")
+    preflight_commands = (
+        (
+            docker,
+            "compose",
+            "run",
+            "--rm",
+            "--no-deps",
+            "bootstrap-demo",
+            "supportguard",
+            "demo",
+            "temporal-refresh",
+            "--tenant",
+            "tenant_demo",
+        ),
+        (
+            docker,
+            "compose",
+            "run",
+            "--rm",
+            "--no-deps",
+            "bootstrap-demo",
+            "supportguard",
+            "demo",
+            "temporal-preflight",
+            "--tenant",
+            "tenant_demo",
+        ),
+        (
+            docker,
+            "compose",
+            "run",
+            "--rm",
+            "--no-deps",
+            "worker",
+            "supportguard",
+            "demo",
+            "resource-preflight",
+            "--tenant",
+            "tenant_demo",
+        ),
+    )
+    preflight_completed = [
+        _run(root, command, environment, timeout=300) for command in preflight_commands
+    ]
+    preflight_payloads: list[dict[str, Any]] = []
+    for completed_item in preflight_completed:
+        try:
+            payload = json.loads(completed_item.stdout.splitlines()[-1])
+        except (IndexError, json.JSONDecodeError):
+            payload = {}
+        preflight_payloads.append(payload if isinstance(payload, dict) else {})
+    temporal_refresh, temporal_preflight, resource_preflight = preflight_payloads
+    preflight_passed = (
+        all(item.returncode == 0 for item in preflight_completed)
+        and temporal_refresh.get("schema") == "demo-temporal-report.v1"
+        and temporal_refresh.get("mode") == "refresh"
+        and temporal_refresh.get("tenant_id") == "tenant_demo"
+        and temporal_refresh.get("latest_snapshot_age_seconds") == 0
+        and temporal_preflight.get("schema") == "demo-temporal-report.v1"
+        and temporal_preflight.get("mode") == "preflight"
+        and temporal_preflight.get("tenant_id") == "tenant_demo"
+        and isinstance(temporal_preflight.get("latest_snapshot_age_seconds"), int)
+        and 0 <= int(temporal_preflight["latest_snapshot_age_seconds"]) <= 120
+        and resource_preflight.get("schema") == "demo-resource-report.v1"
+        and resource_preflight.get("tenant_id") == "tenant_demo"
+        and resource_preflight.get("ready") is True
+    )
+    preflight = {
+        "commands": [_safe_command_result(item) for item in preflight_completed],
+        "latest_snapshot_age_seconds": temporal_preflight.get("latest_snapshot_age_seconds"),
+        "resource_ready": resource_preflight.get("ready"),
+        "passed": preflight_passed,
+    }
+    if not preflight_passed:
+        return {
+            "demo_preflight": preflight,
+            "counts": {"expected": 0, "unexpected": 0, "flaky": 0, "skipped": 0},
+            "denominator": 0,
+            "passed": False,
+        }
+
     completed = _run(
         root,
         [
@@ -300,6 +391,7 @@ def _browser(root: Path, environment: Mapping[str, str]) -> dict[str, Any]:
     skipped = int(stats.get("skipped", 0))
     return {
         **_safe_command_result(completed),
+        "demo_preflight": preflight,
         "counts": {
             "expected": expected,
             "unexpected": unexpected,

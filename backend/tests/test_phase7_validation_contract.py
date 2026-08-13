@@ -384,3 +384,75 @@ def test_phase7_deterministic_proofs_are_fixed_and_never_inherit_provider_secret
     assert '"scripts/run_isolated_integration.py", "integration"' in source
     assert '"scripts/run_mcp_test_partitions.py", "all"' in source
     assert "expected == 19" in source
+
+
+@pytest.mark.parametrize(
+    ("resource_ready", "expected_passed", "expected_calls"),
+    ((True, True, 4), (False, False, 3)),
+)
+def test_browser_proof_runs_clean_fresh_demo_preflight_before_playwright(
+    monkeypatch: pytest.MonkeyPatch,
+    *,
+    resource_ready: bool,
+    expected_passed: bool,
+    expected_calls: int,
+) -> None:
+    commands: list[tuple[str, ...]] = []
+
+    def fake_run(
+        _root: Path,
+        arguments: tuple[str, ...] | list[str],
+        _environment: dict[str, str],
+        *,
+        timeout: int,
+    ) -> SimpleNamespace:
+        command = tuple(arguments)
+        commands.append(command)
+        if "temporal-refresh" in command:
+            payload = {
+                "schema": "demo-temporal-report.v1",
+                "mode": "refresh",
+                "tenant_id": "tenant_demo",
+                "latest_snapshot_age_seconds": 0,
+            }
+        elif "temporal-preflight" in command:
+            payload = {
+                "schema": "demo-temporal-report.v1",
+                "mode": "preflight",
+                "tenant_id": "tenant_demo",
+                "latest_snapshot_age_seconds": 3,
+            }
+        elif "resource-preflight" in command:
+            payload = {
+                "schema": "demo-resource-report.v1",
+                "tenant_id": "tenant_demo",
+                "ready": resource_ready,
+            }
+        else:
+            payload = {"stats": {"expected": 19, "unexpected": 0, "flaky": 0, "skipped": 0}}
+        return SimpleNamespace(
+            returncode=1 if payload.get("ready") is False else 0,
+            stdout=json.dumps(payload),
+            stderr="",
+        )
+
+    monkeypatch.setattr(deterministic_proof, "_run", fake_run)
+    monkeypatch.setattr(deterministic_proof, "_executable", lambda name: name)
+    result = deterministic_proof._browser(
+        ROOT,
+        {
+            "COMPOSE_PROJECT_NAME": "supportguard-browser-proof",
+            "PLAYWRIGHT_BASE_URL": "http://127.0.0.1:5173",
+        },
+    )
+
+    assert result["passed"] is expected_passed
+    assert result["denominator"] == (19 if expected_passed else 0)
+    assert result["demo_preflight"]["resource_ready"] is resource_ready
+    assert result["demo_preflight"]["latest_snapshot_age_seconds"] == 3
+    assert len(commands) == expected_calls
+    assert "temporal-refresh" in commands[0]
+    assert "temporal-preflight" in commands[1]
+    assert "resource-preflight" in commands[2]
+    if expected_passed:
+        assert commands[3][-2:] == ("test", "--reporter=json")
