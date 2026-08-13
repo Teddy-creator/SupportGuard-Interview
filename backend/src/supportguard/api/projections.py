@@ -606,13 +606,19 @@ async def _published_knowledge_sources(
         for source_ref in matching_refs:
             source_id = str(source_ref["source_id"])
             for claim in claims_by_source.get(source_id, []):
+                source_version = _business_fact_source_version(
+                    tool_name=str(payload.get("tool_name", "")),
+                    source_id=source_id,
+                    data=data,
+                    fallback=resource_version,
+                )
                 projected.append(
                     {
                         "source_type": "business_fact",
                         "document_id": source_id,
                         "observation_source_id": source_id,
                         "version": (
-                            str(resource_version) if resource_version is not None else None
+                            str(source_version) if source_version is not None else None
                         ),
                         "title": _business_fact_title(str(payload.get("tool_name", ""))),
                         "section_path": "当前业务事实",
@@ -628,6 +634,24 @@ async def _published_knowledge_sources(
                     }
                 )
     return projected
+
+
+def _business_fact_source_version(
+    *,
+    tool_name: str,
+    source_id: str,
+    data: dict[str, Any],
+    fallback: object,
+) -> object:
+    """Keep each member of a multi-record observation bound to its own version."""
+
+    if tool_name != "query_billing_record":
+        return fallback
+    if source_id == f"billing_record:{data.get('billing_record_id')}":
+        return data.get("version", fallback)
+    if source_id == f"billing_record:{data.get('original_billing_record_id')}":
+        return data.get("original_version", fallback)
+    return fallback
 
 
 def _business_fact_title(tool_name: str) -> str:

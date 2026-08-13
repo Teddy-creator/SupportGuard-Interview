@@ -110,7 +110,7 @@ export function CitationChip({
 function businessResourceLabel(citation: Citation): string | null {
   if (citation.source_type !== "business_fact") return null;
   const identity = citation.observation_source_id ?? citation.document_id;
-  if (!identity) return null;
+  if (!identity?.startsWith("billing_record:")) return null;
   const separator = identity.indexOf(":");
   const resource = separator >= 0 ? identity.slice(separator + 1) : identity;
   return resource.trim() || null;

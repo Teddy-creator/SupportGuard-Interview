@@ -56,6 +56,49 @@ class _CitationSession:
         return self.canonical_message_id
 
 
+class _BillingCitationSession(_CitationSession):
+    def __init__(self) -> None:
+        claims = [
+            SimpleNamespace(
+                id=f"claim_{index}",
+                claim_text="两笔账单构成重复扣费。",
+                support_refs={
+                    "citation_binding_ids": [],
+                    "observation_source_ids": [source_id],
+                },
+            )
+            for index, source_id in enumerate(
+                (
+                    "billing_record:bill_demo_duplicate",
+                    "billing_record:bill_demo_original",
+                )
+            )
+        ]
+        observation = SimpleNamespace(
+            id="observation_billing",
+            payload={
+                "tool_name": "query_billing_record",
+                "status": "ok",
+                "observed_at": "2026-07-28T10:00:00+00:00",
+                "freshness_status": "fresh",
+                "resource_version": "2",
+                "source_refs": [
+                    {"source_id": "billing_record:bill_demo_duplicate"},
+                    {"source_id": "billing_record:bill_demo_original"},
+                ],
+                "data": {
+                    "billing_record_id": "bill_demo_duplicate",
+                    "version": 2,
+                    "original_billing_record_id": "bill_demo_original",
+                    "original_version": 1,
+                },
+            },
+        )
+        self._scalar_rows = iter((_ScalarRows(claims), _ScalarRows([observation])))
+        self.canonical_message_id = "msg_answer"
+        self.message_query_parameters = None
+
+
 @pytest.mark.asyncio
 async def test_citations_bind_only_to_the_canonical_answer_publication() -> None:
     session = _CitationSession(canonical_message_id="msg_answer")
@@ -84,3 +127,17 @@ async def test_citations_do_not_fall_through_to_runtime_failure_assistant_messag
     assert session.message_query_parameters is not None
     assert "assistant:run_failed" in session.message_query_parameters.values()
     assert projected == []
+
+
+@pytest.mark.asyncio
+async def test_multi_record_business_citations_keep_each_records_version() -> None:
+    projected = await _published_knowledge_sources(  # type: ignore[arg-type]
+        _BillingCitationSession(),
+        "run_billing",
+    )
+
+    versions = {item["observation_source_id"]: item["version"] for item in projected}
+    assert versions == {
+        "billing_record:bill_demo_duplicate": "2",
+        "billing_record:bill_demo_original": "1",
+    }
