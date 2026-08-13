@@ -88,7 +88,8 @@ export function CitationChip({
               {item.supporting_span ? (
                 <span>{item.supporting_span}</span>
               ) : null}
-              {item.claim_summary ? (
+              {item.claim_summary &&
+              item.claim_summary.trim() !== item.supporting_span?.trim() ? (
                 <small>支持结论：{item.claim_summary}</small>
               ) : null}
             </span>

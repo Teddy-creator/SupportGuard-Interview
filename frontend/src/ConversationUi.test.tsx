@@ -317,6 +317,7 @@ describe("customer-safe answer projection", () => {
         version: "2",
         section_path: "当前业务事实",
         supporting_span: "重复账单已核验。",
+        claim_summary: "重复账单已核验。",
         message_id: "message-assistant",
       },
     ];
@@ -327,6 +328,13 @@ describe("customer-safe answer projection", () => {
         name: "▤ 账单状态 v2 · bill_demo_duplicate",
       }),
     ).toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "▤ 账单状态 v2 · bill_demo_duplicate",
+      }),
+    );
+    expect(screen.getByText("重复账单已核验。")).toBeInTheDocument();
+    expect(screen.queryByText("支持结论：重复账单已核验。")).not.toBeInTheDocument();
   });
 
   it("deduplicates identical evidence spans while preserving claim summaries", () => {

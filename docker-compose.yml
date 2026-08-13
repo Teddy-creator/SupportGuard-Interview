@@ -97,7 +97,13 @@ services:
   bootstrap-demo:
     <<: *backend
     restart: "no"
-    command: ["sh", "-c", "supportguard db seed && supportguard knowledge ingest $${KNOWLEDGE_INGEST_ARGS:-}"]
+    command:
+      - "sh"
+      - "-c"
+      - >-
+        supportguard db seed &&
+        supportguard knowledge ingest $${KNOWLEDGE_INGEST_ARGS:-} &&
+        supportguard demo temporal-refresh --tenant tenant_demo
     environment:
       <<: *backend-environment
       DATABASE_URL: postgresql+asyncpg://supportguard_bootstrap:${BOOTSTRAP_DATABASE_PASSWORD:-supportguard_bootstrap}@postgres:5432/supportguard

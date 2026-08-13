@@ -247,6 +247,16 @@ def test_demo_preflight_uses_the_role_that_owns_each_resource() -> None:
     assert "bootstrap-demo supportguard demo resource-preflight" not in target
 
 
+def test_compose_bootstrap_refreshes_demo_time_after_seed_and_knowledge() -> None:
+    compose = (ROOT / "docker-compose.yml").read_text()
+    target = compose.split("  bootstrap-demo:", 1)[1].split("\n  api:", 1)[0]
+
+    assert target.index("supportguard db seed") < target.index("supportguard knowledge ingest")
+    assert target.index("supportguard knowledge ingest") < target.index(
+        "supportguard demo temporal-refresh --tenant tenant_demo"
+    )
+
+
 def test_demo_temporal_refresh_covers_an_imminent_minute_rollover() -> None:
     base = datetime(2026, 7, 24, 12, 30, tzinfo=UTC)
 
