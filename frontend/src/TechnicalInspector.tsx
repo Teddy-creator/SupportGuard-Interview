@@ -160,12 +160,19 @@ export function TechnicalInspector({
   const toolInvocationCount = timeline.filter(
     (event) => event.event_type === "tool_invocation",
   ).length;
+  const knowledgeResultCount = timeline.filter(
+    (event) =>
+      event.event_type === "tool_observation" &&
+      event.payload?.tool_name === "search_knowledge",
+  ).length;
+  const businessResultCount = verifiedFactCount - knowledgeResultCount;
+  const toolActivityCount = Math.max(toolInvocationCount, verifiedFactCount);
   const proposalCount = timeline.filter(
     (event) => event.event_type === "proposal_drafted",
   ).length;
   const denialRecorded = timeline.some(eventRecordsDenial);
   const preToolDenial =
-    toolInvocationCount === 0 &&
+    toolActivityCount === 0 &&
     verifiedFactCount === 0 &&
     proposalCount === 0 &&
     (denialRecorded ||
@@ -174,9 +181,11 @@ export function TechnicalInspector({
       ));
   const boundarySummary = preToolDenial
     ? "请求在工具调用前被拒绝"
-    : toolInvocationCount === 0
+    : toolActivityCount === 0
       ? "本轮未调用业务工具"
-      : "按当前会话范围运行";
+      : verifiedFactCount > 0
+        ? `已返回 ${verifiedFactCount} 个只读工具结果`
+        : "只读工具调用已记录";
   return (
     <aside
       id="technical-inspector"
@@ -253,12 +262,16 @@ export function TechnicalInspector({
                     <dd>{session.active_tenant.name}</dd>
                   </div>
                   <div>
-                    <dt>只读工具调用</dt>
-                    <dd>{toolInvocationCount}</dd>
+                    <dt>只读工具结果</dt>
+                    <dd>{verifiedFactCount}</dd>
                   </div>
                   <div>
-                    <dt>已核验业务事实</dt>
-                    <dd>{verifiedFactCount}</dd>
+                    <dt>业务查询结果</dt>
+                    <dd>{businessResultCount}</dd>
+                  </div>
+                  <div>
+                    <dt>知识检索结果</dt>
+                    <dd>{knowledgeResultCount}</dd>
                   </div>
                   <div>
                     <dt>高风险申请</dt>
@@ -268,9 +281,11 @@ export function TechnicalInspector({
                 <p>
                   {preToolDenial
                     ? "本轮由确定性的身份与范围检查提前终止，因此没有访问业务工具，也没有创建或执行操作。"
-                    : toolInvocationCount === 0
+                    : toolActivityCount === 0
                       ? "本轮没有调用业务工具；这可能是无需取数的回答或安全停止，不能据此声称数据库 RLS 在本轮被触发。"
-                      : "本轮工具只能使用服务端会话注入的租户与客户范围；对话中的资源编号或权限声明不会改变该范围。"}
+                      : verifiedFactCount > 0
+                        ? `本轮完成 ${verifiedFactCount} 个只读工具结果：业务查询 ${businessResultCount} 个，知识检索 ${knowledgeResultCount} 个。工具只能使用服务端会话注入的租户与客户范围；对话中的资源编号或权限声明不会改变该范围。`
+                        : "本轮记录了只读工具调用，但没有持久化终态结果；不能把它描述成已核验事实。"}
                 </p>
                 <small>
                   数据库角色与 RLS 是后备边界；本视图不会把未发生的数据库访问冒充为“本轮命中 RLS”。

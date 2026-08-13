@@ -92,8 +92,8 @@ describe("TechnicalInspector security summary", () => {
     expect(
       within(proof).getByText("请求在工具调用前被拒绝"),
     ).toBeInTheDocument();
-    expect(within(proof).getByText("只读工具调用")).toBeInTheDocument();
-    expect(within(proof).getAllByText("0")).toHaveLength(3);
+    expect(within(proof).getByText("只读工具结果")).toBeInTheDocument();
+    expect(within(proof).getAllByText("0")).toHaveLength(4);
   });
 
   it("does not disguise a failed or empty tool path as a pre-tool denial", () => {
@@ -111,9 +111,40 @@ describe("TechnicalInspector security summary", () => {
     );
 
     const proof = screen.getByRole("region", { name: "本轮安全边界" });
-    expect(within(proof).getByText("按当前会话范围运行")).toBeInTheDocument();
+    expect(within(proof).getByText("只读工具调用已记录")).toBeInTheDocument();
     expect(within(proof).queryByText(/工具调用前被拒绝/)).toBeNull();
-    expect(within(proof).getByText("1")).toBeInTheDocument();
+    expect(within(proof).getByText(/没有持久化终态结果/)).toBeInTheDocument();
+  });
+
+  it("counts persisted tool results even when a separate invocation event is absent", () => {
+    render(
+      <TechnicalInspector
+        open
+        loading={false}
+        data={inspector([
+          event("tool_observation", 1, { tool_name: "search_knowledge" }),
+          event("tool_observation", 2, { tool_name: "query_subscription" }),
+          event("tool_observation", 3, { tool_name: "query_api_usage" }),
+        ], "evidence freshness insufficient")}
+        session={session}
+        onClose={() => undefined}
+      />,
+    );
+
+    const proof = screen.getByRole("region", { name: "本轮安全边界" });
+    expect(
+      within(proof).getByText("已返回 3 个只读工具结果"),
+    ).toBeInTheDocument();
+    expect(within(proof).getByText(/业务查询 2 个，知识检索 1 个/)).toBeInTheDocument();
+    const resultRow = within(proof).getByText("只读工具结果").closest("div");
+    const businessRow = within(proof).getByText("业务查询结果").closest("div");
+    const knowledgeRow = within(proof).getByText("知识检索结果").closest("div");
+    expect(resultRow).not.toBeNull();
+    expect(businessRow).not.toBeNull();
+    expect(knowledgeRow).not.toBeNull();
+    expect(within(resultRow as HTMLElement).getByText("3")).toBeInTheDocument();
+    expect(within(businessRow as HTMLElement).getByText("2")).toBeInTheDocument();
+    expect(within(knowledgeRow as HTMLElement).getByText("1")).toBeInTheDocument();
   });
 
   it("states when no tool was used without claiming an RLS hit", () => {
