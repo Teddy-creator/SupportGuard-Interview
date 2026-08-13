@@ -56,6 +56,45 @@ def _worker_url(database_url: str) -> str:
     )
 
 
+async def _add_refund_pair(session: AsyncSession, *, resource_id: str) -> None:
+    charged_at = datetime.now(UTC) - timedelta(days=1)
+    period_start = date(2026, 8, 1)
+    period_end = date(2026, 9, 1)
+    original_id = f"{resource_id}_original"
+    session.add(
+        BillingRecord(
+            id=original_id,
+            tenant_id="tenant_demo",
+            customer_id="cust_demo",
+            amount=Decimal("49.00"),
+            currency="USD",
+            status="charged",
+            charged_at=charged_at,
+            service_period_start=period_start,
+            service_period_end=period_end,
+            duplicate_of=None,
+            version=1,
+        )
+    )
+    await session.flush()
+    session.add(
+        BillingRecord(
+            id=resource_id,
+            tenant_id="tenant_demo",
+            customer_id="cust_demo",
+            amount=Decimal("49.00"),
+            currency="USD",
+            status="charged",
+            charged_at=charged_at,
+            service_period_start=period_start,
+            service_period_end=period_end,
+            duplicate_of=original_id,
+            version=2,
+        )
+    )
+    await session.flush()
+
+
 async def _prepare_interrupt(
     session: AsyncSession,
     *,
@@ -196,20 +235,7 @@ async def test_two_transactions_atomically_reuse_one_active_approval() -> None:
     try:
         async with admin_factory() as session, session.begin():
             await session.execute(text("SELECT set_config('app.tenant_id','tenant_demo',true)"))
-            session.add(
-                BillingRecord(
-                    id=resource_id,
-                    tenant_id="tenant_demo",
-                    customer_id="cust_demo",
-                    amount=Decimal("49.00"),
-                    currency="USD",
-                    status="charged",
-                    charged_at=datetime.now(UTC) - timedelta(days=1),
-                    service_period_start=date(2026, 8, 1),
-                    service_period_end=date(2026, 9, 1),
-                    version=2,
-                )
-            )
+            await _add_refund_pair(session, resource_id=resource_id)
             fixtures = [
                 await _prepare_interrupt(
                     session,

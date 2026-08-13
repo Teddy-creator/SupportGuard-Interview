@@ -4,8 +4,6 @@ import asyncio
 import importlib
 import inspect
 import os
-from datetime import UTC, date, datetime, timedelta
-from decimal import Decimal
 from uuid import uuid4
 
 import pytest
@@ -157,26 +155,13 @@ async def test_interrupt_finalizer_locks_ticket_then_waits_on_proposal_before_ru
         .render_as_string(hide_password=False)
     )
     worker_factory = async_sessionmaker(worker, expire_on_commit=False)
-    prepare_interrupt = importlib.import_module("test_v1512_active_approval_race").__dict__[
-        "_prepare_interrupt"
-    ]
+    active_approval_module = importlib.import_module("test_v1512_active_approval_race")
+    prepare_interrupt = active_approval_module.__dict__["_prepare_interrupt"]
+    add_refund_pair = active_approval_module.__dict__["_add_refund_pair"]
     try:
         async with admin_factory() as session, session.begin():
             await session.execute(text("SELECT set_config('app.tenant_id','tenant_demo',true)"))
-            session.add(
-                BillingRecord(
-                    id=resource_id,
-                    tenant_id="tenant_demo",
-                    customer_id="cust_demo",
-                    amount=Decimal("49.00"),
-                    currency="USD",
-                    status="charged",
-                    charged_at=datetime.now(UTC) - timedelta(days=1),
-                    service_period_start=date(2026, 8, 1),
-                    service_period_end=date(2026, 9, 1),
-                    version=2,
-                )
-            )
+            await add_refund_pair(session, resource_id=resource_id)
             fixture = await prepare_interrupt(
                 session,
                 prefix=prefix,
@@ -280,9 +265,8 @@ async def test_execute_active_approval_and_interrupt_sibling_do_not_deadlock(
     prepare_action = importlib.import_module("test_v1512_runtime_action_binding_postgres").__dict__[
         "_prepare"
     ]
-    prepare_interrupt = importlib.import_module("test_v1512_active_approval_race").__dict__[
-        "_prepare_interrupt"
-    ]
+    active_approval_module = importlib.import_module("test_v1512_active_approval_race")
+    prepare_interrupt = active_approval_module.__dict__["_prepare_interrupt"]
     (
         admin,
         admin_factory,
@@ -304,6 +288,7 @@ async def test_execute_active_approval_and_interrupt_sibling_do_not_deadlock(
     try:
         prefix = f"a1p2_{uuid4().hex[:10]}"
         async with admin_factory() as session, session.begin():
+            await session.execute(text("SELECT set_config('app.tenant_id','tenant_demo',true)"))
             approval = await session.get(ApprovalRequest, approval_id)
             assert approval is not None
             action_marker_id = await session.scalar(
@@ -496,26 +481,13 @@ async def test_interrupt_finalizer_revalidates_lease_after_proposal_barrier() ->
         .render_as_string(hide_password=False)
     )
     worker_factory = async_sessionmaker(worker, expire_on_commit=False)
-    prepare_interrupt = importlib.import_module("test_v1512_active_approval_race").__dict__[
-        "_prepare_interrupt"
-    ]
+    active_approval_module = importlib.import_module("test_v1512_active_approval_race")
+    prepare_interrupt = active_approval_module.__dict__["_prepare_interrupt"]
+    add_refund_pair = active_approval_module.__dict__["_add_refund_pair"]
     try:
         async with admin_factory() as session, session.begin():
             await session.execute(text("SELECT set_config('app.tenant_id','tenant_demo',true)"))
-            session.add(
-                BillingRecord(
-                    id=resource_id,
-                    tenant_id="tenant_demo",
-                    customer_id="cust_demo",
-                    amount=Decimal("49.00"),
-                    currency="USD",
-                    status="charged",
-                    charged_at=datetime.now(UTC) - timedelta(days=1),
-                    service_period_start=date(2026, 8, 1),
-                    service_period_end=date(2026, 9, 1),
-                    version=2,
-                )
-            )
+            await add_refund_pair(session, resource_id=resource_id)
             fixture = await prepare_interrupt(
                 session,
                 prefix=prefix,
