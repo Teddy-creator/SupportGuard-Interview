@@ -2,7 +2,12 @@
 
 > **v2.0 Authority Notice（2026-08-11）**：当前唯一的新工作权威是
 > `docs/interview-edition-simplification-v2.0.md`，操作宪法是根目录 `AGENTS.md`。用户已授权
-> Phase 0～7；Phase 0～6 已完成。Phase 7 首个 Candidate `b132c395c2edf2d7d72477dc9051bffc3d7f4024` 的一次性 IE-P16 为 `11/16`；replacement `7527c0acca079f57549538e49135a91ef87b9389` 的前置证明和 Hosted CI 全绿，但一次性 IE-P16 为 `13/16`。两个 SHA 均已消费且不得重跑；用户已持续授权后续 clean Candidate 的必要真实 DeepSeek 验证。当前 Interview Head 为 `i202_refund_fence_authority`，Phase 7 与最终 Definition of Done 仍未完成。
+> Phase 0～7。历史 Candidate `b132c395c2edf2d7d72477dc9051bffc3d7f4024` 与
+> `7527c0acca079f57549538e49135a91ef87b9389` 的一次性 IE-P16 为 `11/16`、`13/16`，Receipt
+> 保持不可改写。用户持续授权 clean Candidate 的必要真实 DeepSeek 验证；最终工程 Candidate
+> `4466290963993e0b7662d75b571e4b15e4e97627` 已通过全部机器证明、Hosted CI 与一次性 IE-P16
+> `16/16`。当前 Interview Head 为 `i202_refund_fence_authority`，Phase 7 工程验证已完成，最终
+> Definition of Done 仅等待用户 Human Acceptance。
 > 精简前基线固定为 `6255c8c0eb0dcedd877bfbf16a9695dad2a0c9eb`。下方
 > 2026-07-28 的“当前”表述是不可改写的精简前架构状态，不覆盖 v2.0。
 

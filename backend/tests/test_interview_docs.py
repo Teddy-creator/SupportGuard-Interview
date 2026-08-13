@@ -12,7 +12,7 @@ def test_current_interview_documentation_matches_repository_facts() -> None:
 
     assert result == {
         "result": "pass",
-        "v20_activation": "phase7",
+        "v20_activation": "phase7_human_acceptance",
         "current_authority_document_count": 8,
         "current_database_head": "i202_refund_fence_authority",
         "v20_phase5_candidate_sha": "70717d8f19a9cbe3d8ead99db228c93f1577acc4",
@@ -60,6 +60,20 @@ def test_current_interview_documentation_matches_repository_facts() -> None:
         "phase7_replacement_authorization_consumed": True,
         "phase7_confirmation_gate": False,
         "phase7_subsequent_clean_candidate_deepseek_authorized": True,
+        "phase7_final_candidate_sha": "4466290963993e0b7662d75b571e4b15e4e97627",
+        "phase7_final_tree_sha": "f4d021c13eac823d807cf3d120a99a610df9bb7b",
+        "phase7_final_p16_receipt_sha256": (
+            "21186631e6525743f1d1a617fe0e181500c9d2e1841531a355be500aa0ad45b5"
+        ),
+        "phase7_final_p16_result": "16/16",
+        "phase7_final_hosted_receipt_sha256": (
+            "1c82310915018a88f29762adba797ed0c97ed833208c11451d31e413de42c6b3"
+        ),
+        "phase7_final_validation_receipt_sha256": (
+            "5dc7be8398169fb65dc265faec5a33e19caf20acd03f5df950c238c511b519f0"
+        ),
+        "phase7_machine_validation_complete": True,
+        "human_acceptance_complete": False,
         "active_dataset": None,
         "protected_holdout": "not_accessed",
         "cross_encoder": "not_executed",

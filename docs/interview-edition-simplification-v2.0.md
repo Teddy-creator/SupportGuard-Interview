@@ -3,7 +3,7 @@
 - 文档类型：重大范围收敛、权威迁移与结构简化提案
 - 基线仓库：私有 canonical repository（公开镜像已对本机绝对路径做最小脱敏）
 - 基线提交：`6255c8c0eb0dcedd877bfbf16a9695dad2a0c9eb`
-- 状态：已批准并冻结；用户已于 2026-08-11 明确授权执行 Phase 0～7；Phase 0～6 已完成；Phase 7 首个 Candidate `b132c395c2edf2d7d72477dc9051bffc3d7f4024` 的一次性 IE-P16 为 `11/16`；replacement `7527c0acca079f57549538e49135a91ef87b9389` 通过全部前置证明和 Hosted CI，但一次性 IE-P16 为 `13/16`；两个 SHA 均已消费且不得重跑，用户已于 2026-08-13 持续授权后续 clean Candidate 的必要真实 DeepSeek 验证，当前继续通用超时诊断与修复；最终 Definition of Done 未完成
+- 状态：已批准并冻结；用户已于 2026-08-11 明确授权执行 Phase 0～7；Phase 0～7 的机器验证与工程 Definition of Done 已完成。前两个已消费 Candidate `b132c395c2edf2d7d72477dc9051bffc3d7f4024`、`7527c0acca079f57549538e49135a91ef87b9389` 的一次性 IE-P16 分别为 `11/16`、`13/16`，失败 Receipt 保留且不得重跑；用户于 2026-08-13 持续授权后续 clean Candidate 的必要真实 DeepSeek 验证，最终 Candidate `4466290963993e0b7662d75b571e4b15e4e97627` 已通过全部机器证明、Hosted CI 与唯一一次 IE-P16 `16/16`。最终 Definition of Done 仅等待用户本人完成 Human Acceptance
 - 目标读者：项目作者、AI 应用 / Agent 开发岗位面试官、后续开发 Agent
 
 ## 1. 决策摘要
@@ -477,16 +477,29 @@ IE-P16 执行 `16/16` 场景、通过 `13`、失败 `3`；IE-P14/P15/P16 均记�
 全部具名资源清理为零。replacement SHA 已消费且不得重跑；用户随后持续授权后续 clean Candidate
 的必要真实 DeepSeek 验证。Phase 7、Human Acceptance 与最终 DoD 继续保持未完成。
 
+Phase 7 最终执行记录：Candidate `4466290963993e0b7662d75b571e4b15e4e97627`（Tree
+`f4d021c13eac823d807cf3d120a99a610df9bb7b`）在 clean `HEAD == origin/main` 上通过 Backend
+`1592/1592`、Frontend `81/81`、Current Integration `225/225`、MCP `6/6 + 11/11`、Browser
+`19/19`、Clean Compose、双 wheel、Runtime-only 镜像、RAG Dev30、IE-F06 `6/6` 与 IE-J12
+`12/12`。首次并发 Package Boundary 尝试因本地基础设施超时失败并被原样保留；同一未变 Candidate
+的顺序重试通过，Runtime / Validation RECORD 为 `221 / 20`、零重叠，Runtime Graph 为 `205`
+Modules / `2758` Edges / `0` SCC / `0` Forbidden Reachability。Hosted CI Run `31687980408` 的
+5 个冻结 Job 共执行 `76` 步并全部成功。该 SHA 唯一一次真实 DeepSeek IE-P16 完整执行 `16/16`
+且全部通过，Prompt / Completion Token 为 `265737 / 21560`，完整估算费用为 `¥0.308857`；Safety、
+Semantic、Usage 与 Cleanup Claim 全部通过，真实外部业务 Effect 为 `0`，全部具名资源与 MCP 子
+进程残留为 `0`。Phase 7 机器验证与工程 DoD 已完成；最终 DoD 仅等待用户 Human Acceptance。
+
 ### Phase 7：验证与作者移交
 
-- 运行确定性、RAG Dev30、IE-F06、IE-P16、IE-J12、Hosted CI 和 Clean Compose；
-- 生成 `release-verification.md`、三条 Trace Walkthrough 和 30 个高频问答；
-- 实现 Agent 停在 Review Gate，由用户本人完成作者掌握验收；
+- 已运行确定性、RAG Dev30、IE-F06、IE-P16、IE-J12、Hosted CI 和 Clean Compose；
+- 已生成 `release-verification.md`、三条 Trace Walkthrough 和 30 个高频问答；
+- Agent 已停在 Review Gate，由用户本人完成作者掌握验收；
 - 用户验收后才把 Interview Edition 设为默认展示版本。
 
 每个 Phase 结束必须逐项回查本 Phase 合同。未满足条目继续留在原 Phase 修复，不得用“已提交”
-代替“已完成”，也不得进入下一 Phase 隐藏遗留问题。唯一例外是 Phase 1 明确登记的 Hosted CI
-外部 Release Blocker；它不阻止 Phase 2～6，但 Phase 7 与最终 DoD 必须保持未完成。
+代替“已完成”，也不得进入下一 Phase 隐藏遗留问题。Phase 1 明确登记的 Hosted CI 外部
+Release Blocker 不阻止 Phase 2～6；它只在后续精确 Candidate 的 Hosted CI 真实执行成功后关闭，
+最终 Candidate `4466290963993e0b7662d75b571e4b15e4e97627` 已以 5 Job / 76 Step 全绿完成该闭环。
 
 ## 11. 作者掌握计划
 
@@ -509,34 +522,34 @@ IE-P16 执行 `16/16` 场景、通过 `13`、失败 `3`；IE-P14/P15/P16 均记�
 
 ### 12.1 产品与安全
 
-- [ ] IE-J12、IE-P16、IE-F06 与三条 Web Demo 满足各自冻结合同和独立分母；
-- [ ] Agent 有真实 Observation 回流和 Replan；
-- [ ] RAG Dev30 达到第 9.2 节指标；
-- [ ] 三类 Action 复用一套完整 Proposal / Approval / RuntimeEffect；
-- [ ] Tenant/RLS、Policy、HITL、Checkpoint、Idempotency、Fence 和 Effect-once 不回退；
-- [ ] 第 7 节十项问题全部关闭。
+- [x] IE-J12、IE-P16、IE-F06 与三条 Web Demo 满足各自冻结合同和独立分母；
+- [x] Agent 有真实 Observation 回流和 Replan；
+- [x] RAG Dev30 达到第 9.2 节指标；
+- [x] 三类 Action 复用一套完整 Proposal / Approval / RuntimeEffect；
+- [x] Tenant/RLS、Policy、HITL、Checkpoint、Idempotency、Fence 和 Effect-once 不回退；
+- [x] 第 7 节十项问题全部关闭。
 
 ### 12.2 结构与可读性
 
-- [ ] 总 Code Map 恰为 12 个入口，每入口一跳必读依赖 `≤2`，三条 Demo 与冻结 Owner Map 一致；
-- [ ] 必须掌握核心目标 `6,000～8,000`、绝对上限 `12,000` 非空非注释行并有 Manifest；
-- [ ] 核心决策函数全部 `<200` 行，Runtime 依赖环和重复业务 owner 均为 `0`；
-- [ ] Graph 无转发空壳或不可达 escalation；
-- [ ] 前端 Query / Stream / Mutation / View State 边界明确；
-- [ ] Runtime wheel / 镜像不含 Validation CLI，空环境安装和启动通过；
-- [ ] 当前权威文档恰为 8 份；Archive Hash、远端可达和 Restore Dry-run 通过；
-- [ ] Baseline Schema、Seed、权限与约束等价报告通过，旧数据库 fail closed。
+- [x] 总 Code Map 恰为 12 个入口，每入口一跳必读依赖 `≤2`，三条 Demo 与冻结 Owner Map 一致；
+- [x] 必须掌握核心目标 `6,000～8,000`、绝对上限 `12,000` 非空非注释行并有 Manifest；
+- [x] 核心决策函数全部 `<200` 行，Runtime 依赖环和重复业务 owner 均为 `0`；
+- [x] Graph 无转发空壳或不可达 escalation；
+- [x] 前端 Query / Stream / Mutation / View State 边界明确；
+- [x] Runtime wheel / 镜像不含 Validation CLI，空环境安装和启动通过；
+- [x] 当前权威文档恰为 8 份；Archive Hash、远端可达和 Restore Dry-run 通过；
+- [x] Baseline Schema、Seed、权限与约束等价报告通过，旧数据库 fail closed。
 
 ### 12.3 验证与诚实边界
 
-- [ ] Unit、Contract、Integration、PostgreSQL/RLS、MCP、双 Worker、Frontend、Ruff/Lint、Mypy、
+- [x] Unit、Contract、Integration、PostgreSQL/RLS、MCP、双 Worker、Frontend、Ruff/Lint、Mypy、
   Security、Wheel、Clean Compose 和 Docs Smoke 全绿；
-- [ ] MCP Discovery、Schema Hash、Allowlist、重连、关闭、权限隔离和零孤儿进程通过；
-- [ ] Provider fail-closed、PII egress、Lease/Fence takeover 和 Effect-once 通过；
-- [ ] Hosted CI 实际启动并完成，不是零步骤；若账户阻塞则保持未完成；
-- [ ] Docker Builder、镜像、Volume、临时目录和 MCP 子进程清理可证明；
-- [ ] `release-verification.md` 区分历史 `37/37`、当前结果和未执行 Evaluation；
-- [ ] Evaluation v6、Cross-Encoder、真实外部 Effect 和生产 SLA 未被夸大。
+- [x] MCP Discovery、Schema Hash、Allowlist、重连、关闭、权限隔离和零孤儿进程通过；
+- [x] Provider fail-closed、PII egress、Lease/Fence takeover 和 Effect-once 通过；
+- [x] Hosted CI 实际启动并完成，不是零步骤；若账户阻塞则保持未完成；
+- [x] Docker Builder、镜像、Volume、临时目录和 MCP 子进程清理可证明；
+- [x] `release-verification.md` 区分历史 `37/37`、当前结果和未执行 Evaluation；
+- [x] Evaluation v6、Cross-Encoder、真实外部 Effect 和生产 SLA 未被夸大。
 
 ### 12.4 作者所有权（最终 Human Acceptance）
 

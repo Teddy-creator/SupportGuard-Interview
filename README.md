@@ -85,8 +85,18 @@ flowchart LR
 - 仓库提供固定、不可替换的 v1.5.12 八 Lane Preflight。`make v1512-journey-preflight-plan` 只查看合同；正式 Preflight 必须在 clean `HEAD == origin/main` 上由 `make v1512-journey-preflight` 运行，并把命令输出、JUnit、Runtime 身份和零残留清理证据写到仓库外。它不会执行 37 项 Journey，也不会消费 Formal 授权。
 - Evaluation v6 已完成 Contract、公开 Dev 60、Scorer、Materializer、Lineage/Non-leak Preflight 与 Custodian Allowed-input Packet；独立私有 Holdout Receipt 尚未取得，因此 `active_dataset=null`，`eval dev` / `eval real` 必须 fail closed。
 - Cross-Encoder 目前未实现、默认关闭。只有独立 Custodian 冻结 v6 后，才允许在同一冻结 Dev 上做真实查询时 A/B；RRF 不被称为 Reranker。
-- v2.0 Phase 6 Candidate `30254587585fa2169cab071a926c501e06dac9a6` 已完成受控 Pruning：2,197 个历史文档、Migration、评测载体、报告、测试 Carrier 与 Validation Owner 已从当前工作区迁出，仍由 Archive Tag、Source Commit 和 SHA-256 Manifest 可恢复；当前只保留 8 份权威文档。Hermetic Backend `1315/1315`、Current Integration `225/225`、MCP `6/6 + 10/10`、Frontend `81/81`、双 wheel 边界与 Runtime-only 镜像均通过，具名资源清理残留为 `0`。当前进入 Phase 7，但 Hosted CI Run `31573174199` 仍因 Payment / Spending Limit 为 5 个 Job、0 步骤的外部阻塞，Phase 7 与最终 DoD 未完成。
-- Phase 7 首个 Candidate `b132c395c2edf2d7d72477dc9051bffc3d7f4024` 的一次性真实 DeepSeek IE-P16 为 `11/16`。replacement Candidate `7527c0acca079f57549538e49135a91ef87b9389`（Tree `b9d96a0dd984cf8874a00f8f00172ac6f34db4be`）随后通过 RAG Dev30、IE-F06 `6/6`、IE-J12 `12/12`、完整确定性/集成/MCP/浏览器/Clean Compose、双 wheel、Runtime-only 镜像和 Hosted CI Run `31664415941`；但它唯一一次 IE-P16 为 `13/16`，IE-P14/P15/P16 均以 `ReadTimeout` 执行失败，正式 Safety/Semantic Claim 均为 false。异常兜底虽然在 Receipt 中写入 `0` token，但没有取得数据库用量快照，因此三项实际 Provider 用量未知；Receipt 已观测总量为 `248121 / 14710` token、对应估算费用 `¥0.277541`，实际总用量和费用可能更高。真实外部 Effect 和零残留清理均为 `0`。两个 SHA 均已消费且不得重跑；用户已持续授权后续 clean Candidate 的必要 DeepSeek 验证，Phase 7 与最终 DoD 仍未完成。
+- v2.0 Phase 6 Candidate `30254587585fa2169cab071a926c501e06dac9a6` 已完成受控 Pruning：2,197 个历史文档、Migration、评测载体、报告、测试 Carrier 与 Validation Owner 已从当前工作区迁出，仍由 Archive Tag、Source Commit 和 SHA-256 Manifest 可恢复；当前只保留 8 份权威文档。Hermetic Backend `1315/1315`、Current Integration `225/225`、MCP `6/6 + 10/10`、Frontend `81/81`、双 wheel 边界与 Runtime-only 镜像均通过，具名资源清理残留为 `0`。Phase 6 关闭时 Hosted CI Run `31573174199` 曾因 Payment / Spending Limit 为 5 个 Job、0 步骤的外部阻塞；该历史事实保留，最终 Candidate 的真实 Hosted Run 已在下一项闭环。
+- Phase 7 前两个 Candidate `b132c395c2edf2d7d72477dc9051bffc3d7f4024` 与
+  `7527c0acca079f57549538e49135a91ef87b9389` 的一次性真实 DeepSeek IE-P16 分别为 `11/16`、
+  `13/16`，失败 Receipt 均不可改写且 SHA 不得重跑。用户持续授权通用修复后的 clean Candidate
+  进行必要 DeepSeek 验证；最终工程 Candidate
+  `4466290963993e0b7662d75b571e4b15e4e97627`（Tree
+  `f4d021c13eac823d807cf3d120a99a610df9bb7b`）随后通过 Backend `1592`、Frontend `81`、Current
+  Integration `225`、MCP `6 + 11`、Browser `19`、Clean Compose `8`、RAG Dev30、IE-F06 `6/6`、
+  IE-J12 `12/12`、双 wheel、Runtime-only 镜像及 Hosted CI Run `31687980408` 的 5 Job / 76 Step。
+  该 SHA 唯一一次 IE-P16 为 `16/16`，Safety / Semantic / Cleanup 全部通过，Provider 用量完整为
+  `265737 / 21560` token，估算费用 `¥0.308857`；真实外部业务 Effect 仍为 `0`。Phase 7 机器验证
+  与工程 DoD 已完成，最终 Definition of Done 只等待用户本人完成 Human Acceptance。
 
 </details>
 
@@ -96,7 +106,7 @@ flowchart LR
 - Runtime Action 只修改本地 Fixture，不连接真实外部业务系统。
 - PostgreSQL Conversation Page 已消除全历史物化与 Citation HTTP `1 + N`；但超长对话仍依赖顺序 Cursor 加载，尚未做页面缓存、连接池深度调优、SBOM/签名、备份/PITR、灾备和生产 SLA。
 - Approval Queue 是面试所需的 Pending-first 轻量工作台；项目没有 Operator Inbox、人工回复、CRM 或 SLA 系统。
-- 确定性测试默认使用 Fake Provider；Production Auth 是 OIDC Bearer Adapter 和真实数据/授权边界，不等同于完整 IAM SaaS。Phase 1 本地正确性和 Phase 2 包边界均已完成；Phase 1 Hosted CI Run `31512749202` 与 Phase 2 Run `31520751057` 都因账户 Payment / Spending Limit 形成 5 个 Job、0 步骤的 `external_zero_step_blocker`，所以当前不能宣称 Hosted CI 全绿。真实外部业务 effect 和生产 SLA 不在 v2.0 范围内。
+- 确定性测试默认使用 Fake Provider；Production Auth 是 OIDC Bearer Adapter 和真实数据/授权边界，不等同于完整 IAM SaaS。Phase 1 / 2 的历史 Hosted Run 曾因 Payment / Spending Limit 为零步骤，但最终工程 Candidate 的 Hosted CI Run `31687980408` 已真实执行 5 个 Job / 76 个 Step 并全部通过。真实外部业务 effect 和生产 SLA 不在 v2.0 范围内。
 
 ## 验证
 
@@ -113,13 +123,13 @@ uv run python scripts/validate_interview_docs.py
 ```
 
 Phase 7 Runner 只接受 clean `HEAD == origin/main` 的精确 Candidate，并为同一 SHA 的完整 IE-P16
-执行资格 fail closed。`b132c395...` 与 replacement `7527c0ac...` 均已消费且不得重跑；后者已在
-前置证明和 Hosted green 后完整执行为 `13/16`。用户已持续授权后续 clean Candidate 的必要真实
-DeepSeek 验证；每个新 Candidate 仍只能执行一次完整矩阵，且不得选择性重跑失败项。
+执行资格 fail closed。`b132c395...`、`7527c0ac...` 与最终 `44662909...` 均已消费且不得重跑；
+三次完整结果分别是 `11/16`、`13/16`、`16/16`。用户持续授权 clean Candidate 的必要真实
+DeepSeek 验证，但每个 SHA 仍只能执行一次完整矩阵，且不得选择性重跑失败项。
 
 ## 阅读入口
 
-- [Interview Edition Simplification v2.0](docs/interview-edition-simplification-v2.0.md)：已批准并冻结的当前范围、权威迁移、Phase 0～7、复杂度预算与作者验收标准；Phase 0～6 已完成，Phase 7 的两个已消费 Candidate 均已如实失败，当前继续通用超时诊断与修复，最终 DoD 未完成。
+- [Interview Edition Simplification v2.0](docs/interview-edition-simplification-v2.0.md)：已批准并冻结的当前范围、权威迁移、Phase 0～7、复杂度预算与作者验收标准；Phase 0～7 机器验证和工程 DoD 已完成，当前等待用户 Human Acceptance。
 - [面试讲解与 Code Map](docs/interview-guide.md)：15 分钟演示顺序、源码纵向入口、常见追问与取舍。
 - [架构](docs/architecture.md)：状态、权限、Agent/MCP、RAG、HITL、Queue 和多租户边界。
 - [Demo Runbook](docs/demo-runbook.md)：三条主 Demo、页面与数据库终态检查。
@@ -130,4 +140,4 @@ Phase 6 已把历史文档、旧 Migration、旧评测载体和旧测试 Carrier
 annotated Tag `archive/interview-v2.0-baseline` 或 Phase 6 Manifest 记录的 source commit 恢复，
 不会被当前导航重新当作权威。
 
-当前唯一的新工作权威是已批准并冻结的 [Interview Edition Simplification v2.0](docs/interview-edition-simplification-v2.0.md)，操作与安全边界由 [`AGENTS.md`](AGENTS.md) 约束。用户已授权 Phase 0～7；首个 Candidate `b132c395c2edf2d7d72477dc9051bffc3d7f4024` 的 IE-P16 为 `11/16`，replacement `7527c0acca079f57549538e49135a91ef87b9389` 的零成本证明与 Hosted CI 全绿但一次性 IE-P16 为 `13/16`。两份 Receipt 均被保留、两个 SHA 均不得重跑；后续 clean Candidate 与必要真实 DeepSeek 验证已有持续授权。最终 Definition of Done、Human Acceptance、Holdout 与 Cross-Encoder 均未完成。精简前基线固定为 `6255c8c0eb0dcedd877bfbf16a9695dad2a0c9eb`，历史 `e68715f...` 的 `37/37` 仍只绑定 b205。
+当前唯一的新工作权威是已批准并冻结的 [Interview Edition Simplification v2.0](docs/interview-edition-simplification-v2.0.md)，操作与安全边界由 [`AGENTS.md`](AGENTS.md) 约束。用户已授权 Phase 0～7 并持续授权 clean Candidate 的必要真实 DeepSeek 验证；历史失败 Candidate `b132c395c2edf2d7d72477dc9051bffc3d7f4024`、`7527c0acca079f57549538e49135a91ef87b9389` 的 Receipt 均被保留。最终工程 Candidate `4466290963993e0b7662d75b571e4b15e4e97627` 的全部机器证明、Hosted CI 与一次性 IE-P16 `16/16` 已完成。最终 Definition of Done 仅等待 Human Acceptance；Holdout、Cross-Encoder、真实外部 Effect 与生产 SLA 仍未执行且不在 v2.0 声明范围内。精简前基线固定为 `6255c8c0eb0dcedd877bfbf16a9695dad2a0c9eb`，历史 `e68715f...` 的 `37/37` 仍只绑定 b205。

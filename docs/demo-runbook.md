@@ -20,16 +20,15 @@ b201 保证自动化 Customer Message、Turn 与 Agent Run 的直接和规范化
 它不改动客户 DTO、Agent、审批或动作结果。v1.6 的 37/37 Receipt 仍绑定当时的 b205 Candidate，
 b207 只追加审批来源的 Origin 有界 Keyset 分页与问候标题的同事务持久化。本次现场
 运行只能声明当前 Candidate 实际执行过的确定性与真实 Provider 证据。
-当前 v2.0 Phase 6 Candidate 为 `30254587585fa2169cab071a926c501e06dac9a6`：Authority Transition、
-2,197 个历史文件的受控 Pruning、Archive 恢复、Test Disposition、8 份当前权威文档、双 wheel、
-Runtime-only 镜像、Hermetic Backend `1315/1315`、Current Integration `225/225`、MCP
-`6/6 + 10/10` 与 Frontend `81/81` 均通过，零残留清理完成。Phase 7 Candidate
-`b132c395c2edf2d7d72477dc9051bffc3d7f4024` 的一次性真实 IE-P16 为 `11/16`。唯一获批 replacement
-`7527c0acca079f57549538e49135a91ef87b9389` 随后通过 RAG Dev30、IE-F06、IE-J12、Clean Compose、
-完整前置证明与 Hosted CI Run `31664415941`，但其一次性真实 IE-P16 为 `13/16`；IE-P14/P15/P16
-均为 `ReadTimeout`。两份失败 Receipt、费用与零残留清理均已保存，两个 SHA 都不得重跑。
-用户已持续授权后续 clean Candidate 的必要真实 DeepSeek 验证，但不授权选择性重跑已消费场景。
-这不代表 Phase 7、Human Acceptance、Holdout、Cross-Encoder 或最终 Definition of Done 已通过。
+Phase 7 历史 Candidate `b132c395c2edf2d7d72477dc9051bffc3d7f4024`、
+`7527c0acca079f57549538e49135a91ef87b9389` 的一次性真实 IE-P16 为 `11/16`、`13/16`；两份
+失败 Receipt、费用与零残留清理均已保存，两个 SHA 都不得重跑。用户持续授权 clean Candidate
+的必要真实 DeepSeek 验证，但不授权选择性重跑。最终工程 Candidate
+`4466290963993e0b7662d75b571e4b15e4e97627` 已通过 RAG Dev30、IE-F06 `6/6`、IE-J12 `12/12`、
+Backend `1592`、Current Integration `225`、MCP `6 + 11`、Frontend `81`、Browser `19`、Clean
+Compose、双 wheel、Runtime-only 镜像和 Hosted CI Run `31687980408`；其唯一一次真实 IE-P16
+为 `16/16`，Provider 用量完整、零残留清理通过。机器工程证明已完成；Holdout、Cross-Encoder、
+真实外部业务 Effect 不在本次范围，最终 Definition of Done 只等待用户 Human Acceptance。
 升级到该 Head 仍不等于执行过
 下述 Journey。
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate the compact Interview v2 current authority after Phase 6 pruning."""
+"""Validate the compact Interview v2 authority after Phase 7 machine validation."""
 
 from __future__ import annotations
 
@@ -91,6 +91,28 @@ PHASE7_REPLACEMENT_COST_LIMITATION: Final = (
     "The receipt total tokens and estimated cost exclude any unobserved usage from "
     "the failed scenarios."
 )
+PHASE7_FINAL_CANDIDATE: Final = "4466290963993e0b7662d75b571e4b15e4e97627"
+PHASE7_FINAL_TREE: Final = "f4d021c13eac823d807cf3d120a99a610df9bb7b"
+PHASE7_FINAL_P16_RECEIPT = Path(
+    "validation/evidence/interview_v2/phase7/attempts/"
+    "ie-p16-4466290963993e0b7662d75b571e4b15e4e97627.json"
+)
+PHASE7_FINAL_P16_RECEIPT_SHA256: Final = (
+    "21186631e6525743f1d1a617fe0e181500c9d2e1841531a355be500aa0ad45b5"
+)
+PHASE7_FINAL_HOSTED_RECEIPT = Path(
+    "validation/evidence/interview_v2/phase7/"
+    "hosted-ci-4466290963993e0b7662d75b571e4b15e4e97627.json"
+)
+PHASE7_FINAL_HOSTED_RECEIPT_SHA256: Final = (
+    "1c82310915018a88f29762adba797ed0c97ed833208c11451d31e413de42c6b3"
+)
+PHASE7_FINAL_VALIDATION_RECEIPT = Path(
+    "validation/evidence/interview_v2/phase7/phase7-final-validation-receipt.v1.json"
+)
+PHASE7_FINAL_VALIDATION_RECEIPT_SHA256: Final = (
+    "5dc7be8398169fb65dc265faec5a33e19caf20acd03f5df950c238c511b519f0"
+)
 TEST_DISPOSITION = Path("validation/contracts/interview_v2/test-disposition.v1.json")
 _MARKDOWN_LINK = re.compile(r"\[[^\]]+\]\(([^)]+)\)")
 
@@ -149,6 +171,7 @@ def validate() -> dict[str, object]:
             "Phase 7" not in content
             or PHASE7_FAILED_CANDIDATE not in content
             or PHASE7_REPLACEMENT_CANDIDATE not in content
+            or PHASE7_FINAL_CANDIDATE not in content
         ):
             raise RuntimeError(f"current_documentation_phase_identity_missing:{raw_path}")
         authorization_marker = "standing authorization" if raw_path == "AGENTS.md" else "持续授权"
@@ -278,6 +301,77 @@ def validate() -> dict[str, object]:
     ):
         raise RuntimeError("phase7_replacement_validation_receipt_semantics_mismatch")
 
+    final_p16_path = ROOT / PHASE7_FINAL_P16_RECEIPT
+    final_hosted_path = ROOT / PHASE7_FINAL_HOSTED_RECEIPT
+    final_validation_path = ROOT / PHASE7_FINAL_VALIDATION_RECEIPT
+    if _sha256(final_p16_path) != PHASE7_FINAL_P16_RECEIPT_SHA256:
+        raise RuntimeError("phase7_final_p16_receipt_hash_mismatch")
+    if _sha256(final_hosted_path) != PHASE7_FINAL_HOSTED_RECEIPT_SHA256:
+        raise RuntimeError("phase7_final_hosted_receipt_hash_mismatch")
+    if _sha256(final_validation_path) != PHASE7_FINAL_VALIDATION_RECEIPT_SHA256:
+        raise RuntimeError("phase7_final_validation_receipt_hash_mismatch")
+
+    final_p16 = _load_json(final_p16_path)
+    final_results = final_p16.get("results", [])
+    if (
+        final_p16.get("schema") != "supportguard.interview_v2.ie_p16_receipt.v1"
+        or final_p16.get("candidate", {}).get("candidate_sha") != PHASE7_FINAL_CANDIDATE
+        or final_p16.get("candidate", {}).get("git_tree_sha") != PHASE7_FINAL_TREE
+        or final_p16.get("denominator") != 16
+        or final_p16.get("executed") != 16
+        or final_p16.get("passed") != 16
+        or final_p16.get("failed") != 0
+        or [item.get("id") for item in final_results]
+        != [f"IE-P{ordinal:02d}" for ordinal in range(1, 17)]
+        or any(item.get("passed") is not True for item in final_results)
+        or final_p16.get("claims", {}).get("safety_pass") is not True
+        or final_p16.get("claims", {}).get("semantic_pass") is not True
+        or final_p16.get("claims", {}).get("cleanup_pass") is not True
+        or final_p16.get("claims", {}).get("complete_matrix_pass") is not True
+        or final_p16.get("claims", {}).get("provider_usage_observed_complete") is not True
+        or final_p16.get("cost", {}).get("unobserved_scenario_ids") != []
+        or final_p16.get("cost", {}).get("estimated_cost_is_complete") is not True
+        or final_p16.get("cost", {}).get("estimated_max_actual_cny") != "0.308857"
+    ):
+        raise RuntimeError("phase7_final_p16_receipt_semantics_mismatch")
+
+    final_hosted = _load_json(final_hosted_path)
+    if (
+        final_hosted.get("candidate_sha") != PHASE7_FINAL_CANDIDATE
+        or final_hosted.get("run_id") != 31687980408
+        or final_hosted.get("classification") != "completed_success"
+        or final_hosted.get("conclusion") != "success"
+        or final_hosted.get("claims", {}).get("hosted_execution_started") is not True
+        or final_hosted.get("claims", {}).get("local_execution_used_as_substitute") is not False
+        or final_hosted.get("claims", {}).get("release_blocker") is not False
+        or len(final_hosted.get("jobs", [])) != 5
+        or sum(job.get("step_count", -1) for job in final_hosted.get("jobs", [])) != 76
+        or any(job.get("conclusion") != "success" for job in final_hosted.get("jobs", []))
+    ):
+        raise RuntimeError("phase7_final_hosted_receipt_semantics_mismatch")
+
+    final_validation = _load_json(final_validation_path)
+    if (
+        final_validation.get("contract_version")
+        != "supportguard-interview-v2-phase7-final-validation.v1"
+        or final_validation.get("candidate_sha") != PHASE7_FINAL_CANDIDATE
+        or final_validation.get("candidate_tree_sha") != PHASE7_FINAL_TREE
+        or final_validation.get("origin_main_sha") != PHASE7_FINAL_CANDIDATE
+        or final_validation.get("status")
+        != "phase7_machine_validation_complete_human_acceptance_pending"
+        or final_validation.get("claims", {}).get("phase7_machine_validation_complete") is not True
+        or final_validation.get("claims", {}).get("engineering_definition_of_done_complete")
+        is not True
+        or final_validation.get("claims", {}).get("final_definition_of_done_complete") is not False
+        or final_validation.get("claims", {}).get("human_acceptance_complete") is not False
+        or final_validation.get("claims", {}).get("hosted_ci_green") is not True
+        or final_validation.get("claims", {}).get("ie_p16_complete_matrix_pass") is not True
+        or final_validation.get("results", {}).get("ie_p16", {}).get("passed") != 16
+        or final_validation.get("results", {}).get("ie_p16", {}).get("failed") != 0
+        or final_validation.get("results", {}).get("cleanup", {}).get("status") != "passed"
+    ):
+        raise RuntimeError("phase7_final_validation_receipt_semantics_mismatch")
+
     phase5_path = ROOT / PHASE5_RECEIPT
     phase5_hosted_path = ROOT / PHASE5_HOSTED_RECEIPT
     if _sha256(phase5_path) != PHASE5_RECEIPT_SHA256:
@@ -354,7 +448,7 @@ def validate() -> dict[str, object]:
 
     return {
         "result": "pass",
-        "v20_activation": "phase7",
+        "v20_activation": "phase7_human_acceptance",
         "current_authority_document_count": len(tracked_docs),
         "current_database_head": CURRENT_PRODUCT_DATABASE_HEAD,
         "v20_phase5_candidate_sha": PHASE5_CANDIDATE,
@@ -386,6 +480,14 @@ def validate() -> dict[str, object]:
         "phase7_replacement_authorization_consumed": True,
         "phase7_confirmation_gate": False,
         "phase7_subsequent_clean_candidate_deepseek_authorized": True,
+        "phase7_final_candidate_sha": PHASE7_FINAL_CANDIDATE,
+        "phase7_final_tree_sha": PHASE7_FINAL_TREE,
+        "phase7_final_p16_receipt_sha256": PHASE7_FINAL_P16_RECEIPT_SHA256,
+        "phase7_final_p16_result": "16/16",
+        "phase7_final_hosted_receipt_sha256": PHASE7_FINAL_HOSTED_RECEIPT_SHA256,
+        "phase7_final_validation_receipt_sha256": PHASE7_FINAL_VALIDATION_RECEIPT_SHA256,
+        "phase7_machine_validation_complete": True,
+        "human_acceptance_complete": False,
         "active_dataset": evaluation["active_dataset"],
         "protected_holdout": evaluation["protected_holdout"],
         "cross_encoder": evaluation["cross_encoder"],

@@ -23,17 +23,16 @@ production-shaped versus actually production-integrated.
    visibility changes, protected Evaluation access, or making Interview Edition the default before final
    Human Acceptance.
 7. Current Phase, exact Candidate, local receipt, and Hosted CI disposition are recorded in
-   `docs/release-verification.md`. Phase 7 Candidate `b132c395c2edf2d7d72477dc9051bffc3d7f4024`
-   passed its zero-cost proof set and Hosted CI, then its one allowed complete IE-P16 finished `11/16` and
-   entered the Confirmation Gate. On 2026-08-13 the user authorized exactly one replacement Candidate;
-   replacement `7527c0acca079f57549538e49135a91ef87b9389` passed all prerequisite proofs and Hosted CI,
-   then its one complete IE-P16 finished `13/16` with three `ReadTimeout` execution failures and again
-   stopped at the Confirmation Gate. Both failed Receipts, costs and clean teardowns are immutable. The
-   replacement authorization is consumed and neither consumed SHA may be rerun. On 2026-08-13 the user then
-   granted standing authorization for subsequent clean Candidates and necessary real DeepSeek validation,
-   without another per-run confirmation. This does not authorize selective reruns, Holdout, Cross-Encoder,
-   historical Gate / Parity, or spend above the existing CNY 30 gate. This constitution never upgrades
-   historical or partial evidence into a final Definition of Done claim.
+   `docs/release-verification.md`. Phase 7 Candidates `b132c395c2edf2d7d72477dc9051bffc3d7f4024`
+   and `7527c0acca079f57549538e49135a91ef87b9389` consumed their single complete IE-P16 runs at
+   `11/16` and `13/16`; both failed Receipts, costs and clean teardowns remain immutable and neither SHA may
+   be rerun. After the user granted standing authorization for subsequent clean Candidates and necessary
+   real DeepSeek validation, final engineering Candidate
+   `4466290963993e0b7662d75b571e4b15e4e97627` passed every prerequisite, Hosted CI Run
+   `31687980408`, and its one complete IE-P16 at `16/16`; its machine validation and cleanup are complete.
+   This standing authorization still does not permit selective reruns, Holdout, Cross-Encoder, historical
+   Gate / Parity, or spend above the CNY 30 gate. Final Definition of Done remains pending until the user
+   personally completes Human Acceptance; machine evidence cannot substitute for author ownership.
 8. On 2026-08-12 the user explicitly authorized the history-free, MIT-licensed public mirror
    `Teddy-creator/SupportGuard-Interview`. This authorization does not publish or modify the private canonical
    repository, its Archive Tags, historical Actions records, protected Evaluation inputs, or private evidence.
