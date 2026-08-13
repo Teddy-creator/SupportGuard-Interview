@@ -482,6 +482,9 @@ async def test_worker_finalize_atomically_activates_oldest_accepted_turn() -> No
             run = await session.get(AgentRun, run_id, with_for_update=True)
             current_message = await session.get(TicketMessage, f"message_{prefix}")
             assert ticket is not None and run is not None and current_message is not None
+            await session.execute(
+                select(func.set_config("app.tenant_id", ticket.tenant_id, True))
+            )
             current_turn = await session.scalar(
                 select(ConversationTurn)
                 .where(
