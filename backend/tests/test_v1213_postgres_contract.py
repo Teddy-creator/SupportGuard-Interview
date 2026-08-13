@@ -12,9 +12,9 @@ from sqlalchemy.ext.asyncio import create_async_engine
 from supportguard.contracts.canonical_json import canonical_json_bytes
 from supportguard.db.reference_contract import CURRENT_PRODUCT_DATABASE_HEAD
 from supportguard.db.role_contract import (
-    MCP_HELPER_CALL_GRAPH,
     MCP_OWNER_ONLY_HELPERS,
     RUNTIME_ROLES,
+    expected_mcp_helper_call_graph,
 )
 
 pytestmark = pytest.mark.postgres
@@ -158,7 +158,9 @@ async def test_v1213_mcp_helpers_and_call_graph_match_frozen_manifest() -> None:
                     {"helpers": helper_names},
                 )
             ).all()
-            assert {(str(row[0]), str(row[1])) for row in graph_rows} == set(MCP_HELPER_CALL_GRAPH)
+            assert {(str(row[0]), str(row[1])) for row in graph_rows} == set(
+                expected_mcp_helper_call_graph()
+            )
     finally:
         await engine.dispose()
 

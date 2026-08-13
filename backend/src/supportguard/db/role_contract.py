@@ -218,6 +218,46 @@ MCP_HELPER_CALL_GRAPH = frozenset(
     }
 )
 
+# Keep the v1.2.13 call graph above immutable, just like FUNCTION_GRANTS.  The
+# Interview chain replaces two historical wrapper edges and adds four narrow
+# refund-pair implementation edges.  The denied escalation function remains a
+# historical definition, so its static edge stays even though its live grant
+# is retired.  Current catalog checks consume the effective projection below
+# instead of rewriting the historical denominator.
+INTERVIEW_RETIRED_MCP_HELPER_CALL_GRAPH = frozenset(
+    {
+        (
+            "supportguard_read_mcp_query_billing_record(jsonb,jsonb)",
+            "supportguard_read_mcp_execute",
+        ),
+        (
+            "supportguard_worker_execute_approved_action(text,text,text,bigint)",
+            "supportguard_canonical_jsonb",
+        ),
+    }
+)
+
+INTERVIEW_ADDED_MCP_HELPER_CALL_GRAPH = frozenset(
+    {
+        (
+            "supportguard_read_mcp_query_billing_record_v203(jsonb,jsonb)",
+            "supportguard_read_mcp_execute",
+        ),
+        (
+            "supportguard_action_mcp_execute_refund_v203(jsonb,jsonb)",
+            "supportguard_action_mcp_execute",
+        ),
+        (
+            "supportguard_refund_pair_snapshot(text,text,text,timestamp with time zone)",
+            "supportguard_canonical_jsonb",
+        ),
+        (
+            "supportguard_worker_execute_approved_action_i202(text,text,text,bigint)",
+            "supportguard_canonical_jsonb",
+        ),
+    }
+)
+
 
 RUNTIME_ROLES = frozenset(
     {
@@ -547,6 +587,19 @@ def expected_worker_table_grants() -> dict[str, frozenset[str]]:
     grants["approval_requests"] = frozenset({"SELECT", "INSERT"})
     grants["proposal_records"] = frozenset({"SELECT", "INSERT"})
     return grants
+
+
+def expected_mcp_helper_call_graph() -> frozenset[tuple[str, str]]:
+    """Return the exact current helper graph without mutating its frozen base."""
+
+    if not INTERVIEW_RETIRED_MCP_HELPER_CALL_GRAPH <= MCP_HELPER_CALL_GRAPH:
+        raise ValueError("retired MCP helper edge is absent from the historical graph")
+    if INTERVIEW_ADDED_MCP_HELPER_CALL_GRAPH & MCP_HELPER_CALL_GRAPH:
+        raise ValueError("added MCP helper edge already exists in the historical graph")
+    return (
+        MCP_HELPER_CALL_GRAPH - INTERVIEW_RETIRED_MCP_HELPER_CALL_GRAPH
+        | INTERVIEW_ADDED_MCP_HELPER_CALL_GRAPH
+    )
 
 
 def expected_function_grants() -> dict[str, frozenset[str]]:

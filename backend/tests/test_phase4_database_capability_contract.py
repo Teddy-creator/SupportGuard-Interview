@@ -15,9 +15,13 @@ from supportguard.db.interview_baseline import (
 from supportguard.db.reference_contract import CURRENT_PRODUCT_DATABASE_HEAD
 from supportguard.db.role_contract import (
     FUNCTION_GRANTS,
+    INTERVIEW_ADDED_MCP_HELPER_CALL_GRAPH,
     INTERVIEW_RETIRED_FUNCTION_GRANTS,
+    INTERVIEW_RETIRED_MCP_HELPER_CALL_GRAPH,
+    MCP_HELPER_CALL_GRAPH,
     V126_RETIRED_FUNCTION_GRANTS,
     expected_function_grants,
+    expected_mcp_helper_call_graph,
 )
 from supportguard.db.security_contract import (
     BASELINE_IDENTITY,
@@ -130,6 +134,43 @@ def test_current_grants_retire_escalation_without_rewriting_historical_denominat
     assert set(current) == historical - v126_retired - phase4_retired | {
         "supportguard_api_get_refund_display(text,text[])"
     }
+
+
+def test_current_mcp_helper_graph_projects_exact_interview_delta() -> None:
+    historical = MCP_HELPER_CALL_GRAPH
+    retired = INTERVIEW_RETIRED_MCP_HELPER_CALL_GRAPH
+    added = INTERVIEW_ADDED_MCP_HELPER_CALL_GRAPH
+
+    assert len(historical) == 20
+    assert retired == {
+        (
+            "supportguard_read_mcp_query_billing_record(jsonb,jsonb)",
+            "supportguard_read_mcp_execute",
+        ),
+        (
+            "supportguard_worker_execute_approved_action(text,text,text,bigint)",
+            "supportguard_canonical_jsonb",
+        ),
+    }
+    assert added == {
+        (
+            "supportguard_read_mcp_query_billing_record_v203(jsonb,jsonb)",
+            "supportguard_read_mcp_execute",
+        ),
+        (
+            "supportguard_action_mcp_execute_refund_v203(jsonb,jsonb)",
+            "supportguard_action_mcp_execute",
+        ),
+        (
+            "supportguard_refund_pair_snapshot(text,text,text,timestamp with time zone)",
+            "supportguard_canonical_jsonb",
+        ),
+        (
+            "supportguard_worker_execute_approved_action_i202(text,text,text,bigint)",
+            "supportguard_canonical_jsonb",
+        ),
+    }
+    assert expected_mcp_helper_call_graph() == historical - retired | added
 
 
 def test_i201_catalog_delta_is_exactly_generic_definition_and_direct_acl() -> None:
