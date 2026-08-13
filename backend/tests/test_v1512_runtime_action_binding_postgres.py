@@ -1339,6 +1339,9 @@ async def test_production_coordinator_cannot_bypass_database_owned_stale() -> No
             assert approval is not None and approval.proposal_id is not None
             proposal = await session.get(ProposalRecord, approval.proposal_id)
             assert proposal is not None
+            await session.execute(
+                select(func.set_config("app.tenant_id", proposal.tenant_id, True))
+            )
             session.add(
                 ProposalRecord(
                     id=sibling_proposal_id,
@@ -1351,6 +1354,9 @@ async def test_production_coordinator_cannot_bypass_database_owned_stale() -> No
                     action_payload=proposal.action_payload,
                     observation_binding=proposal.observation_binding,
                     action_hash=proposal.action_hash,
+                    refund_original_resource_id=proposal.refund_original_resource_id,
+                    refund_original_version=proposal.refund_original_version,
+                    refund_pair_hash=proposal.refund_pair_hash,
                     status="draft",
                     status_version=1,
                 )
@@ -1417,6 +1423,9 @@ async def test_concurrent_exact_replays_lock_full_proposal_set_without_deadlock(
             assert approval is not None and approval.proposal_id is not None
             proposal = await session.get(ProposalRecord, approval.proposal_id)
             assert proposal is not None
+            await session.execute(
+                select(func.set_config("app.tenant_id", proposal.tenant_id, True))
+            )
             session.add(
                 ProposalRecord(
                     id=sibling_proposal_id,
