@@ -11,7 +11,7 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
 from time import monotonic
-from typing import Any, Literal, Protocol
+from typing import Any, Final, Literal, Protocol
 
 import anyio
 from mcp import ClientSession
@@ -21,6 +21,7 @@ from supportguard.mcp.client import raw_mcp_session
 from supportguard.tools.capabilities import ACTION_PROPOSAL_CAPABILITIES, READ_CAPABILITIES
 
 ServerName = Literal["read", "action"]
+DEFAULT_MCP_CALL_TIMEOUT_SECONDS: Final = 30.0
 SupervisorState = Literal[
     "stopped",
     "starting",
@@ -334,7 +335,9 @@ class ManagedServer:
 
 
 class MCPManager:
-    def __init__(self, *, timeout_seconds: float = 10.0) -> None:
+    def __init__(self, *, timeout_seconds: float = DEFAULT_MCP_CALL_TIMEOUT_SECONDS) -> None:
+        if timeout_seconds <= 0:
+            raise ValueError("MCP call timeout must be positive")
         self.timeout_seconds = timeout_seconds
         self.servers: dict[ServerName, ManagedServer] = {
             "read": ManagedServer("read", "supportguard.mcp.read_server"),

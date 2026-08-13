@@ -21,6 +21,7 @@ from supportguard.mcp import client as mcp_client
 from supportguard.mcp import manager as compatibility_manager
 from supportguard.mcp.action_server import mcp as action_mcp
 from supportguard.mcp.runtime import (
+    DEFAULT_MCP_CALL_TIMEOUT_SECONDS,
     EXPECTED_TOOLS,
     FROZEN_SCHEMA_HASHES,
     ManagedServer,
@@ -112,6 +113,14 @@ def test_manager_module_is_a_compatibility_reexport_not_a_second_lifecycle_owner
     source = inspect.getsource(compatibility_manager)
     assert "class MCPManager" not in source
     assert "class ManagedServer" not in source
+
+
+def test_default_mcp_call_budget_covers_cold_local_retrieval_and_remains_overridable() -> None:
+    assert DEFAULT_MCP_CALL_TIMEOUT_SECONDS == 30.0
+    assert MCPManager().timeout_seconds == DEFAULT_MCP_CALL_TIMEOUT_SECONDS
+    assert MCPManager(timeout_seconds=0.5).timeout_seconds == 0.5
+    with pytest.raises(ValueError, match="must be positive"):
+        MCPManager(timeout_seconds=0)
 
 
 def test_runtime_not_client_owns_current_initialize_and_discovery_lifecycle() -> None:
