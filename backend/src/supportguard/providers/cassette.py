@@ -21,6 +21,7 @@ def validate_native_tool_cassette(path: Path) -> dict[str, Any]:
     if cassette.get("cassette_schema") not in {
         "deepseek-native-tools.v1",
         "deepseek-native-tools.v2",
+        "deepseek-native-tools.v3",
     }:
         raise ValueError("unsupported_cassette_schema")
     for side in ("response", "parser_expectation"):

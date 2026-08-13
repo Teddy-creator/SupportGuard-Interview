@@ -102,10 +102,10 @@ def test_retention_manifest_has_exact_schema_coverage_and_defaults_deny() -> Non
 
 @pytest.mark.asyncio
 async def test_deepseek_native_tool_cassette_freezes_request_response_and_parser() -> None:
-    path = Path(__file__).parent / "fixtures/provider/deepseek-native-tools.v2.json"
+    path = Path(__file__).parent / "fixtures/provider/deepseek-native-tools.v3.json"
     report = await replay_native_tool_cassette(path)
     assert report["request_hash"] == (
-        "d5c52e0906927e53fce67ec782292472014e364a9bfcd2e0d2110ed90b846c9d"
+        "9fcf57167ee9bf088daaf8682d42cb4d697a9f5abb6e34a776cb21c69ffcb8d5"
     )
     assert report["response_hash"] == (
         "f9befb4cb6c855b11e7f653fb02048922c0abfc39d88f5af5d881d2766c0a196"

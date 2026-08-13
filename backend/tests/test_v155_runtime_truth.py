@@ -49,11 +49,8 @@ def test_canonical_runtime_manifest_is_stable_and_uses_current_contract() -> Non
     second = deepcopy(first)
 
     assert first == second
-    assert (
-        first.prompt_version
-        == "agent_decide.v5+bound_evidence_synthesis.v1"
-    )
-    assert first.schema_version == "agent-contract.v5.1"
+    assert first.prompt_version == "agent_decide.v6+bound_evidence_synthesis.v1"
+    assert first.schema_version == "agent-contract.v5.2"
     assert first.prompt_hash == contract_manifest()["prompt_hash"]
     assert len(first.schema_hash) == 64
     assert len(first.embedding_fingerprint) == 64
@@ -128,11 +125,14 @@ def test_memory_follow_up_semantics_never_invent_human_work(
     mode: str,
     expected: list[str],
 ) -> None:
-    assert follow_up_questions(
-        terminal_state=terminal,
-        finish_reason=reason,
-        automation_mode=mode,
-    ) == expected
+    assert (
+        follow_up_questions(
+            terminal_state=terminal,
+            finish_reason=reason,
+            automation_mode=mode,
+        )
+        == expected
+    )
 
 
 def test_heartbeat_wire_contract_is_bounded_and_carries_migration_identity() -> None:
@@ -156,10 +156,7 @@ def test_heartbeat_wire_contract_is_bounded_and_carries_migration_identity() -> 
         "agent",
         "runtime_manifest:" + "a" * 64,
     ]
-    assert (
-        f"database_head:{CURRENT_PRODUCT_DATABASE_HEAD}"
-        in payload["capabilities"]
-    )
+    assert f"database_head:{CURRENT_PRODUCT_DATABASE_HEAD}" in payload["capabilities"]
     assert "writer_contract:3:contract" in payload["capabilities"]
 
     with pytest.raises(ValueError, match="bounded"):
@@ -191,12 +188,15 @@ def test_worker_readiness_is_derived_from_live_component_state() -> None:
         MCPManager,
         SimpleNamespace(health=lambda: {"read": ready_server, "action": ready_server}),
     )
-    assert worker_heartbeat_snapshot(
-        settings=settings,
-        provider=provider,
-        manager=manager,
-        worker=worker,
-    ).status == "ready"
+    assert (
+        worker_heartbeat_snapshot(
+            settings=settings,
+            provider=provider,
+            manager=manager,
+            worker=worker,
+        ).status
+        == "ready"
+    )
 
     worker.last_progress_at = datetime.now(UTC) - timedelta(minutes=2)
     degraded = worker_heartbeat_snapshot(

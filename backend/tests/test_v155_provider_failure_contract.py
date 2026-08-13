@@ -85,8 +85,8 @@ def test_unresolved_action_preserves_grounded_ineligibility_fact() -> None:
 
 
 def test_current_prompt_requires_conflict_evidence_before_clarification() -> None:
-    assert PROMPT_VERSION == "agent_decide.v5+bound_evidence_synthesis.v1"
-    prompt = load_prompt("agent_decide", version="v5").content
+    assert PROMPT_VERSION == "agent_decide.v6+bound_evidence_synthesis.v1"
+    prompt = load_prompt("agent_decide", version="v6").content
 
     assert "policy, document, or version conflict" in prompt
     assert "call `search_knowledge` before returning `needs_clarification`" in prompt

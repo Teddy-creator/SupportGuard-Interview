@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+from collections.abc import Sequence
 from contextvars import ContextVar
 from datetime import UTC, datetime
 from email.utils import parsedate_to_datetime
@@ -11,18 +12,37 @@ import httpx
 from openai import APIConnectionError, APIStatusError, APITimeoutError, AsyncOpenAI
 from pydantic import BaseModel, SecretStr, ValidationError
 
-from supportguard.agent.schemas import AgentDecision
 from supportguard.config import Settings, get_settings
 from supportguard.providers.base import (
+    TERMINAL_CANDIDATE_FUNCTION,
     ProviderCallResult,
     ProviderTransportRecord,
     ProviderUsage,
     RawProviderDecision,
     RawProviderToolCall,
+    native_terminal_candidate_schema,
 )
 from supportguard.providers.limiter import ProviderLimitError, RedisProviderLimiter
 
 OutputT = TypeVar("OutputT", bound=BaseModel)
+
+
+def _terminal_candidate_content(
+    tool_calls: Sequence[Any],
+) -> str | None:
+    """Normalize exactly one reserved terminal call into strict JSON content.
+
+    Invalid arguments remain content for the existing bounded schema-repair path. Mixed or
+    repeated calls are application tool batches and therefore continue to fail closed downstream.
+    """
+
+    if len(tool_calls) != 1:
+        return None
+    call = tool_calls[0]
+    if call.function.name != TERMINAL_CANDIDATE_FUNCTION:
+        return None
+    arguments = call.function.arguments
+    return arguments if isinstance(arguments, str) else None
 
 
 class ProviderError(RuntimeError):
@@ -306,12 +326,23 @@ class DeepSeekProvider:
         prior_turns: list[dict[str, Any]],
         trace_metadata: dict[str, str],
     ) -> ProviderCallResult[RawProviderDecision]:
-        schema = json.dumps(AgentDecision.model_json_schema(), ensure_ascii=False)
         instruction = (
-            f"{system}\nUse native tool calls when another read is required. "
-            "Otherwise return one JSON AgentDecision object. Never invent a tool result or "
-            f"request a write tool. AgentDecision schema:\n{schema}"
+            f"{system}\nUse only the supplied native read functions when another read is "
+            f"required. When evidence is complete, call the reserved "
+            f"`{TERMINAL_CANDIDATE_FUNCTION}` response function exactly once; it is structured "
+            "output, not an application tool, and performs no I/O or effect. Never combine that "
+            "response function with a read call. For a clarification, return exactly one JSON "
+            "object with decision_type=needs_clarification, a concise decision_summary, empty "
+            "tool_calls, null candidate, and one clarification_question. For manual takeover, "
+            "use decision_type=manual_takeover with a concise decision_summary, empty tool_calls, "
+            "null candidate, and null clarification_question. Never invent a tool result or "
+            "request a write tool."
         )
+        if any(
+            item.get("function", {}).get("name") == TERMINAL_CANDIDATE_FUNCTION for item in tools
+        ):
+            raise ProviderError("reserved_terminal_candidate_function_collision")
+        provider_tools = [*tools, native_terminal_candidate_schema()]
         messages: list[dict[str, Any]] = [
             {"role": "system", "content": instruction},
             {"role": "user", "content": context},
@@ -325,7 +356,7 @@ class DeepSeekProvider:
                 temperature=self.settings.llm_temperature,
                 max_tokens=self.settings.provider_max_output_tokens,
                 messages=messages,
-                tools=tools,
+                tools=provider_tools,
                 tool_choice="auto",
                 response_format={"type": "json_object"},
                 extra_body={"thinking": {"type": "disabled"}},
@@ -337,6 +368,24 @@ class DeepSeekProvider:
                 completion_tokens += response.usage.completion_tokens
             message = response.choices[0].message
             if message.tool_calls:
+                terminal_content = _terminal_candidate_content(message.tool_calls)
+                if terminal_content is not None:
+                    output = RawProviderDecision(
+                        finish_reason=response.choices[0].finish_reason,
+                        content=terminal_content,
+                        tool_calls=(),
+                    )
+                    return ProviderCallResult(
+                        output=output,
+                        attempts=1,
+                        usage=ProviderUsage(prompt_tokens, completion_tokens),
+                        trace_metadata={
+                            **trace_metadata,
+                            "terminal_transport": "native_final_candidate.v1",
+                        },
+                        transport=self._require_transport(),
+                        transport_attempts=transport_attempts,
+                    )
                 output = RawProviderDecision(
                     finish_reason=response.choices[0].finish_reason,
                     content=message.content,

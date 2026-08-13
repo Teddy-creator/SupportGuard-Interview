@@ -26,7 +26,8 @@ Ticket Aggregate 以最新 Run 为当前回答边界。Knowledge Source 必须�
 
 Provider 显示分为 `configured_runtime` 与 `actual_runtime`：前者是命令受理配置，后者只从该 Run 已持久化的 LLM Attempt/Context Ledger 派生；尚未调用时为 null，Fake、DeepSeek production/native 不混淆。Context Evidence Projection 使用版本化合同：历史 Ledger 按 `context-evidence.v1` 重放，新 Ledger 使用只向模型暴露 source locator 的 `context-evidence.v2`；发布校验按 Ledger 版本重放，不改写历史事实。最终引用集合由 Material Claim 的真实绑定确定，未知绑定继续 fail closed。
 
-当前 `agent-contract.v5.1` 在原有 Schema 上增加有界的 `supportguard_greeting` 语义。
+当前 `agent-contract.v5.2` 在原有 Schema 上增加有界的 `supportguard_greeting` 语义，
+并将 Provider 终态提交建模为无 I/O、无权限的严格结构化响应通道。
 独立 [`conversation_semantics.py`](../backend/src/supportguard/agent/conversation_semantics.py)
 把无事实问候与知识型 API 定义从实时账户诊断中分开：问候不调用工具、不制造引用；
 知识型 API 问题只暴露 `search_knowledge`，只有明确需要当前状态时才开放账户、用量或

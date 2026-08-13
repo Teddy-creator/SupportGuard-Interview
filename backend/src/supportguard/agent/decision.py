@@ -571,7 +571,7 @@ class DecisionNodes:
             )
         except ContextBudgetExceeded:
             return await safe_stop(self.host, state, "context_budget_exhausted")
-        prompt = load_prompt("agent_decide", version="v5")
+        prompt = load_prompt("agent_decide", version="v6")
         reserved = await self.host._reserve_external(state, "llm")
         context_ledger_id_hint = new_id("context")
         provider_attempt_id = reserved[1].id if reserved is not None else new_id("attempt")

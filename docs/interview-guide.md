@@ -26,7 +26,8 @@ SupportGuard 不是“LLM 套一个聊天框”，而是一个 AI SaaS 客服单
 12. **会话语义与展示分层**：独立的 Conversation Semantics 只处理问候等无事实请求，
     通用 API 定义只开放知识检索，当前账户诊断才开放实时 Read Tool。Freshness 裁剪、
     会话标题与完成态展示分别由纯函数 owner 负责，不在 Graph、API 或 React Controller
-    中追加 Demo 文案分支。当前 Agent Schema 为 `agent-contract.v5.1`。
+    中追加 Demo 文案分支。当前 Agent Schema 为 `agent-contract.v5.2`，Provider 的
+    `final_candidate` 只是一条严格校验、无 I/O 的终态响应通道，不属于 MCP 能力。
 
 ## 10～15 分钟 Demo 顺序
 

@@ -15,6 +15,7 @@ from supportguard.agent.schemas import (
     ProviderBoundEvidenceSynthesis,
 )
 from supportguard.prompts.registry import load_prompt
+from supportguard.providers.base import native_terminal_candidate_schema
 from supportguard.rag.embeddings import configured_embedding_fingerprint
 from supportguard.rag.types import SourceLocatorV2
 from supportguard.tools.gateway import READ_TOOL_ARGUMENTS, native_read_tool_schemas
@@ -23,12 +24,12 @@ if TYPE_CHECKING:
     from supportguard.config import Settings
 
 PROMPT_NAME = "agent_decide+bound_evidence_synthesis"
-PROMPT_ASSET_VERSION = "v5+v1"
-PROMPT_VERSION = "agent_decide.v5+bound_evidence_synthesis.v1"
-AGENT_SCHEMA_VERSION = "agent-contract.v5.1"
+PROMPT_ASSET_VERSION = "v6+v1"
+PROMPT_VERSION = "agent_decide.v6+bound_evidence_synthesis.v1"
+AGENT_SCHEMA_VERSION = "agent-contract.v5.2"
 CONTEXT_VERSION = "context-v1.2"
-EXPECTED_PROMPT_HASH = "a414a76efb125d560071225253ffb9f5bfc8c1135ee2af52b5f4a044a27e3abc"
-EXPECTED_SCHEMA_HASH = "51c30150c8940975a08593e0121432a5c6a7c04c2786dc14186348506b2e90a1"
+EXPECTED_PROMPT_HASH = "9684a77127754f24cf6995a7a594f886fda2a5206c079c055d721b220ad41f2c"
+EXPECTED_SCHEMA_HASH = "84cc854a6a84d74faea4b3f79943f115225448c4991d7ed1577308b5849c281b"
 _COMMIT_SHA = re.compile(r"^[0-9a-f]{40}(?:[0-9a-f]{24})?$")
 
 
@@ -39,7 +40,7 @@ class AgentContractDrift(RuntimeError):
 def prompt_text() -> str:
     return "\n\n--- bound synthesis ---\n\n".join(
         (
-            load_prompt("agent_decide", version="v5").content,
+            load_prompt("agent_decide", version="v6").content,
             load_prompt("bound_evidence_synthesis", version="v1").content,
         )
     )
@@ -53,6 +54,7 @@ def contract_manifest() -> dict[str, object]:
         "final_response": FinalResponse.model_json_schema(),
         "source_locator": SourceLocatorV2.model_json_schema(),
         "read_tools": native_read_tool_schemas(set(READ_TOOL_ARGUMENTS)),
+        "terminal_candidate_transport": native_terminal_candidate_schema(),
     }
     encoded = json.dumps(schemas, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
     return {

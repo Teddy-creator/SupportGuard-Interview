@@ -582,8 +582,8 @@ def test_context_projection_keeps_decision_facts_without_audit_only_lineage() ->
 
 def test_prompt_schema_and_actual_runtime_provenance_are_content_addressed() -> None:
     manifest = contract_manifest()
-    assert manifest["prompt_version"] == "agent_decide.v5+bound_evidence_synthesis.v1"
-    assert manifest["schema_version"] == "agent-contract.v5.1"
+    assert manifest["prompt_version"] == "agent_decide.v6+bound_evidence_synthesis.v1"
+    assert manifest["schema_version"] == "agent-contract.v5.2"
     assert all(len(str(manifest[key])) == 64 for key in ("prompt_hash", "schema_hash"))
     provenance = runtime_provenance(
         model="deterministic-fake",

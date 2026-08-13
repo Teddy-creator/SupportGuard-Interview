@@ -7,10 +7,27 @@ from typing import Any, Generic, Protocol, TypeVar
 
 from pydantic import BaseModel
 
-from supportguard.agent.schemas import AgentDecision
+from supportguard.agent.schemas import AgentDecision, CandidateResponse
 
 OutputT = TypeVar("OutputT")
 SchemaOutputT = TypeVar("SchemaOutputT", bound=BaseModel)
+TERMINAL_CANDIDATE_FUNCTION = "final_candidate"
+
+
+def native_terminal_candidate_schema() -> dict[str, Any]:
+    """Return the reserved Provider-output function, never an application tool."""
+
+    return {
+        "type": "function",
+        "function": {
+            "name": TERMINAL_CANDIDATE_FUNCTION,
+            "description": (
+                "Submit one terminal, evidence-bound CandidateResponse. This is a response "
+                "transport only; it performs no read, write, approval, or external effect."
+            ),
+            "parameters": CandidateResponse.model_json_schema(),
+        },
+    }
 
 
 @dataclass(frozen=True, slots=True)

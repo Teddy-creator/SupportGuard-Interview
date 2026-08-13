@@ -1860,6 +1860,36 @@ def test_api_diagnostic_renderer_adds_a_concrete_next_step() -> None:
     assert "Retry-After" in rendered
 
 
+def test_completed_rate_limit_evidence_adds_control_boundary_when_provider_omits_it() -> None:
+    candidate = CandidateResponse.model_validate(
+        {
+            "answer": "free text is ignored",
+            "action": "answer",
+            "knowledge_chunk_ids": [],
+            "business_source_ids": ["usage:current"],
+            "material_claims": [
+                {
+                    "text": "当前请求触发了并发限制。",
+                    "observation_source_ids": ["usage:current"],
+                }
+            ],
+        }
+    )
+
+    rendered = AgentRuntimeServices._render_validated_answer(
+        candidate,
+        route=PolicyRoute.ANSWER,
+        finish_reason="answered",
+        integrity=True,
+        issue_type="api_diagnostics",
+        rate_limit_diagnostic_reads_complete=True,
+    )
+
+    assert "余额与运行并发是两套独立控制" in rendered
+    assert "余额充足不会提高套餐并发上限" in rendered
+    assert "Retry-After" in rendered
+
+
 def test_pending_action_context_narrows_policy_follow_up_to_knowledge() -> None:
     state = AgentState(
         classification={"issue_type": "billing_refund"},

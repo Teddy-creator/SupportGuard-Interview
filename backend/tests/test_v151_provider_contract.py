@@ -6,7 +6,7 @@ from typing import Any
 import httpx
 import pytest
 from openai import AuthenticationError
-from pydantic import SecretStr
+from pydantic import SecretStr, ValidationError
 
 from supportguard.agent.graph import AgentState, SupportGraph
 from supportguard.agent.nodes.decision_support import AgentRuntimeServices
@@ -47,6 +47,52 @@ def _chat_response(content: str) -> httpx.Response:
             "usage": {"prompt_tokens": 10, "completion_tokens": 5, "total_tokens": 15},
         },
     )
+
+
+def _tool_response(*calls: tuple[str, dict[str, Any]]) -> httpx.Response:
+    return httpx.Response(
+        200,
+        json={
+            "id": "chatcmpl-v151-tool",
+            "object": "chat.completion",
+            "created": 0,
+            "model": "deepseek-v4-flash",
+            "choices": [
+                {
+                    "index": 0,
+                    "message": {
+                        "role": "assistant",
+                        "content": None,
+                        "tool_calls": [
+                            {
+                                "id": f"call-{index}",
+                                "type": "function",
+                                "function": {
+                                    "name": name,
+                                    "arguments": json.dumps(arguments, ensure_ascii=False),
+                                },
+                            }
+                            for index, (name, arguments) in enumerate(calls)
+                        ],
+                    },
+                    "finish_reason": "tool_calls",
+                }
+            ],
+            "usage": {"prompt_tokens": 10, "completion_tokens": 5, "total_tokens": 15},
+        },
+    )
+
+
+def _answer_candidate() -> dict[str, Any]:
+    return {
+        "answer": "余额与并发是独立控制，请按 Retry-After 重试。",
+        "action": "answer",
+        "knowledge_chunk_ids": [],
+        "knowledge_citations": [],
+        "business_source_ids": [],
+        "material_claims": [],
+        "proposed_arguments": {},
+    }
 
 
 def _settings() -> Settings:
@@ -205,6 +251,99 @@ async def test_deepseek_terminal_retry_failure_preserves_attempt_count_through_d
         assert calls == 2
         assert provider.request_count == 2
         assert AgentRuntimeServices._exception_transport_attempts(captured.value) == 2
+    finally:
+        await provider.aclose()
+
+
+@pytest.mark.asyncio
+async def test_deepseek_reserved_terminal_function_is_strict_output_not_a_tool_attempt() -> None:
+    requests: list[dict[str, Any]] = []
+
+    def transport(request: httpx.Request) -> httpx.Response:
+        requests.append(json.loads(request.content))
+        return _tool_response(("final_candidate", _answer_candidate()))
+
+    provider = DeepSeekProvider(_settings(), http_transport=httpx.MockTransport(transport))
+    try:
+        result = await provider.decide(
+            system="decide",
+            context='{"ticket":"429"}',
+            tools=[
+                {
+                    "type": "function",
+                    "function": {
+                        "name": "query_api_usage",
+                        "description": "Read current usage.",
+                        "parameters": {"type": "object", "properties": {}},
+                    },
+                }
+            ],
+            prior_turns=[],
+            trace_metadata={"run_id": "run-terminal"},
+        )
+        assert result.output.tool_calls == ()
+        decision = AgentRuntimeServices._parse_raw_provider_decision(result.output)
+        assert decision.decision_type == "final_candidate"
+        assert decision.candidate is not None
+        assert decision.candidate.action == "answer"
+        assert result.trace_metadata["terminal_transport"] == "native_final_candidate.v1"
+        assert [item["function"]["name"] for item in requests[0]["tools"]] == [
+            "query_api_usage",
+            "final_candidate",
+        ]
+    finally:
+        await provider.aclose()
+
+
+@pytest.mark.asyncio
+async def test_deepseek_mixed_terminal_and_read_calls_remain_a_rejected_raw_batch() -> None:
+    provider = DeepSeekProvider(
+        _settings(),
+        http_transport=httpx.MockTransport(
+            lambda _request: _tool_response(
+                ("query_api_usage", {}),
+                ("final_candidate", _answer_candidate()),
+            )
+        ),
+    )
+    try:
+        result = await provider.decide(
+            system="decide",
+            context='{"ticket":"429"}',
+            tools=[],
+            prior_turns=[],
+            trace_metadata={},
+        )
+        assert [item.name for item in result.output.tool_calls] == [
+            "query_api_usage",
+            "final_candidate",
+        ]
+        assert result.output.content is None
+    finally:
+        await provider.aclose()
+
+
+@pytest.mark.asyncio
+async def test_deepseek_invalid_terminal_arguments_enter_schema_repair_not_tool_transport() -> None:
+    provider = DeepSeekProvider(
+        _settings(),
+        http_transport=httpx.MockTransport(
+            lambda _request: _tool_response(
+                ("final_candidate", {"answer": "missing required fields"})
+            )
+        ),
+    )
+    try:
+        result = await provider.decide(
+            system="decide",
+            context='{"ticket":"429"}',
+            tools=[],
+            prior_turns=[],
+            trace_metadata={},
+        )
+        assert result.output.tool_calls == ()
+        with pytest.raises(ValidationError):
+            AgentRuntimeServices._parse_raw_provider_decision(result.output)
     finally:
         await provider.aclose()
 
@@ -489,7 +628,7 @@ def test_real_provider_prompts_use_current_taxonomy_and_bounded_customer_routes(
     assert "must be verified by the authorized read tool" in classify
     assert "only when the current customer text explicitly requests" in classify
 
-    decide = load_prompt("agent_decide", version="v5").content
+    decide = load_prompt("agent_decide", version="v6").content
     assert "`action=reject` candidate without tools" in decide
     assert "to resend the secret" in decide
     assert "`query_subscription`, `query_api_usage`, and" in decide
@@ -512,6 +651,9 @@ def test_real_provider_prompts_use_current_taxonomy_and_bounded_customer_routes(
     assert "do not silently downgrade it" in decide
     assert "`previous_provider_decision_rejected.reason_code=premature_action_candidate`" in decide
     assert "one\nbounded corrective decision" in decide
+    assert "reserved native response function named `final_candidate`" in decide
+    assert "performs no I/O" in decide
+    assert "Never combine it with a read call" in decide
 
 
 @pytest.mark.asyncio

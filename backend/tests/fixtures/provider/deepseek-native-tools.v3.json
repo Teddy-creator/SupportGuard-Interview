@@ -1,0 +1,60 @@
+{
+  "cassette_schema": "deepseek-native-tools.v3",
+  "provider_adapter_version": "deepseek-openai-native.v2",
+  "model": "deepseek-v4-flash",
+  "prompt_hash": "1111111111111111111111111111111111111111111111111111111111111111",
+  "schema_hash": "2222222222222222222222222222222222222222222222222222222222222222",
+  "context_hash": "3333333333333333333333333333333333333333333333333333333333333333",
+  "request_input": {
+    "system": "[SANITIZED_PROMPT_FIXTURE]",
+    "context": "[SANITIZED_CONTEXT_FIXTURE]",
+    "prior_turns": [],
+    "tools": [
+      {
+        "type": "function",
+        "function": {
+          "name": "query_account",
+          "parameters": {
+            "type": "object",
+            "properties": {},
+            "additionalProperties": false
+          }
+        }
+      }
+    ]
+  },
+  "request_hash": "9fcf57167ee9bf088daaf8682d42cb4d697a9f5abb6e34a776cb21c69ffcb8d5",
+  "response": {
+    "choices": [
+      {
+        "finish_reason": "tool_calls",
+        "message": {
+          "role": "assistant",
+          "content": null,
+          "tool_calls": [
+            {
+              "id": "call_fixture_01",
+              "type": "function",
+              "function": {
+                "name": "query_account",
+                "arguments": "{}"
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "response_hash": "f9befb4cb6c855b11e7f653fb02048922c0abfc39d88f5af5d881d2766c0a196",
+  "parser_expectation": {
+    "finish_reason": "tool_calls",
+    "tool_calls": [
+      {
+        "id": "call_fixture_01",
+        "name": "query_account",
+        "arguments": {}
+      }
+    ]
+  },
+  "parser_expectation_hash": "ff046700f75f87140405431580eaf0b7a15955f8003abc3e78b920c7ae213993"
+}

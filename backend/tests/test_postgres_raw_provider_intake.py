@@ -412,8 +412,8 @@ async def test_raw_native_calls_are_audited_before_typed_validation(
         }
         assert all(
             item.runtime_provenance["prompt_version"]
-            == "agent_decide.v5+bound_evidence_synthesis.v1"
-            and item.runtime_provenance["schema_version"] == "agent-contract.v5.1"
+            == "agent_decide.v6+bound_evidence_synthesis.v1"
+            and item.runtime_provenance["schema_version"] == "agent-contract.v5.2"
             and item.runtime_provenance["code_commit"]
             for item in ledgers
         )
