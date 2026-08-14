@@ -62,6 +62,37 @@ const DETERMINISTIC_APPROVER_SESSION: SessionContext = {
   customer: undefined,
 };
 
+const DETERMINISTIC_DEMO_SHELL_SESSION: SessionContext = {
+  ...DETERMINISTIC_SESSION,
+  principal: {
+    id: "user_customer_demo",
+    display_name: "Aster Customer",
+    role: "customer",
+    membership_role: "customer_admin",
+  },
+  active_tenant: {
+    id: "tenant_demo",
+    name: "Aster Labs",
+  },
+  customer: {
+    id: "cust_demo",
+    display_name: "Aster Customer",
+    region: "us",
+    security_status: "normal",
+  },
+  accessible_tenants: [
+    {
+      id: "tenant_demo",
+      name: "Aster Labs",
+    },
+  ],
+  configured_runtime: {
+    mode: "fake",
+    model: "deterministic-fake",
+    actual_run_source: "run",
+  },
+};
+
 type MockApiContext = {
   route: PlaywrightRoute;
   path: string;
@@ -123,6 +154,23 @@ async function installDeterministicApi(
       },
       404,
     );
+  });
+}
+
+async function installDeterministicDemoShellApi(page: Page): Promise<void> {
+  await installDeterministicApi(page, async ({ route, path, method }) => {
+    if (method === "GET" && path === "/session") {
+      await fulfillJson(route, DETERMINISTIC_DEMO_SHELL_SESSION);
+      return true;
+    }
+    if (method === "GET" && path === "/conversations") {
+      await fulfillJson(route, {
+        items: [],
+        next_cursor: null,
+      } satisfies ConversationPage);
+      return true;
+    }
+    return false;
   });
 }
 
@@ -305,6 +353,7 @@ async function switchToApprover(page: Page): Promise<void> {
 
 test("desktop conversation shell matches the approved hierarchy", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
+  await installDeterministicDemoShellApi(page);
   await page.goto("/conversations/new");
   await expect(page.getByRole("heading", { name: "今天想解决什么问题？" })).toBeVisible();
   await expect(page.getByRole("button", { name: "＋ 新建对话" })).toBeVisible();
@@ -316,6 +365,7 @@ test("desktop conversation shell matches the approved hierarchy", async ({ page 
 
 test("390px keeps navigation, composer, and touch targets usable", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
+  await installDeterministicDemoShellApi(page);
   await page.goto("/conversations/new");
   await expect(page.getByRole("textbox", { name: "开始新对话" })).toBeVisible();
   await page.getByRole("button", { name: "打开对话导航" }).click();
