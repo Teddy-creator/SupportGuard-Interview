@@ -301,11 +301,14 @@ async def test_public_http_to_restricted_mcp_agent_finalizer_vertical(
             job = await session.get(RuntimeJob, job_id)
             assert ticket is not None
             assert run is not None and run.status == "completed"
-            assert run.agent_finish_reason == "evidence_freshness_insufficient"
+            assert run.agent_finish_reason == "answered"
             assert job is not None and job.status == "succeeded"
             assert run.tool_rounds == 1
             assert run.tool_attempts == 3
-            assert run.llm_calls == 3
+            # The explicit Demo refresh makes all three required evidence
+            # groups current before the run, so planning and final answer are
+            # sufficient without the historical freshness replan.
+            assert run.llm_calls == 2
 
             llm_attempts = list(
                 (
@@ -319,7 +322,7 @@ async def test_public_http_to_restricted_mcp_agent_finalizer_vertical(
                     )
                 ).all()
             )
-            assert [item.ordinal for item in llm_attempts] == [1, 2, 3]
+            assert [item.ordinal for item in llm_attempts] == [1, 2]
             assert all(item.status == "succeeded" for item in llm_attempts)
 
             invocations = list(
@@ -408,12 +411,11 @@ async def test_public_http_to_restricted_mcp_agent_finalizer_vertical(
                 "policy_decision",
                 "final_outcome",
             } <= event_types
-            assert sum(item.event_type == "agent_decision" for item in events) == 3
+            assert sum(item.event_type == "agent_decision" for item in events) == 2
             evidence_replans = [
                 item for item in events if item.event_type == "evidence_group_incomplete"
             ]
-            assert len(evidence_replans) == 1
-            assert evidence_replans[0].payload["result"] == "replan"
+            assert evidence_replans == []
             assert (
                 next(item for item in events if item.event_type == "policy_decision").payload[
                     "route"
@@ -430,7 +432,7 @@ async def test_public_http_to_restricted_mcp_agent_finalizer_vertical(
             follow_up_run = await session.get(AgentRun, follow_up_run_id)
             assert follow_up_run is not None
             assert follow_up_run.status == "completed"
-            assert follow_up_run.agent_finish_reason == "evidence_freshness_insufficient"
+            assert follow_up_run.agent_finish_reason == "answered"
             follow_up_invocations = list(
                 (
                     await session.scalars(
