@@ -6,6 +6,7 @@ from typing import Any, Protocol, cast
 
 from pydantic import ValidationError
 
+from supportguard.agent.api_diagnostics import required_api_rate_limit_diagnostic_reads
 from supportguard.agent.constants import MAX_LLM_CALLS, MAX_TOOL_ATTEMPTS, MAX_TOOL_ROUNDS
 from supportguard.agent.context import (
     AssembledContext,
@@ -154,6 +155,7 @@ class DecisionNodes:
     @staticmethod
     def _current_fact_evidence_groups(state: AgentState) -> tuple[EvidenceGroup, ...]:
         tool_groups: dict[str, EvidenceGroup] = {
+            "search_knowledge": "knowledge",
             "query_request_trace": "request_trace",
             "query_billing_record": "billing_record",
             "query_api_key_metadata": "api_key_metadata",
@@ -166,6 +168,11 @@ class DecisionNodes:
             for tool_name, _ in requested_current_fact_requirements(state).values()
             if tool_name in tool_groups
         ]
+        groups.extend(
+            tool_groups[tool_name]
+            for tool_name in required_api_rate_limit_diagnostic_reads(state)
+            if tool_name in tool_groups
+        )
         referential_billing = resolve_referential_billing_reference(state)
         if referential_billing.status == "resolved":
             groups.append("billing_record")

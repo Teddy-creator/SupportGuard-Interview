@@ -1,6 +1,7 @@
 import asyncio
 import os
 import signal
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pytest
@@ -171,6 +172,80 @@ async def prepare_database(path: Path) -> str:
         await session.commit()
     await engine.dispose()
     return url
+
+
+@pytest.mark.asyncio
+async def test_gateway_collapses_only_exact_duplicate_source_references() -> None:
+    observed_at = datetime.now(UTC).replace(microsecond=0)
+    exact = {
+        "source_type": "business_record",
+        "source_id": "api_usage_bucket:one-minute",
+        "observed_at": observed_at.isoformat(),
+    }
+    conflicting = {
+        **exact,
+        "observed_at": (observed_at + timedelta(seconds=1)).isoformat(),
+    }
+
+    class DuplicateSourceTransport:
+        async def call(
+            self,
+            server_name: str,
+            tool_name: str,
+            arguments: dict[str, object],
+            *,
+            reconnect_once: bool,
+        ) -> MCPCallResult:
+            assert (server_name, tool_name, reconnect_once) == (
+                "read",
+                "query_api_usage",
+                False,
+            )
+            del arguments
+            return MCPCallResult(
+                value={
+                    "tool_call_id": "tool_usage_duplicate",
+                    "ticket_id": "ticket_usage_duplicate",
+                    "window": "1m",
+                    "window_start": (observed_at - timedelta(minutes=1)).isoformat(),
+                    "window_end": observed_at.isoformat(),
+                    "request_count": 5,
+                    "input_token_count": 10,
+                    "output_token_count": 3,
+                    "concurrency_current": 2,
+                    "concurrency_peak": 3,
+                    "remaining_balance": "120.00",
+                    "balance_currency": "USD",
+                    "freshness_seconds": 0,
+                    "freshness_status": "fresh",
+                    "observed_at": observed_at.isoformat(),
+                    "resource_version": "usage-v1",
+                    "source_refs": [exact, exact, conflicting],
+                },
+                attempts=1,
+            )
+
+    gateway = ToolGateway(DuplicateSourceTransport())  # type: ignore[arg-type]
+    observation = await gateway.call_read(
+        ReadToolCall(name="query_api_usage", arguments={"window": "1m"}),
+        ToolCallContext(
+            tenant_id="tenant_demo",
+            customer_id="cust_demo",
+            ticket_id="ticket_usage_duplicate",
+            run_id="run_usage_duplicate",
+            job_id="job_usage_duplicate",
+            segment_id="segment_usage_duplicate",
+            delivery_generation=1,
+            fencing_token=1,
+            tool_call_id="tool_usage_duplicate",
+            trace_id="trace_usage_duplicate",
+        ),
+    )
+
+    assert observation.status == "ok"
+    assert len(observation.source_refs) == 2
+    assert observation.source_refs[0].observed_at == observed_at
+    assert observation.source_refs[1].observed_at == observed_at + timedelta(seconds=1)
 
 
 def bind_hermetic_mcp_database(monkeypatch: pytest.MonkeyPatch, database_url: str) -> None:

@@ -332,6 +332,29 @@ async def test_demo_temporal_refresh_is_scoped_non_destructive_and_fresh(
         assert comparable_end >= datetime.now(UTC).replace(second=0, microsecond=0) + timedelta(
             minutes=5
         )
+        latest_snapshot = await session.scalar(
+            select(ApiUsageSnapshot)
+            .where(
+                ApiUsageSnapshot.tenant_id == "tenant_demo",
+                ApiUsageSnapshot.customer_id == "cust_demo",
+            )
+            .order_by(ApiUsageSnapshot.observed_at.desc(), ApiUsageSnapshot.id.desc())
+            .limit(1)
+        )
+        latest_completed_bucket = await session.scalar(
+            select(ApiUsageBucket)
+            .where(
+                ApiUsageBucket.tenant_id == "tenant_demo",
+                ApiUsageBucket.customer_id == "cust_demo",
+                ApiUsageBucket.bucket_end <= datetime.now(UTC).replace(second=0, microsecond=0),
+            )
+            .order_by(ApiUsageBucket.bucket_end.desc(), ApiUsageBucket.id.desc())
+            .limit(1)
+        )
+        assert latest_snapshot is not None
+        assert latest_completed_bucket is not None
+        assert latest_snapshot.requests_last_minute == latest_completed_bucket.request_count
+        assert latest_snapshot.concurrency_current == latest_completed_bucket.concurrency_end
         remaining_tickets = await session.scalar(select(func.count()).select_from(SupportTicket))
         assert int(remaining_tickets) == ticket_count
     await engine.dispose()

@@ -417,7 +417,7 @@ class ToolGateway:
         transport_lifecycle: dict[str, Any] | None = None,
     ) -> ObservationEnvelope:
         payload = result.model_dump(mode="json")
-        source_refs = payload.pop("source_refs", [])
+        source_refs = ToolGateway._deduplicate_exact_source_refs(payload.pop("source_refs", []))
         payload.pop("tool_call_id", None)
         payload.pop("ticket_id", None)
         version = payload.get("version") or payload.get("business_version")
@@ -436,6 +436,26 @@ class ToolGateway:
             data=payload,
             transport_lifecycle=transport_lifecycle,
         )
+
+    @staticmethod
+    def _deduplicate_exact_source_refs(
+        source_refs: list[dict[str, Any]],
+    ) -> list[dict[str, Any]]:
+        """Collapse transport duplicates without hiding conflicting source identities."""
+
+        seen: set[tuple[str, str, str]] = set()
+        normalized: list[dict[str, Any]] = []
+        for source_ref in source_refs:
+            identity = (
+                str(source_ref.get("source_type", "")),
+                str(source_ref.get("source_id", "")),
+                str(source_ref.get("observed_at", "")),
+            )
+            if identity in seen:
+                continue
+            seen.add(identity)
+            normalized.append(source_ref)
+        return normalized
 
     @staticmethod
     def _transport_lifecycle(

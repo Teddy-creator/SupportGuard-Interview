@@ -74,7 +74,9 @@ export function NewConversationPage({
           <div>
             <small>预置诊断事实</small>
             <strong>req_demo_429 · atlas-chat · 429</strong>
-            <span>余额 120.00 USD；最近并发 40 / 套餐上限 40。</span>
+            <span>
+              演示账户余额 120.00 USD；套餐上限 40。当前滚动并发以运行时查询为准。
+            </span>
           </div>
           <div>
             <small>本租户账单对</small>

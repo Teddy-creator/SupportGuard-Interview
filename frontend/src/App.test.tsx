@@ -967,7 +967,8 @@ describe("Conversation-first product experience", () => {
     });
     expect(demoContext).toHaveTextContent("req_demo_429 · atlas-chat · 429");
     expect(demoContext).toHaveTextContent("余额 120.00 USD");
-    expect(demoContext).toHaveTextContent("并发 40 / 套餐上限 40");
+    expect(demoContext).toHaveTextContent("套餐上限 40");
+    expect(demoContext).toHaveTextContent("当前滚动并发以运行时查询为准");
     expect(demoContext).toHaveTextContent(
       "bill_demo_original → bill_demo_duplicate",
     );

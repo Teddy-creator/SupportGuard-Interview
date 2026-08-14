@@ -27,6 +27,20 @@ _CONTROL_SEPARATION: Final = re.compile(
     r"(?:独立|分开|不同|无关|不会|不能|does not|doesn't|independent|separate)",
     re.I,
 )
+_REQUEST_REFERENCE: Final = re.compile(
+    r"(?<![A-Za-z0-9])(?:req(?:uest)?|trace)(?:[-_.:][A-Za-z0-9]+)+",
+    re.I,
+)
+_GENERIC_REQUEST_LABELS: Final = {
+    "request_id",
+    "request-id",
+    "request.id",
+    "request:id",
+    "trace_id",
+    "trace-id",
+    "trace.id",
+    "trace:id",
+}
 
 _REQUIRED_READS: Final[tuple[tuple[ReadToolName, tuple[str, ...]], ...]] = (
     ("search_knowledge", ("evidence", "index_version")),
@@ -59,6 +73,37 @@ def _customer_messages(state: Mapping[str, Any]) -> tuple[str, ...]:
     return tuple(message for message in messages if message)
 
 
+def _request_references(message: str) -> tuple[str, ...]:
+    references = [
+        match.group(0)
+        for match in _REQUEST_REFERENCE.finditer(message)
+        if match.group(0).lower() not in _GENERIC_REQUEST_LABELS and len(match.group(0)) <= 128
+    ]
+    return tuple(dict.fromkeys(references))
+
+
+def message_specifies_request(message: str) -> bool:
+    """Return whether one unambiguous opaque Request/Trace reference is present."""
+
+    return len(_request_references(message)) == 1
+
+
+def explicit_request_id(state: Mapping[str, Any]) -> str | None:
+    """Resolve one customer-supplied request ID without trusting Assistant history."""
+
+    current = _request_references(str(state.get("redacted_message", "")))
+    if current:
+        return current[0] if len(current) == 1 else None
+    historical = tuple(
+        dict.fromkeys(
+            reference
+            for message in _customer_messages(state)[1:]
+            for reference in _request_references(message)
+        )
+    )
+    return historical[0] if len(historical) == 1 else None
+
+
 def required_api_rate_limit_diagnostic_reads(
     state: Mapping[str, Any],
 ) -> ApiDiagnosticRequirements:
@@ -86,7 +131,16 @@ def required_api_rate_limit_diagnostic_reads(
         for message in messages
     ):
         return {}
-    return dict(_REQUIRED_READS)
+    requirements = dict(_REQUIRED_READS)
+    if explicit_request_id(state) is not None:
+        requirements["query_request_trace"] = (
+            "request_id",
+            "model",
+            "status_code",
+            "error_class",
+            "version",
+        )
+    return requirements
 
 
 def pending_api_rate_limit_diagnostic_tools(

@@ -271,6 +271,20 @@ async def refresh_demo_temporal_fixtures(
                     source_version=max_source_version + index + 1,
                 )
             )
+    await session.flush()
+    current_boundary = now.replace(second=0, microsecond=0)
+    latest_completed_bucket = await session.scalar(
+        select(ApiUsageBucket)
+        .where(
+            ApiUsageBucket.tenant_id == tenant_id,
+            ApiUsageBucket.customer_id == customer.id,
+            ApiUsageBucket.bucket_end <= current_boundary,
+        )
+        .order_by(ApiUsageBucket.bucket_end.desc(), ApiUsageBucket.id.desc())
+        .limit(1)
+    )
+    if latest_completed_bucket is None:
+        raise RuntimeError("demo_temporal_completed_bucket_missing")
     snapshot_id = f"usage_refresh_{epoch}"
     snapshot_exists = await session.get(ApiUsageSnapshot, snapshot_id) is not None
     if not snapshot_exists:
@@ -281,8 +295,8 @@ async def refresh_demo_temporal_fixtures(
                 tenant_id=tenant_id,
                 customer_id=customer.id,
                 observed_at=now,
-                requests_last_minute=latest.requests_last_minute,
-                concurrency_current=latest.concurrency_current,
+                requests_last_minute=latest_completed_bucket.request_count,
+                concurrency_current=latest_completed_bucket.concurrency_end,
                 remaining_balance=latest.remaining_balance,
             )
         )

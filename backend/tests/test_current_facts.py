@@ -6,6 +6,8 @@ import pytest
 from supportguard.agent.api_diagnostics import (
     api_rate_limit_control_separation_present,
     api_rate_limit_diagnostic_reads_complete,
+    explicit_request_id,
+    message_specifies_request,
     pending_api_rate_limit_diagnostic_tools,
     required_api_rate_limit_diagnostic_reads,
 )
@@ -236,6 +238,136 @@ def test_explanation_request_does_not_become_a_current_fact_shortcut() -> None:
         "query_subscription",
         "query_api_usage",
     ]
+
+
+def test_explicit_demo_request_id_requires_a_bounded_second_trace_round() -> None:
+    state = AgentState(
+        tenant_id="tenant_demo",
+        customer_id="cust_demo",
+        run_id="run_429_trace",
+        redacted_message=(
+            "请求 req_demo_429 在余额充足时由 atlas-chat 返回 429 "
+            "concurrency_limit_exceeded，为什么？"
+        ),
+        classification={
+            "issue_type": "api_diagnostics",
+            "policy_boundary": "allowed",
+            "requested_action": "none",
+            "needs_realtime_facts": True,
+        },
+        tool_observations=[],
+        tool_rounds=0,
+        tool_attempts=0,
+    )
+    graph = SupportGraph(
+        provider=DeterministicFakeProvider(),
+        retrieval=None,
+        gateway=cast(ToolGateway, FakeGateway()),
+        test_capability=issue_test_runtime_capability(testing=True),
+    )
+
+    assert explicit_request_id(state) == "req_demo_429"
+    assert message_specifies_request(state["redacted_message"]) is True
+    assert tuple(required_api_rate_limit_diagnostic_reads(state)) == (
+        "search_knowledge",
+        "query_subscription",
+        "query_api_usage",
+        "query_request_trace",
+    )
+    first = graph.runtime._required_evidence_decision(state)
+    assert first is not None
+    assert [item.call.name for item in first.tool_calls] == [
+        "search_knowledge",
+        "query_subscription",
+        "query_api_usage",
+    ]
+
+    observed_at = datetime.now(UTC).isoformat()
+    state["tool_observations"] = [
+        {
+            "run_id": state["run_id"],
+            "tool_name": "search_knowledge",
+            "status": "ok",
+            "source_refs": [{"source_id": "knowledge:rate-limit"}],
+            "data": {"evidence": [{"chunk_id": "rate-limit"}], "index_version": "v1"},
+        },
+        {
+            "run_id": state["run_id"],
+            "tool_name": "query_subscription",
+            "status": "ok",
+            "source_refs": [{"source_id": "subscription:current"}],
+            "data": {
+                "subscription_id": "sub_demo",
+                "plan": "pro",
+                "status": "active",
+                "concurrency_limit": 40,
+                "version": 1,
+            },
+        },
+        {
+            "run_id": state["run_id"],
+            "tool_name": "query_api_usage",
+            "status": "ok",
+            "observed_at": observed_at,
+            "source_refs": [{"source_id": "usage:current"}],
+            "data": {
+                "remaining_balance": "120.00",
+                "balance_currency": "USD",
+                "concurrency_current": 5,
+                "freshness_status": "fresh",
+                "resource_version": "usage-v1",
+            },
+        },
+    ]
+    state["tool_rounds"] = 1
+    state["tool_attempts"] = 3
+    second = graph.runtime._required_evidence_decision(state)
+    assert second is not None
+    assert [item.call.name for item in second.tool_calls] == ["query_request_trace"]
+    assert second.tool_calls[0].call.arguments.model_dump() == {"request_id": "req_demo_429"}
+
+    state["tool_observations"].append(
+        {
+            "run_id": state["run_id"],
+            "tool_name": "query_request_trace",
+            "status": "ok",
+            "observed_at": observed_at,
+            "source_refs": [{"source_id": "request:demo-429"}],
+            "data": {
+                "request_id": "req_demo_429",
+                "model": "atlas-chat",
+                "status_code": 429,
+                "error_class": "concurrency_limit_exceeded",
+                "version": 1,
+            },
+        }
+    )
+    state["tool_rounds"] = 2
+    state["tool_attempts"] = 4
+    assert pending_api_rate_limit_diagnostic_tools(state) == ()
+    assert graph.runtime._allowlist(state) == set()
+    assert graph.decision_nodes._current_fact_evidence_groups(state) == (
+        "knowledge",
+        "subscription",
+        "api_usage",
+        "request_trace",
+    )
+
+
+def test_multiple_request_ids_do_not_authorize_a_guessed_trace_read() -> None:
+    state = AgentState(
+        redacted_message="比较 req_demo_429 和 req_demo_430 为什么都返回 429。",
+        classification={
+            "issue_type": "api_diagnostics",
+            "policy_boundary": "allowed",
+            "requested_action": "none",
+            "needs_realtime_facts": True,
+        },
+    )
+
+    assert explicit_request_id(state) is None
+    assert message_specifies_request(state["redacted_message"]) is False
+    assert "query_request_trace" not in required_api_rate_limit_diagnostic_reads(state)
 
 
 def test_combined_rate_limit_and_account_fact_requirements_use_one_bounded_batch() -> None:

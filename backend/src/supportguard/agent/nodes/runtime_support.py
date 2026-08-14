@@ -16,6 +16,8 @@ from supportguard.actions.service import get_action_spec, get_action_spec_by_pol
 from supportguard.agent.api_diagnostics import (
     api_rate_limit_control_separation_present,
     api_rate_limit_knowledge_query,
+    explicit_request_id,
+    message_specifies_request,
     pending_api_rate_limit_diagnostic_tools,
     required_api_rate_limit_diagnostic_reads,
 )
@@ -121,10 +123,6 @@ from supportguard.tools.gateway import ReadToolCall, ReadToolName, ToolGateway
 _ACCOUNT_DIAGNOSTIC_CUE = re.compile(
     r"(?:账户状态|账号状态|安全状态|风控状态|账户区域|账号区域|"
     r"\baccount status\b|\bsecurity status\b|\baccount region\b)",
-    re.I,
-)
-_REQUEST_TRACE_CUE = re.compile(
-    r"(?:request\s*id|请求\s*(?:id|编号)|\breq[-_][a-z0-9._:-]+\b)",
     re.I,
 )
 _INCIDENT_DIAGNOSTIC_CUE = re.compile(
@@ -633,7 +631,7 @@ class GraphRuntimeSupport:
             message = str(state.get("redacted_message", ""))
             if _ACCOUNT_DIAGNOSTIC_CUE.search(message):
                 visible.add("query_account")
-            if _REQUEST_TRACE_CUE.search(message):
+            if message_specifies_request(message):
                 visible.add("query_request_trace")
             if _INCIDENT_DIAGNOSTIC_CUE.search(message):
                 visible.update({"check_service_status", "query_incident_impact"})
@@ -1207,6 +1205,7 @@ class GraphRuntimeSupport:
             if pending_diagnostic_tools
             else str(state.get("redacted_message", "")).strip()
         )
+        request_id = explicit_request_id(state)
         if not query:
             return None
         tool_calls: list[dict[str, Any]] = []
@@ -1229,6 +1228,8 @@ class GraphRuntimeSupport:
             scheduled_tools.add(tool_name)
 
         for tool_name in pending_diagnostic_tools:
+            if tool_name == "query_request_trace" and request_id is None:
+                continue
             schedule(
                 tool_name,
                 prefix="required_api_diagnostic",
@@ -1237,6 +1238,8 @@ class GraphRuntimeSupport:
                     if tool_name == "search_knowledge"
                     else {"window": "1m"}
                     if tool_name == "query_api_usage"
+                    else {"request_id": request_id}
+                    if tool_name == "query_request_trace"
                     else {}
                 ),
             )
@@ -1508,13 +1511,7 @@ class GraphRuntimeSupport:
 
     @staticmethod
     def _message_specifies_request(message: str) -> bool:
-        return bool(
-            re.search(
-                r"\b(?:req(?:uest)?|trace)[-_:.]?[a-z0-9]{4,}\b",
-                message,
-                flags=re.IGNORECASE,
-            )
-        )
+        return message_specifies_request(message)
 
     @staticmethod
     def _requests_explicit_first_step(message: str) -> bool:
