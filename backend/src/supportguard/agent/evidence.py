@@ -938,14 +938,20 @@ def decide_evidence(
         else:
             observation_reasons.append(f"observation_identity_ambiguous:{observation_id}")
     fresh_observations = tuple(projected for _, projected in fresh_pairs)
-    source_owners: dict[str, list[str]] = {}
-    for fresh_observation in fresh_observations:
-        for source_id in fresh_observation.source_ids:
-            source_owners.setdefault(source_id, []).append(fresh_observation.observation_id)
+    source_types: dict[str, set[str]] = {}
+    for observation, _ in fresh_pairs:
+        source_refs = observation.get("source_refs")
+        if not isinstance(source_refs, list):
+            continue
+        for source_ref in source_refs:
+            if not isinstance(source_ref, dict) or not source_ref.get("source_id"):
+                continue
+            source_id = str(source_ref["source_id"])
+            source_types.setdefault(source_id, set()).add(str(source_ref.get("source_type") or ""))
     observation_reasons.extend(
-        f"observation_source_identity_ambiguous:{source_id}"
-        for source_id, owners in source_owners.items()
-        if len(owners) > 1
+        f"observation_source_identity_conflict:{source_id}"
+        for source_id, observed_types in source_types.items()
+        if len(observed_types) > 1
     )
     eligible_evidence_ids = {
         evidence_id

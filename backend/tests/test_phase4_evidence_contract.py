@@ -59,7 +59,14 @@ def _observation(
         "observed_at": observed_at.isoformat(),
         "fresh_until": (fresh_until or NOW + timedelta(minutes=5)).isoformat(),
         "resource_version": "resource-v1",
-        "source_refs": [{"source_id": source_id} for source_id in source_ids],
+        "source_refs": [
+            {
+                "source_type": "business_record",
+                "source_id": source_id,
+                "observed_at": observed_at.isoformat(),
+            }
+            for source_id in source_ids
+        ],
         "trusted_scope": {
             "tenant_id": tenant_id,
             "customer_id": customer_id,
@@ -276,7 +283,7 @@ def test_duplicate_source_inside_one_observation_fails_closed() -> None:
     assert "observation_source_identity_duplicate" in decision.insufficient_reasons
 
 
-def test_repeated_observation_or_cross_observation_source_is_ambiguous() -> None:
+def test_repeated_observation_identity_is_ambiguous() -> None:
     observation = _observation(
         tool_name="query_account",
         source_ids=("account:current",),
@@ -288,26 +295,58 @@ def test_repeated_observation_or_cross_observation_source_is_ambiguous() -> None
         observations=[observation, dict(observation)],
         can_replan=False,
     )
-    repeated_source = _decide(
-        requirements=EvidenceRequirements(required_groups=("account",)),
+    assert "observation_identity_ambiguous:observation-duplicate" in (
+        repeated_observation.insufficient_reasons
+    )
+
+
+def test_same_authoritative_source_can_support_distinct_observations() -> None:
+    decision = _decide(
+        requirements=EvidenceRequirements(required_groups=("account", "subscription")),
         observations=[
-            observation,
             _observation(
                 tool_name="query_account",
-                source_ids=("account:current",),
-                suffix="second-owner",
+                source_ids=("subscription:current",),
+                suffix="account-view",
                 data={"account_status": "active"},
+            ),
+            _observation(
+                tool_name="query_subscription",
+                source_ids=("subscription:current",),
+                suffix="subscription-view",
+                data={"plan": "pro"},
             ),
         ],
         can_replan=False,
     )
 
-    assert "observation_identity_ambiguous:observation-duplicate" in (
-        repeated_observation.insufficient_reasons
+    assert decision.result == "accept"
+    assert decision.satisfied_groups == ("account", "subscription")
+
+
+def test_one_source_id_cannot_fork_across_source_types() -> None:
+    account = _observation(
+        tool_name="query_account",
+        source_ids=("shared:current",),
+        suffix="account-source",
+        data={"account_status": "active"},
     )
-    assert "observation_source_identity_ambiguous:account:current" in (
-        repeated_source.insufficient_reasons
+    subscription = _observation(
+        tool_name="query_subscription",
+        source_ids=("shared:current",),
+        suffix="subscription-source",
+        data={"plan": "pro"},
     )
+    subscription["source_refs"][0]["source_type"] = "tool_result"
+
+    decision = _decide(
+        requirements=EvidenceRequirements(required_groups=("account", "subscription")),
+        observations=[account, subscription],
+        can_replan=False,
+    )
+
+    assert decision.result == "terminal"
+    assert "observation_source_identity_conflict:shared:current" in (decision.insufficient_reasons)
 
 
 def test_two_binding_ids_cannot_alias_one_evidence_identity() -> None:
