@@ -3,7 +3,7 @@ import { useState } from "react";
 import { citationEvidenceKey } from "./citationKeys";
 import { actionLabel } from "./productCopy";
 import { formatTime, statusLabel } from "./presentation";
-import type { SessionContext, TurnInspector } from "./productTypes";
+import type { Citation, SessionContext, TurnInspector } from "./productTypes";
 
 const eventNames: Record<string, string> = {
   run_started: "开始分析请求",
@@ -129,6 +129,50 @@ function eventDetail(payload?: Record<string, unknown>): string | null {
   return values.filter(Boolean).join(" · ") || null;
 }
 
+type BusinessEvidenceGroup = {
+  key: string;
+  titles: string[];
+  claimSummary?: string;
+  observedAt?: string;
+  freshness: string;
+  sourceIds: string[];
+};
+
+function groupedBusinessEvidence(
+  facts: Citation[],
+): BusinessEvidenceGroup[] {
+  const groups = new Map<string, BusinessEvidenceGroup>();
+  facts.forEach((fact, index) => {
+    const key = fact.claim_id ? `claim:${fact.claim_id}` : `fact:${index}`;
+    const existing = groups.get(key) ?? {
+      key,
+      titles: [],
+      claimSummary: fact.claim_summary ?? fact.supporting_span,
+      observedAt: fact.observed_at,
+      freshness: fact.freshness ?? "unknown",
+      sourceIds: [],
+    };
+    if (fact.title && !existing.titles.includes(fact.title)) {
+      existing.titles.push(fact.title);
+    }
+    const sourceId = fact.observation_source_id ?? fact.document_id;
+    if (sourceId && !existing.sourceIds.includes(sourceId)) {
+      existing.sourceIds.push(sourceId);
+    }
+    if (
+      fact.observed_at &&
+      (!existing.observedAt || fact.observed_at > existing.observedAt)
+    ) {
+      existing.observedAt = fact.observed_at;
+    }
+    if (fact.freshness !== "fresh") {
+      existing.freshness = fact.freshness ?? "unknown";
+    }
+    groups.set(key, existing);
+  });
+  return [...groups.values()];
+}
+
 export function TechnicalInspector({
   open,
   loading,
@@ -151,6 +195,7 @@ export function TechnicalInspector({
     tool_call_mode: run?.tool_call_mode,
   };
   const actual = run?.actual_runtime;
+  const businessEvidence = groupedBusinessEvidence(data?.business_facts ?? []);
   const timeline = (data?.timeline ?? []).filter(
     (event) => event.run_id === data?.run_id,
   );
@@ -342,16 +387,29 @@ export function TechnicalInspector({
                   </details>
                 </article>
               ))}
-              {(data?.business_facts ?? []).map((fact, index) => (
-                <article
-                  key={`${fact.title}-${fact.observed_at}-${index}`}
-                >
-                  <strong>{fact.title ?? "实时业务事实"}</strong>
+              {businessEvidence.map((fact) => (
+                <article key={fact.key}>
+                  <strong>
+                    {fact.titles.length
+                      ? fact.titles.join(" · ")
+                      : "实时业务事实"}
+                  </strong>
                   <small>
                     {fact.freshness === "fresh" ? "当前有效" : "时效待确认"} ·{" "}
-                    {formatTime(fact.observed_at)}
+                    {formatTime(fact.observedAt)}
+                    {fact.sourceIds.length
+                      ? ` · ${fact.sourceIds.length} 项来源`
+                      : ""}
                   </small>
-                  {fact.claim_summary ? <p>{fact.claim_summary}</p> : null}
+                  {fact.claimSummary ? <p>{fact.claimSummary}</p> : null}
+                  {fact.sourceIds.length ? (
+                    <details>
+                      <summary>查看来源绑定</summary>
+                      {fact.sourceIds.map((sourceId) => (
+                        <code key={sourceId}>{sourceId}</code>
+                      ))}
+                    </details>
+                  ) : null}
                 </article>
               ))}
               {!(data?.knowledge_sources ?? []).length &&

@@ -1,4 +1,10 @@
-import { cleanup, render, screen, within } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  within,
+} from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { TechnicalInspector } from "./TechnicalInspector";
@@ -181,5 +187,63 @@ describe("TechnicalInspector security summary", () => {
       within(proof).getByText("请求在工具调用前被拒绝"),
     ).toBeInTheDocument();
     expect(within(proof).getByText(/没有访问业务工具/)).toBeInTheDocument();
+  });
+
+  it("groups one claim across business sources without hiding the bindings", () => {
+    const data = inspector([], "answered");
+    data.business_facts = [
+      {
+        source_type: "business_fact",
+        claim_id: "claim-diagnostic",
+        title: "请求追踪结果",
+        observation_source_id: "api_request_trace:trace_demo_429",
+        claim_summary: "请求失败时并发槽位已满。",
+        observed_at: "2026-08-14T01:00:01Z",
+        freshness: "fresh",
+      },
+      {
+        source_type: "business_fact",
+        claim_id: "claim-diagnostic",
+        title: "API 使用情况",
+        observation_source_id: "api_usage_snapshot:usage_demo",
+        claim_summary: "请求失败时并发槽位已满。",
+        observed_at: "2026-08-14T01:00:00Z",
+        freshness: "fresh",
+      },
+      {
+        source_type: "business_fact",
+        claim_id: "claim-diagnostic",
+        title: "API 使用情况",
+        observation_source_id: "subscription:sub_demo",
+        claim_summary: "请求失败时并发槽位已满。",
+        observed_at: "2026-08-14T01:00:00Z",
+        freshness: "fresh",
+      },
+    ];
+    render(
+      <TechnicalInspector
+        open
+        loading={false}
+        data={data}
+        session={session}
+        onClose={() => undefined}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "证据" }));
+
+    expect(
+      screen.getByText("请求追踪结果 · API 使用情况"),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/3 项来源/)).toBeInTheDocument();
+    expect(screen.getAllByText("请求失败时并发槽位已满。")).toHaveLength(1);
+    fireEvent.click(screen.getByText("查看来源绑定"));
+    expect(
+      screen.getByText("api_request_trace:trace_demo_429"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("api_usage_snapshot:usage_demo"),
+    ).toBeInTheDocument();
+    expect(screen.getByText("subscription:sub_demo")).toBeInTheDocument();
   });
 });
