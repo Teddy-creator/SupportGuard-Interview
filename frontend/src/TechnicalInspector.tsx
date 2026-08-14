@@ -323,7 +323,7 @@ export function TechnicalInspector({
                     <dd>{knowledgeResultCount}</dd>
                   </div>
                   <div>
-                    <dt>高风险申请</dt>
+                    <dt>关联高风险申请</dt>
                     <dd>{proposalCount}</dd>
                   </div>
                 </dl>
@@ -339,6 +339,11 @@ export function TechnicalInspector({
                 <small>
                   数据库角色与 RLS 是后备边界；本视图不会把未发生的数据库访问冒充为“本轮命中 RLS”。
                 </small>
+                {proposalCount > 0 ? (
+                  <small>
+                    申请计数表示本轮关联到的审批对象，可能是新建申请，也可能是复用已有申请。
+                  </small>
+                ) : null}
               </section>
               <ol className="inspector-timeline">
                 {timeline.map((event) => {

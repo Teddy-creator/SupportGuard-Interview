@@ -145,6 +145,7 @@ export function deduplicatedCitationEvidence(
     const summaries = [existing.claim_summary, citation.claim_summary]
       .filter((value): value is string => Boolean(value?.trim()))
       .flatMap((value) => value.split("；").map((item) => item.trim()))
+      .map((value) => value.replace(/[，,。.!！？?；;]+$/u, ""))
       .filter(Boolean);
     selected.set(key, {
       ...existing,

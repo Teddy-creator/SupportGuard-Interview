@@ -133,6 +133,8 @@ describe("TechnicalInspector security summary", () => {
     );
 
     expect(screen.getByText("结果 审批者已拒绝")).toBeInTheDocument();
+    expect(screen.getByText("关联高风险申请")).toBeInTheDocument();
+    expect(screen.getByText(/可能是新建申请，也可能是复用已有申请/)).toBeInTheDocument();
   });
 
   it("does not disguise a failed or empty tool path as a pre-tool denial", () => {

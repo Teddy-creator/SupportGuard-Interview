@@ -406,7 +406,7 @@ describe("customer-safe answer projection", () => {
 
     expect(deduplicatedCitationEvidence(citations)).toEqual([
       expect.objectContaining({
-        claim_summary: "金额必须一致。；币种与服务周期必须一致。",
+        claim_summary: "金额必须一致；币种与服务周期必须一致",
       }),
     ]);
   });
