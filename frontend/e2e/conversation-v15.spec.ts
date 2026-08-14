@@ -587,7 +587,7 @@ test("rejecting a high-risk action leaves the customer conversation with the Age
     });
 
     await expect(
-      customer.getByRole("region", { name: /撤销 API Key 已拒绝/ }),
+      customer.getByRole("region", { name: /撤销 API Key 审批者已拒绝/ }),
     ).toBeVisible({ timeout: 15_000 });
     await submit(customer, "你是谁？", "继续提问");
     await expect(customer.locator(".assistant-row")).toHaveCount(2, {
