@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime, timedelta
 
@@ -61,6 +62,14 @@ def _authorize(settings: Settings, tenant_id: str) -> None:
         raise RuntimeError("demo_temporal_refresh_requires_demo_tenant")
 
 
+def _as_utc(value: datetime) -> datetime:
+    return value if value.tzinfo is not None else value.replace(tzinfo=UTC)
+
+
+def _refresh_clock(clock: Callable[[], datetime] | None) -> datetime:
+    return _as_utc(clock() if clock is not None else datetime.now(UTC))
+
+
 def demo_coverage_window_end(now: datetime) -> datetime:
     """Keep Demo usage complete while the real Provider finishes a turn.
 
@@ -110,12 +119,7 @@ async def demo_temporal_preflight(
             )
         ).all()
     )
-    observed_times = [
-        item.observed_at
-        if item.observed_at.tzinfo is not None
-        else item.observed_at.replace(tzinfo=UTC)
-        for item in snapshots
-    ]
+    observed_times = [_as_utc(item.observed_at) for item in snapshots]
     latest = max(observed_times, default=None)
     return DemoTemporalReport(
         schema="demo-temporal-report.v1",
@@ -204,7 +208,11 @@ async def demo_resource_preflight(
 
 
 async def refresh_demo_temporal_fixtures(
-    session: AsyncSession, *, settings: Settings, tenant_id: str
+    session: AsyncSession,
+    *,
+    settings: Settings,
+    tenant_id: str,
+    clock: Callable[[], datetime] | None = None,
 ) -> DemoTemporalReport:
     _authorize(settings, tenant_id)
     before = await demo_temporal_preflight(session, settings=settings, tenant_id=tenant_id)
@@ -235,14 +243,9 @@ async def refresh_demo_temporal_fixtures(
             )
         ).all()
     )
-    now = datetime.now(UTC)
+    now = _refresh_clock(clock)
     window_end = demo_coverage_window_end(now)
-    original_end = max(
-        item.bucket_end
-        if item.bucket_end.tzinfo is not None
-        else item.bucket_end.replace(tzinfo=UTC)
-        for item in buckets
-    )
+    original_end = max(_as_utc(item.bucket_end) for item in buckets)
     shift = window_end - original_end
     # A long-lived local Demo maintainer intentionally keeps a five-minute
     # buffer ahead of wall time. Re-entering inside that bounded buffer is an
@@ -288,7 +291,7 @@ async def refresh_demo_temporal_fixtures(
     snapshot_id = f"usage_refresh_{epoch}"
     snapshot_exists = await session.get(ApiUsageSnapshot, snapshot_id) is not None
     if not snapshot_exists:
-        latest = max(snapshots, key=lambda item: item.observed_at)
+        latest = max(snapshots, key=lambda item: _as_utc(item.observed_at))
         session.add(
             ApiUsageSnapshot(
                 id=snapshot_id,
@@ -302,12 +305,7 @@ async def refresh_demo_temporal_fixtures(
         )
         latest_observed_at = now
     else:
-        latest_observed_at = max(
-            item.observed_at
-            if item.observed_at.tzinfo is not None
-            else item.observed_at.replace(tzinfo=UTC)
-            for item in snapshots
-        )
+        latest_observed_at = max(_as_utc(item.observed_at) for item in snapshots)
     await session.flush()
     return DemoTemporalReport(
         schema="demo-temporal-report.v1",

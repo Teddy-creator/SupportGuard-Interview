@@ -293,7 +293,9 @@ async def test_demo_temporal_refresh_is_scoped_non_destructive_and_fresh(
         await seed_demo_data(session)
         snapshots = list((await session.scalars(select(ApiUsageSnapshot))).all())
         buckets = list((await session.scalars(select(ApiUsageBucket))).all())
-        old_time = datetime.now(UTC) - timedelta(days=3)
+        second_refresh = datetime.now(UTC)
+        first_refresh = second_refresh.replace(second=59, microsecond=0) - timedelta(minutes=1)
+        old_time = first_refresh - timedelta(days=3)
         for snapshot in snapshots:
             snapshot.observed_at = old_time
         for index, bucket in enumerate(buckets):
@@ -302,19 +304,38 @@ async def test_demo_temporal_refresh_is_scoped_non_destructive_and_fresh(
         await session.commit()
         ticket_count = int(await session.scalar(select(func.count()).select_from(SupportTicket)))
         report = await refresh_demo_temporal_fixtures(
-            session, settings=settings, tenant_id="tenant_demo"
+            session,
+            settings=settings,
+            tenant_id="tenant_demo",
+            clock=lambda: first_refresh,
         )
         await session.commit()
         repeated = await refresh_demo_temporal_fixtures(
-            session, settings=settings, tenant_id="tenant_demo"
+            session,
+            settings=settings,
+            tenant_id="tenant_demo",
+            clock=lambda: first_refresh,
+        )
+        await session.commit()
+        rolled_over = await refresh_demo_temporal_fixtures(
+            session,
+            settings=settings,
+            tenant_id="tenant_demo",
+            clock=lambda: second_refresh,
         )
         await session.commit()
         after = await demo_temporal_preflight(session, settings=settings, tenant_id="tenant_demo")
         assert report.mode == "refresh"
         assert repeated.mode == "refresh"
+        assert rolled_over.mode == "refresh"
         assert repeated.usage_bucket_count == report.usage_bucket_count
+        assert repeated.usage_snapshot_count == report.usage_snapshot_count
+        assert rolled_over.usage_bucket_count == report.usage_bucket_count + 1
+        assert rolled_over.usage_snapshot_count == report.usage_snapshot_count + 1
         assert repeated.latest_snapshot_age_seconds is not None
         assert repeated.latest_snapshot_age_seconds <= 5
+        assert rolled_over.latest_snapshot_age_seconds is not None
+        assert rolled_over.latest_snapshot_age_seconds <= 5
         assert after.latest_snapshot_age_seconds is not None
         assert after.latest_snapshot_age_seconds <= 5
         latest_bucket_end = await session.scalar(
