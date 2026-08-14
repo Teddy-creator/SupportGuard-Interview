@@ -102,6 +102,39 @@ describe("TechnicalInspector security summary", () => {
     expect(within(proof).getAllByText("0")).toHaveLength(4);
   });
 
+  it("does not present a policy rejection as a human approval decision", () => {
+    const { rerender } = render(
+      <TechnicalInspector
+        open
+        loading={false}
+        data={inspector(
+          [event("policy_decision", 1, { route: "rejected" })],
+          "rejected",
+        )}
+        session={session}
+        onClose={() => undefined}
+      />,
+    );
+
+    expect(screen.getByText("结果 请求未执行")).toBeInTheDocument();
+    expect(screen.queryByText("结果 审批者已拒绝")).toBeNull();
+
+    rerender(
+      <TechnicalInspector
+        open
+        loading={false}
+        data={inspector(
+          [event("proposal_drafted", 1, { action_type: "refund" })],
+          "rejected",
+        )}
+        session={session}
+        onClose={() => undefined}
+      />,
+    );
+
+    expect(screen.getByText("结果 审批者已拒绝")).toBeInTheDocument();
+  });
+
   it("does not disguise a failed or empty tool path as a pre-tool denial", () => {
     render(
       <TechnicalInspector

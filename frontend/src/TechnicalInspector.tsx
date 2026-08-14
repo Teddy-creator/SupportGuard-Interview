@@ -215,6 +215,10 @@ export function TechnicalInspector({
   const proposalCount = timeline.filter(
     (event) => event.event_type === "proposal_drafted",
   ).length;
+  const resultLabel =
+    run?.finish_reason === "rejected" && proposalCount === 0
+      ? "请求未执行"
+      : statusLabel(run?.finish_reason ?? run?.status ?? "");
   const denialRecorded = timeline.some(eventRecordsDenial);
   const preToolDenial =
     toolActivityCount === 0 &&
@@ -361,7 +365,7 @@ export function TechnicalInspector({
                 <span>Tool rounds {run.budgets?.tool_rounds ?? 0}</span>
                 <span>Attempts {run.budgets?.tool_attempts ?? 0}</span>
                 <span>LLM calls {run.budgets?.llm_calls ?? 0}</span>
-                <span>结果 {statusLabel(run.finish_reason ?? run.status)}</span>
+                <span>结果 {resultLabel}</span>
               </div>
               {run.failure_category ? (
                 <p className="inspector-failure">
