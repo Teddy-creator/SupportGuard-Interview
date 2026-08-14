@@ -92,12 +92,13 @@ export function useConversationViewState({
     followLatestMessage.current = true;
     window.requestAnimationFrame(() => {
       const node = conversationScroll.current;
-      if (node && followLatestMessage.current) node.scrollTop = node.scrollHeight;
+      if (!node || !followLatestMessage.current) return;
+      node.scrollTop = selectedId ? node.scrollHeight : 0;
     });
   }, [conversationScroll, selectedId]);
 
   useEffect(() => {
-    if (!followLatestMessage.current) return;
+    if (!selectedId || !followLatestMessage.current) return;
     window.requestAnimationFrame(() => {
       const node = conversationScroll.current;
       if (node && followLatestMessage.current) node.scrollTop = node.scrollHeight;
@@ -106,6 +107,7 @@ export function useConversationViewState({
     conversation?.turns.length,
     conversation?.updated_at,
     conversationScroll,
+    selectedId,
     streamCursor,
   ]);
 
